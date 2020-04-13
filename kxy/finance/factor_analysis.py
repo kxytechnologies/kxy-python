@@ -11,26 +11,30 @@ def information_adjusted_beta(r, r_m):
 	.. _information-adjusted-beta:
 	Calculates the informmation-adjusted beta.
 
-	Details
-	-------
-	The standard beta coefficient of an asset or a portfolio is defined as
-	.. math::
-		\beta = \text{Corr}\left(r, r_m\right) \sqrt{\frac{\mathbb{V}\text{ar}\left(r\right)}{\mathbb{V}\text{ar}\left(r_m\right)}},
 
-	where :math:`\text{Corr}` is Pearson's correlation coefficient. 
+	.. note::
 
-	The information-adjusted correlation generalizes the foregoing equations and reads 
-	.. math::
-		\text{IA}-\beta = \text{IA-Corr}\left(r, r_m\right) \sqrt{\frac{\mathbb{V}\text{ar}\left(r\right)}{\mathbb{V}\text{ar}\left(r_m\right)}}.
+		The standard beta coefficient of an asset or a portfolio is defined as
 
-	While Pearson's correlation (and therefore beta) only captures linear relationships between
-	a portfolio's returns and market returns, the information-adjusted correlation 
-	(see :ref:`information-adjusted-correlation`) also fully captures non-linear and temporal 
-	dependencies between portfolio returns and market returns.
+		.. math::
+			\\beta = \\text{Corr}\\left(r, r_m\\right) \\sqrt{\\frac{\mathbb{V}\\text{ar}\\left(r\\right)}{\mathbb{V}\\text{ar}\\left(r_m\\right)}},
 
-	Checkout `this blog post <https://medium.com/kxytechnologies/https-medium-com-pit-ai-technologies-the-black-swans-in-your-market-neutral-portfolios-part-1-e17fc18a42a7>` 
-	for a discussion on the limits of Pearson correlation and beta, and `this blog post <https://medium.com/kxytechnologies/https-medium-com-pit-ai-technologies-the-black-swans-in-your-market-neutral-portfolios-part-2-b5e8d691b214>`_
-	for the introduction of information-adjusted correlation and beta as remedies.
+		where :math:`\\text{Corr}` is Pearson's correlation coefficient. 
+
+		The information-adjusted correlation generalizes the foregoing equations and reads 
+
+		.. math::
+			\\text{IA}\\beta = \\text{IACorr}\\left(r, r_m\\right) \\sqrt{\\frac{\mathbb{V}\\text{ar}\\left(r\\right)}{\mathbb{V}\\text{ar}\left(r_m\\right)}}.
+
+		While Pearson's correlation (and therefore beta) only captures linear relationships between
+		portfolio returns and market returns, the information-adjusted correlation 
+		(see :ref:`kxy.finance.risk_analysis.information_adjusted_correlation <information-adjusted-correlation>`) fully captures nonlinear and temporal 
+		dependencies between portfolio returns and market returns.
+
+		Checkout `this blog post <https://medium.com/kxytechnologies/https-medium-com-pit-ai-technologies-the-black-swans-in-your-market-neutral-portfolios-part-1-e17fc18a42a7>`_ 
+		for a discussion on the limits of Pearson correlation and beta, and `this other blog post <https://medium.com/kxytechnologies/https-medium-com-pit-ai-technologies-the-black-swans-in-your-market-neutral-portfolios-part-2-b5e8d691b214>`_
+		for the introduction of information-adjusted correlation and beta as remedies.
+
 
 	Parameters
 	----------
@@ -38,6 +42,7 @@ def information_adjusted_beta(r, r_m):
 		The array of asset or portfolio returns.
 	r_m : (n) array_like
 		The array of market returns.
+
 
 	Returns
 	-------

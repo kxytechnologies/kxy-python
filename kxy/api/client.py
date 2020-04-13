@@ -14,13 +14,11 @@ API_KEY = os.getenv('KXY_API_KEY')
 
 class APIClient(object):
 	"""
-	Python client for the RESTful KXY API.
-
-	All API methods require an API key. The API key must be set in the environment 
+	Python client for the RESTful KXY API. All API methods require an API key. The API key must be set in the environment 
 	variable KXY_API_KEY.
 
-	Examples
-	--------
+	Example
+	-------
 	>>> import os
 	>>> os.environ['KXY_API_KEY'] = <your API key goes here>
 	"""
@@ -60,6 +58,8 @@ class APIClient(object):
 	@requires_api_key
 	def get(path, **params):
 		"""
+		.. note:: This method requires a valid API key.
+
 		Issues a GET request to the API resource identified by the input path.
 
 		Parameters
@@ -77,21 +77,18 @@ class APIClient(object):
 			The response of the API. The request HTTP status code can be accessed
 			through `response.status_code`. To check if the request was succesful,
 			inspect `response.ok`. When the API returned data, they can be accessed
-			through `response.json()`.
+			through `response.json()`. Supported status codes are:
 
-		Notes
-		-----
-		This method requires a valid API key. Supported status codes are:
-		200: 
-			The request was successful and the API returned some data accessible through
-			`response.json()`.
-		403: 
-			The request failed because some parameter are either invalid or missing.
-			Check `response.json()['reason']` for more information.
-		404:
-			The request failed because the API couldn't yet solve the problem of interest.
-			You should typically try again another time. Check `response.json()['reason']`
-			for more information.
+			200: 
+				The request was successful and the API returned some data accessible through
+				`response.json()`.
+			403: 
+				The request failed because some parameter are either invalid or missing.
+				Check `response.json()['reason']` for more information.
+			404:
+				The request failed because the API couldn't yet solve the problem of interest.
+				You should typically try again another time. Check `response.json()['reason']`
+				for more information.
 		"""
 		url = APIClient.url(path)
 		response = requests.get(url, params=params, headers={'x-api-key': API_KEY})
@@ -103,6 +100,8 @@ class APIClient(object):
 	@requires_api_key
 	def post(path, **params):
 		"""
+		.. note:: This method requires a valid API key.
+
 		Issues a POST request to the API resource identified by the input path.
 
 		Parameters
@@ -123,19 +122,18 @@ class APIClient(object):
 			inspect `response.ok`. When the API returned data, they can be accessed
 			through `response.json()`.
 
-		Notes
-		-----
-		This method requires a valid API key. Supported status codes are:
-		200: 
-			The request was successful and the API returned some data accessible through
-			`response.json()`.
-		403: 
-			The request failed because some parameter are either invalid or missing.
-			Check `response.json()['reason']` for more information.
-		404:
-			The request failed because the API couldn't yet solve the problem of interest.
-			You should typically try again another time. Check `response.json()['reason']`
-			for more information.
+			Supported status codes are:
+
+			200: 
+				The request was successful and the API returned some data accessible through
+				`response.json()`.
+			403: 
+				The request failed because some parameter are either invalid or missing.
+				Check `response.json()['reason']` for more information.
+			404:
+				The request failed because the API couldn't yet solve the problem of interest.
+				You should typically try again another time. Check `response.json()['reason']`
+				for more information.
 		"""
 		url = APIClient.url(path)
 		response = requests.post(url, json=params, headers={'x-api-key': API_KEY})
@@ -147,6 +145,8 @@ class APIClient(object):
 	@lru_cache(maxsize=32)
 	def route(path=None, method=None, **params):
 		"""
+		.. note:: This method requires a valid API key.
+
 		Generic method to issue a GET or a POST request to the API resource identified
 		by the input path.
 
@@ -170,24 +170,23 @@ class APIClient(object):
 			inspect `response.ok`. When the API returned data, they can be accessed
 			through `response.json()`.
 
-	    Raises
-	    ------
-	    ValueError
-	        If path is None or method is neither 'GET', nor 'POST'.
+			Supported status codes are:
 
-		Notes
-		-----
-		This method requires a valid API key. Supported status codes are:
-		200: 
-			The request was successful and the API returned some data accessible through
-			`response.json()`.
-		403: 
-			The request failed because some parameter are either invalid or missing.
-			Check `response.json()['reason']` for more information.
-		404:
-			The request failed because the API couldn't yet solve the problem of interest.
-			You should typically try again another time. Check `response.json()['reason']`
-			for more information.
+			200: 
+				The request was successful and the API returned some data accessible through
+				`response.json()`.
+			403: 
+				The request failed because some parameter are either invalid or missing.
+				Check `response.json()['reason']` for more information.
+			404:
+				The request failed because the API couldn't yet solve the problem of interest.
+				You should typically try again another time. Check `response.json()['reason']`
+				for more information.
+
+		Raises
+		------
+		ValueError
+			If path is None or method is neither 'GET', nor 'POST'.
 		"""
 		if path is None or method is None or \
 				method.upper() not in ('GET', 'PATH'):

@@ -22,44 +22,47 @@ def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=N
 	Solves a constrained least-informative copula problem and returns the differential 
 	entropy of the least informative copula satisfying the input constraints.
 
-	The optimimzation problem is solved on the KXY infrastructure, not locally, and an 
-	API key is required to do so.
+	.. important::
+
+		The optimimzation problem is solved on the KXY infrastructure, not locally, and an 
+		API key is required to do so.
 
 
-	Details
-	-------
-	Let :math:`x \in \mathbb{R}^d` be a continuous random variable with probability density
-	function :math:`p`, copula density :math:`c` and copula-uniform representation
-	:math:`u := \left(F_1(x_i), \dots, F_d(x_d)\right)` where :math:`F_i` is the cummulative
-	density function of coordinate variable :math:`x_i`. 
+	.. note::
 
-	The differential entropy of :math:`x`, defined as 
-	.. math::
-		h(x) := -\int_{\mathbb{R}^d} p(x) \log p(x) dx
+		Let :math:`x \in \mathbb{R}^d` be a continuous random variable with probability density
+		function :math:`p`, copula density :math:`c` and copula-uniform representation :math:`u := (F_1(x_i), \dots , F_d(x_d))` where 
+		:math:`F_i` is the cummulative density function of coordinate variable :math:`x_i`. The differential entropy of :math:`x`, defined as 
 
-	can be broken down as 
-	.. math::
-		h(x) = h(u) + \sum_{i=1}^d h(x_i).
+		.. math::
+			h(x) := -\int_{\mathbb{R}^d} p(x) \log p(x) dx
 
-	:math:`h(u)=h(c)` is also the entropy of the copula of :math:`x`. Note that :math:`\sum_{i=1}^d h(x_i)-h(x)=-h(u)`
-	is the total correlation of :math:`x` and quantifies information redundancy between 
-	coordinates of :math:`x`.
+		can be broken down as 
 
-	Given a functional :math:`g` of :math:`c` that can estimated from samples of math:`x`,
-	this function solves the following optimization problem:
+		.. math::
+			h(x) = h(u) + \sum_{i=1}^d h(x_i).
 
-	.. math::
-		\max_{c \in \mathcal{C}} h(c) \\
-		\text{s.t.} g(c) = \alpha
+		:math:`h(u)=h(c)` is also the entropy of the copula of :math:`x` . Note that :math:`\sum_{i=1}^d h(x_i)-h(x)=-h(u)`
+		is the total correlation of :math:`x` and quantifies information redundancy between 
+		coordinates of :math:`x`.
+
+		Given a functional :math:`g` of :math:`c` that can estimated from samples of math:`x` ,
+		this function solves the following optimization problem over the set of all copulas :math:`\mathcal{C}`
+
+		.. math::
+			&\max_{c \in \mathcal{C}} h(c), \\
+
+			&\\text{subject to } g(c) = \\alpha
 
 
-	Functionals that are currently supported are population versions of the average pairwise 
-	Spearman's rank correlation among a subset of coordinates of x.
+		Functionals that are currently supported are population versions of the average pairwise 
+		Spearman's rank correlation among a subset of coordinates of x.
 
-	.. math::
-		g(c) = 12 \left[ \frac{2}{d(d-1)} \sum{j<j^\prime} E\left(u_ju_{j^\prime} \right) \right]-3
+		.. math::
+			g(c) = 12 \\left[ \\frac{2}{d(d-1)} \\sum_{j<j^\\prime} E \\left( u_j u_{j^\\prime} \\right) \\right]-3
 
-	For sample estimates based on math:`x`, see Eq. (3.3.3) in :cite:`JoeH90`.
+		For sample estimates based on math:`x`, see Eq. (3.3.3) in :cite:`JoeH90`.
+
 
 	Parameters
 	----------
@@ -94,14 +97,17 @@ def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=N
 	------
 	AssertionError
 		If any required parameter is missing.
+
 	ValueError
 		If the optimization problem is not feasible.
+
 	Exception
 		If the KXY API is not able to return an answer quickly enough. This typically means
 		you should try again later.
 
-	References
-	----------
+
+	.. rubric:: References
+
 	.. [JoeH90] Joe, H. Journal of multivariate analysis 35 (1), 12-30, 1990.
 	"""
 	assert method in ('average-pairwise-spearman-rho', 'average-pairwise-spearman-rho-1vd'), \
@@ -142,15 +148,14 @@ def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=N
 def scalar_continuous_entropy(x):
 	"""
 	.. _scalar-continuous-entropy:
-	Estimates the (differential) entropy of a continuous scalar random variable using the standard 1-spacing estimator:
+	Estimates the (differential) entropy of a continuous scalar random variable using the standard 1-spacing estimator (:cite:`KozN87`, :cite:`BerD97`):
 
 	.. math::
-		h(x) \approx -\gamma(1) + \frac{1}{n-1} \sum_{i=1}^{n-1} \log \left[ n \left(x_{(i+1)} - x_{(i)}\right) \right]
+		h(x) \\approx - \gamma(1) + \\frac{1}{n-1} \\sum_{i=1}^{n-1} \log \\left[ n \\left(x_{(i+1)} - x_{(i)} \\right) \\right],
 
-	where :math:`x_{(i)}` is the i-th smallest entry in :math:`(x_1, \dots, x_n)`, and :math:`\gamma` is
+	where :math:`x_{(i)}` is the i-th smallest entry in :math:`(x_1, \dots, x_n)`, and :math:`\\gamma` is
 	the digamma function. 
 
-	See :cite:`KozN87` and :cite:`BerD97`.
 	
 	Parameters
 	----------
@@ -167,10 +172,12 @@ def scalar_continuous_entropy(x):
 	AssertionError
 		If the input has the wrong shape.
 		
-	References
-	----------
+
+	.. rubric:: References
+
 	.. [KozN87] Kozachenko, L. F., and Nikolai N. Leonenko. "Sample estimate of the entropy of a random vector." 
 		Problemy Peredachi Informatsii 23.2 (1987): 9-16.
+
 	.. [BerD97] Beirlant, J., Dudewicz, E.J., Györfi, L., van der Meulen, E.C. "Nonparametric entropy estimation: an overview." 
 		International Journal of Mathematical and Statistical Sciences. 6 (1): 17–40. (1997) ISSN 1055-7490. 
 	"""
@@ -219,12 +226,14 @@ def discrete_entropy(x):
 def least_structured_copula_entropy(x):
 	"""
 	.. _least-structured-copula-entropy:
-	Estimates the entropy of least informative copula model whose average pairwise
+	Estimates the entropy of the least informative copula model whose average pairwise
 	Spearman rank correlation is the same as the sample estimate from the input
 	array.
 
-	This also corresponds to least amount of total correlation that is evidenced
-	by the sample average pairwise Spearman's rank correlation.
+	.. note::
+	
+		This also corresponds to least amount of total correlation that is evidenced
+		by the sample average pairwise Spearman's rank correlation.
 
 	Parameters
 	----------
@@ -235,9 +244,7 @@ def least_structured_copula_entropy(x):
 	-------
 	h : float
 		The (differential) entropy of the least structured copula 
-		consistent with observed average pairwise Spearman's rank correlation.
-
-	See also :ref:`max-ent-copula-entropy`.
+		consistent with observed average pairwise Spearman's rank correlation. See also :ref:`max_ent_copula_entropy <max-ent-copula-entropy>`.
 	"""
 	if len(x.shape) == 1 or x.shape[1] == 1:
 		# By convention, the copula-dual representation 
@@ -260,8 +267,8 @@ def least_structured_continuous_entropy(x):
 	.. math::
 		h(x) = h(u) + \sum_{i=1}^d h(x_i),
 
-	and :math:`h(u)` is estimated using :ref:`least-structured-copula-entropy` and 
-	:math:`h(x_i)` are estimated using :ref:`scalar-continuous-entropy`. 
+	and :math:`h(u)` is estimated using :ref:`least_structured_copula_entropy <least-structured-copula-entropy>` and 
+	:math:`h(x_i)` are estimated using :ref:`scalar_continuous_entropy <scalar-continuous-entropy>`. 
 
 
 	Parameters
@@ -276,7 +283,7 @@ def least_structured_continuous_entropy(x):
 		its copula is the least structured copula consistent with the observed 
 		average pairwise Spearman's rank correlation. 
 
-		By convention, when :math:`d=1`, this function is the same as :ref:`scalar-continuous-entropy`, 
+		By convention, when :math:`d=1`, this function is the same as :ref:`scalar_continuous_entropy. <scalar-continuous-entropy>`, 
 		and returns 0 when :math:`n=1`.
 	"""
 	if x.shape[0] == 1:
@@ -298,28 +305,33 @@ def least_structured_mixed_entropy(x_c, x_d):
 	Estimates the joint entropy :math:`h(x_c, x_d)`, where :math:`x_c` is continuous
 	random vector and :math:`x_d` is a discrete random vector.
 
-	We use the identities
-	.. math::
-		h(x, y) &= h(y) + h(x|y) \\
-				&= h(y) + E \left( h(x|y=.) \right)
+	.. note::
 
-	that are true when :math:`x` and :math:`y` are either both continuous or both discrete
-	to extend the definition of the joint entropy to the case where one is continuous and
-	the other discrete.
+		We use the identities
 
-	Specifically, 
-	.. math::
-		h(x_c, x_d) = h(x_d) + \sum_{j=1}^q \mathbb{P}(x_d=j) h\left(x_c | x_d=j \right).
+		.. math::
+			h(x, y) &= h(y) + h(x|y) \\
 
-	:math:`h(x_d)` is estimated using :ref:`discrete-entropy`.
-	:math:`\mathbb{P}(x_d=j)` is estimated using frequencies.
-	:math:`h\left(x_c | x_d=j \right)` is estimated using :ref:`least-structured-continuous-entropy`.
+			&= h(y) + E \\left[ h(x \\vert y=.) \\right]
+
+		that are true when :math:`x` and :math:`y` are either both continuous or both discrete
+		to extend the definition of the joint entropy to the case where one is continuous and
+		the other discrete.
+
+		Specifically,
+
+		.. math::
+			h(x_c, x_d) = h(x_d) + \sum_{j=1}^q \mathbb{P}(x_d=j) h\\left(x_c \\vert x_d=j \\right).
+
+		:math:`h(x_d)` is estimated using :ref:`discrete_entropy <discrete-entropy>`, :math:`\mathbb{P}(x_d=j)` is estimated using frequencies, and
+		:math:`h\\left(x_c \\vert x_d=j \\right)` is estimated using :ref:`least_structured_continuous_entropy <least-structured-continuous-entropy>`.
 
 
 	Parameters
 	----------
 	x_c : (n, d) array_like
 		n i.i.d. draws from the continuous data generating distribution.
+
 	x_d : (n) array_like
 		n i.i.d. draws from the discrete data generating distribution, jointly sampled with x_c.
 

@@ -8,19 +8,15 @@ def regression_suboptimality(residuals, y):
 	"""
 	.. _regression-suboptimality:
 	Evaluate how optimal a model is by calculating the mutual information
-	between the model residuals and the regression target.
-
-	.. math::
-		I\left(\epsilon, y\right)
+	between the model residuals and the regression target, :math:`I\\left(\\epsilon, y\\right)`.
 
 	A regression model is optimal when its residuals are statistically independent
-	from the output y, or equivalently, when :math:`I\left(\epsilon, y\right)=0`.
+	from the output y, or equivalently, when :math:`I\\left(\\epsilon, y\\right)=0`.
 
 	Mutual information between residuals and output indicate that the regression 
 	model can be improved. The higher the mutual information, the more the model
 	can be improved.
 
-	See also :ref:`least-continuous-mutual-information`.
 
 	Parameters
 	----------
@@ -34,6 +30,11 @@ def regression_suboptimality(residuals, y):
 	-------
 	d : float
 		The regression difficulty.
+
+
+	.. seealso:: 
+
+		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`.
 	"""
 	return least_continuous_mutual_information(residuals, y)
 

@@ -21,9 +21,9 @@ def avg_pairwise_spearman_corr(x):
         random variable, whose average pairwise Spearman rank correlation
         this function calculates.
 
-	References
-	----------
-	.. [JoeH90] Joe, H. Journal of multivariate analysis 35 (1), 12-30, 1990.
+	.. rubric:: References
+
+	.. [joeh90] Joe, H. Journal of multivariate analysis 35 (1), 12-30, 1990.
 	"""
 	# R[i,j] is the rank of x[i, j] among x[1, j] ... x[n, j]
 	n, m = x.shape
