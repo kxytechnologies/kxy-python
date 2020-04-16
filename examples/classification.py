@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-os.environ['KXY_API_KEY'] = 'YOUR API KEY GOES HERE' #'uD7ncgzjqs3ktJnar1QNI9rL8K7wpu1H2DejCDZ2'
+os.environ['KXY_API_KEY'] = 'YOUR API KEY GOES HERE'
 import kxy
 
 if __name__ == '__main__':
@@ -16,7 +16,7 @@ if __name__ == '__main__':
 	"""
 	# Pre-Learning: How feasible or solvable is this problem? Are features any useful?
 	print(df.classification_feasibility('Is Fake'))
-	
+
 	# Pre-Learning: How useful is each feature individually?
 	importance_df = df.features_importance('Is Fake')
 	print(importance_df)

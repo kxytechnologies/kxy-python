@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-os.environ['KXY_API_KEY'] = 'uD7ncgzjqs3ktJnar1QNI9rL8K7wpu1H2DejCDZ2'
+os.environ['KXY_API_KEY'] = 'YOUR API KEY GOES HERE'
 import logging
 
 import numpy as np
