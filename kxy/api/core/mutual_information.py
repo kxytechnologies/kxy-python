@@ -3,9 +3,9 @@
 
 """
 This file leverages the KXY API to evaluate mutual information and related measure derived
-from solving mmaximum entropy copula problems under concordance measures. All optimization 
+from solving maximum entropy copula problems under concordance measures. All optimization 
 problems are solved by the KXY API and users require an API key  that should be set in the 
-environment variable KXY_API_KEY.
+environment variable ``KXY_API_KEY``.
 """
 import numpy as np
 

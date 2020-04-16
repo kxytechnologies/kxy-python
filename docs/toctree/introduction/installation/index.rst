@@ -1,6 +1,14 @@
 
+===============
 Getting Started
 ===============
+
+The **KXY platform** is the `only AutoML platform` dedicated to bringing about **business value** by addressing two questions 
+that are fundamental to the data science life cycle in a modeel-free, fast, rigorous and and cost-effective manner:
+
+* **Pre-Learning**: How valuable is a dataset for improving decision making, and what datasets should be used in models?
+* **Post-Learning**: Which action would yield a higher ROI, trying to improvee your production model using the same datasets, or investing in acquiring additional and complementary datasets?
+
 
 Installation
 ------------
@@ -187,7 +195,7 @@ Regression
 		'Beam-Draught Ratio', 'Length-Beam Ratio', 'Froude Number', 'Residuary Resistance'])
 	>>> df.rename(columns={col: col.title() for col in df.columns}, inplace=True)
 	>>> print(df)
-     Longitudinal Position  Prismatic Coeefficient  Length-Displacement  Beam-Draught Ratio  Length-Beam Ratio  Froude Number  Residuary Resistance
+    Longitudinal Position  Prismatic Coeefficient  Length-Displacement  Beam-Draught Ratio  Length-Beam Ratio  Froude Number  Residuary Resistance
 	0                     -2.3                   0.568                 4.78                3.99               3.17          0.125                  0.11
 	1                     -2.3                   0.568                 4.78                3.99               3.17          0.150                  0.27
 	2                     -2.3                   0.568                 4.78                3.99               3.17          0.175                  0.47

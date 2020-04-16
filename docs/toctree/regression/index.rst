@@ -2,8 +2,6 @@
 Regression
 ==========
 
-Contents:
-
 .. toctree::
 
 	pre_learning/index

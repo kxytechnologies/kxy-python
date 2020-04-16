@@ -2,7 +2,7 @@
 Model-Free Estimation
 =====================
 
-Contents:
+COMING UP SOON
 
 .. toctree::
 

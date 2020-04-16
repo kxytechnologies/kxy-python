@@ -2,8 +2,6 @@
 Classification
 ==============
 
-Contents:
-
 .. toctree::
 
 	pre_learning/index
