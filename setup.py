@@ -10,7 +10,7 @@ sys.path.append('.')
 from setuptools import setup, find_packages
 
 setup(name='kxy',
-      version='0.0',
+      version='0.0.1',
       zip_safe=False,
       license='AGPLv3',
       download_url='https://github.com/kxytechnologies/kxy-python/archive/v0.0.1.tar.gz',
