@@ -4,7 +4,9 @@ Contents:
 
 .. toctree::
 
-	toctree/introduction/index
+	toctree/introduction/installation/index
+
+	toctree/introduction/technical/index
 
 	toctree/estimation/index
 
@@ -13,6 +15,8 @@ Contents:
 	toctree/regression/index
 
 	toctree/finance/index
+
+	toctree/pandas/index
 
 	toctree/api/index
 

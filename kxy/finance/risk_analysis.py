@@ -9,8 +9,7 @@ from kxy.api.core import least_continuous_mutual_information
 def information_adjusted_correlation(x, y, p=0):
 	"""
 	.. _information-adjusted-correlation:
-	Calculates the information-adjusted correlation or correlation matrix between
-	two arrays depending on their shapes.
+	Calculates the information-adjusted correlation matrix between two arrays.
 
 	.. note::
 
@@ -58,10 +57,10 @@ def information_adjusted_correlation(x, y, p=0):
 
 	Parameters
 	----------
-	x : (n) or (n, p) array_like
-		i.i.d. draws from a scalar or vector random variable.
-	y : (n) or (n, p) array_like array_like
-		i.i.d. draws from a scalar or vector random variable jointly sampled with x.
+	x : (n,) or (n, p) array_like
+		n i.i.d. draws from a scalar or vector random variable.
+	y : (n,) or (n, p) array_like array_like
+		n i.i.d. draws from a scalar or vector random variable jointly sampled with x.
 	p : int
 		The number of lags to use when generating Spearman rank auto-correlation to use 
 		as empirical evidence in the maximum-entropy problem. The default value is 0, which 
@@ -69,10 +68,8 @@ def information_adjusted_correlation(x, y, p=0):
 
 	Returns
 	-------
-	c : float or array_like
-		The information-adjusted correlation coefficient or correlation matrix between 
-		the two random variables. A float is returned when both x and y are one-dimensional arrays,
-		and an array is returned otherwise.
+	c : array_like
+		The information-adjusted correlation matrix between the two random variables. 
 
 	Raises
 	------

@@ -22,7 +22,7 @@ def regression_difficulty(x, y):
 	----------
 	x : (n, d) array_like
 		n i.i.d. draws from the features generating distribution.
-	y : (n) array_like
+	y : (n,) array_like
 		n i.i.d. draws from the (continuous) laels generating distribution, sampled
 		jointly with x.
 
@@ -34,7 +34,7 @@ def regression_difficulty(x, y):
 
 	.. seealso:: 
 
-		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`.
+		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`
 	"""
 	return 1./least_continuous_mutual_information(x, y)
 
@@ -57,7 +57,7 @@ def regression_feasibility(x, y):
 	----------
 	x : (n, d) array_like
 		n i.i.d. draws from the features generating distribution.
-	y : (n) array_like
+	y : (n,) array_like
 		n i.i.d. draws from the (continuous) laels generating distribution, sampled
 		jointly with x.
 
@@ -69,7 +69,7 @@ def regression_feasibility(x, y):
 
 	.. seealso:: 
 
-		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`.
+		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`
 	"""
 	return least_continuous_mutual_information(x, y)
 

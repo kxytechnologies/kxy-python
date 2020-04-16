@@ -20,7 +20,7 @@ class APIClient(object):
 	Example
 	-------
 	>>> import os
-	>>> os.environ['KXY_API_KEY'] = <your API key goes here>
+	>>> os.environ['KXY_API_KEY'] = 'your API key goes here'
 	"""
 	@staticmethod
 	def stage():
@@ -58,7 +58,7 @@ class APIClient(object):
 	@requires_api_key
 	def get(path, **params):
 		"""
-		.. note:: This method requires a valid API key.
+		.. important:: This method requires a valid API key.
 
 		Issues a GET request to the API resource identified by the input path.
 
@@ -100,7 +100,7 @@ class APIClient(object):
 	@requires_api_key
 	def post(path, **params):
 		"""
-		.. note:: This method requires a valid API key.
+		.. important:: This method requires a valid API key.
 
 		Issues a POST request to the API resource identified by the input path.
 
@@ -145,7 +145,7 @@ class APIClient(object):
 	@lru_cache(maxsize=32)
 	def route(path=None, method=None, **params):
 		"""
-		.. note:: This method requires a valid API key.
+		.. important:: This method requires a valid API key.
 
 		Generic method to issue a GET or a POST request to the API resource identified
 		by the input path.

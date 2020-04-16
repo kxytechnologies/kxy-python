@@ -167,10 +167,10 @@ def least_mixed_mutual_information(x_c, y, x_d=None):
 	probas = np.array([1.*len(y[y==cat])/n for cat in categories])
 
 	h = least_structured_continuous_entropy(x_c) if x_d is None else least_structured_mixed_entropy(x_c, x_d)
-	h -= np.sum([probas[i] * least_structured_continuous_entropy(x_c[y==categories[i]]) for i in range(len(categories))]) if x_d is None \
+	wh = np.sum([probas[i] * least_structured_continuous_entropy(x_c[y==categories[i]]) for i in range(len(categories))]) if x_d is None \
 		else np.sum([probas[i] * least_structured_mixed_entropy(x_c[y==categories[i]], x_d[y==categories[i]]) for i in range(len(categories))])
 
-	return max(h, 0.0)
+	return max(h-wh, 0.0)
 
 
 
@@ -203,7 +203,7 @@ def discrete_mutual_information(x, y):
 
 	hx = discrete_entropy(x)
 	hy = discrete_entropy(y)
-	hxy = discrete_entropy([str(x[i]) + '*_*' + str(y[i]) for i in range(x.shape[0])])
+	hxy = discrete_entropy(np.array([str(x[i]) + '*_*' + str(y[i]) for i in range(x.shape[0])]))
 
 	return max(0., hx+hy-hxy)
 

@@ -17,10 +17,11 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'The KXY'
+project = 'Model-Free & Serverless ML'
 copyright = '2020, KXY Technologies, Inc.'
 author = 'Dr. Yves-Laurent Kom Samo'
 version = 'latest'
+autodoc_inherit_docstrings = False
 
 
 # -- General configuration ---------------------------------------------------
@@ -59,6 +60,8 @@ html_context = {
 }
 
 html_theme = 'sphinx_rtd_theme'
+html_logo = 'images/logo.png'
+html_favicon = 'images/favicon.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

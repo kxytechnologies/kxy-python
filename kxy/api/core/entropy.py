@@ -7,6 +7,7 @@ under concordance measures. All optimization problems are solved by the KXY API
 and users require an API key that should be set in the environment variable
 KXY_API_KEY.
 """
+import logging
 import requests
 
 import numpy as np
@@ -121,6 +122,7 @@ def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=N
 		api_response = APIClient.route(\
 			path='/core/dependence/copula/maximum-entropy/entropy/rv/full', method='GET', \
 			d=d, rho=rho)
+		logging.info('rho: %.4f, d:%d, api_response: %s' % (rho, d, api_response.json()))
 
 	if method == 'average-pairwise-spearman-rho-1vd':
 		assert d is not None, 'The d dimension of the feature space should be provided'
@@ -132,6 +134,9 @@ def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=N
 		api_response = APIClient.route(\
 			path='/core/dependence/copula/maximum-entropy/entropy/rv/1vd', method='GET', \
 			d=d, rho_features=rho_features, rho_full=rho_full)
+		logging.info('rho_features: %.4f, rho_full: %.4f, d: %d, api_response: %s' % (\
+			rho_features, rho_full, d, api_response.json()))
+	
 
 	if api_response.status_code == requests.codes.ok:
 		return api_response.json()['entropy']
@@ -155,6 +160,12 @@ def scalar_continuous_entropy(x):
 
 	where :math:`x_{(i)}` is the i-th smallest entry in :math:`(x_1, \dots, x_n)`, and :math:`\\gamma` is
 	the digamma function. 
+
+	
+	.. note::
+
+		A Gaussian noise with negligible standard deviation (1/10000-th of the input standard deviation) is added to the input
+		for robustness.
 
 	
 	Parameters
@@ -183,8 +194,10 @@ def scalar_continuous_entropy(x):
 	"""
 	assert len(x.shape) == 1 or x.shape[1] == 1, 'x should be a one dimensional numpy array'
 
-	n = x.shape[0]
-	sorted_x = np.sort(x) if len(x.shape) == 1 else np.sort(x[:, 0])
+	noise_std = x.std()/10000.
+	x += noise_std * np.random.randn(*x.shape)
+	sorted_x = np.unique(x)
+	n = sorted_x.shape[0]
 	ent = np.sum(np.log(n*(sorted_x[1:]-sorted_x[:-1])))/n - spe.digamma(1)
 
 	return ent
@@ -293,10 +306,10 @@ def least_structured_continuous_entropy(x):
 	if len(x.shape) == 1 or x.shape[1] == 1:
 		return scalar_continuous_entropy(x)
 
-	h = least_structured_copula_entropy(x)
-	h += np.sum([scalar_continuous_entropy(x[:, i]) for i in range(x.shape[1])])
+	ch = least_structured_copula_entropy(x)
+	ih = np.sum([scalar_continuous_entropy(x[:, i]) for i in range(x.shape[1])])
 
-	return h
+	return ih+ch
 
 
 def least_structured_mixed_entropy(x_c, x_d):

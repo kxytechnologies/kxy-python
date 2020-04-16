@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+os.environ['KXY_API_KEY'] = 'uD7ncgzjqs3ktJnar1QNI9rL8K7wpu1H2DejCDZ2'
+import logging
+
+import numpy as np
+import kxy
+
+if __name__ == '__main__':
+	# Regression: 
+	df = kxy.read_csv('http://archive.ics.uci.edu/ml/machine-learning-databases/00243/yacht_hydrodynamics.data', \
+		sep='[ ]{1,2}', names=['Longitudinal Position', 'Prismatic Coeefficient', 'Length-Displacement', \
+		'Beam-Draught Ratio', 'Length-Beam Ratio', 'Froude Number', 'Residuary Resistance'])
+	df.rename(columns={col: col.title() for col in df.columns}, inplace=True)
+	print(df)
+
+	"""
+	PRE-LEARNING
+	"""
+	label_column = 'Residuary Resistance'
+	# Pre-Learning: How feasible or solvable is this problem? Are features any useful?
+	print('Feasibility: %.4f, Entropy: %.4f' % (\
+		df.regression_feasibility(label_column), kxy.scalar_continuous_entropy(df[label_column].values)))
+	
+	# Pre-Learning: How useful is each feature individually?
+	importance_df = df.features_importance(label_column, problem='regression')
+	print(importance_df)
+	importance_df.plot.bar(x='feature', y='importance', rot=90)
+
+	"""
+	LEARNING (BASIC)
+	"""
+	from sklearn.linear_model import LinearRegression
+	# Training
+	train_size = 200
+	train_df = df.iloc[:train_size]
+	x_train = train_df[['Froude Number']].values
+	y_train = train_df[label_column].values
+	model = LinearRegression().fit(x_train, y_train)
+
+	# Testing
+	test_df = df.iloc[train_size:]
+	x_test = test_df[['Froude Number']].values
+	y_test = test_df[label_column].values
+
+	# Out-of-sample predictions
+	predictions = model.predict(x_test)
+	test_df['Prediction'] = predictions
+
+	# Out-of-sample accuracy (R^2)
+	print('Out-Of-Sample R^2: %.2f' % (model.score(x_test, y_test)))
+
+	"""
+	POST-LEARNING
+	"""
+	# How suboptimal is this linear regression model?
+	print('Additive Suboptimality: %.4f' % test_df.regression_additive_suboptimality('Prediction', label_column))
+
+
+

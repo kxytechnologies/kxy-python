@@ -14,7 +14,14 @@ def information_adjusted_beta(r, r_m):
 
 	.. note::
 
-		The standard beta coefficient of an asset or a portfolio is defined as
+		The standard beta coefficient of an asset or a portfolio is defined by the CAPM model
+
+		.. math::
+
+			r = \\alpha + r_f + \\beta (r_m-r_f) + \\epsilon
+
+		where :math:`r_f` is a deterministic risk-free rate, :math:`r_m` represents market returns, and
+		:math:`\\epsilon` an idiosyncratic noise term. It follows that
 
 		.. math::
 			\\beta = \\text{Corr}\\left(r, r_m\\right) \\sqrt{\\frac{\mathbb{V}\\text{ar}\\left(r\\right)}{\mathbb{V}\\text{ar}\\left(r_m\\right)}},
@@ -38,9 +45,9 @@ def information_adjusted_beta(r, r_m):
 
 	Parameters
 	----------
-	r : (n) array_like
+	r : (n,) array_like
 		The array of asset or portfolio returns.
-	r_m : (n) array_like
+	r_m : (n,) array_like
 		The array of market returns.
 
 
