@@ -15,11 +15,12 @@ setup(name="kxy",
 	license="AGPLv3",
     author="Dr. Yves-Laurent Kom Samo",
     author_email="github@kxy.ai",
-	url="https://doc.kxysolutions.com",
-	description = "Python API to the KXY platform, the first and only AutoML platform for" \
-		" model-free pre-learning and post-learning. ", 
+	url="https://docs.kxysolutions.com",
+	description = "Python API to the AutoML KXY platform", 
+	long_description="The KXY platform is the first and only AutoML platform for model-free" \
+		" pre-learning and post-learning. More information at https://docs.kxysolutions.com."
     project_urls={
-        "Documentation": "https://doc.kxysolutions.com",
+        "Documentation": "https://docs.kxysolutions.com",
         "Source Code": "https://github.com/kxytechnologies/kxy-python/",
     },
 	download_url = "https://github.com/kxytechnologies/kxy-python/archive/v0.0.2.tar.gz",
