@@ -18,7 +18,7 @@ setup(name="kxy",
 	url="https://docs.kxysolutions.com",
 	description = "Python API to the AutoML KXY platform", 
 	long_description="The KXY platform is the first and only AutoML platform for model-free" \
-		" pre-learning and post-learning. More information at https://docs.kxysolutions.com."
+		" pre-learning and post-learning. More information at https://docs.kxysolutions.com.",
     project_urls={
         "Documentation": "https://docs.kxysolutions.com",
         "Source Code": "https://github.com/kxytechnologies/kxy-python/",
