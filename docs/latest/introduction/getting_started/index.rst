@@ -265,6 +265,6 @@ Post-Learning
 	>>> # Can we do better with a nonlinear model, without new features?
 	>>> print('Additive Suboptimality: %.4f' % \
 	...		test_df.regression_additive_suboptimality('Prediction', label_column))
-	Additive Suboptimality: 0.0000
+	Additive Suboptimality: 0.0015
 
 

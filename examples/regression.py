@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-os.environ['KXY_API_KEY'] = 'YOUR API KEY GOES HERE'
+if os.environ.get('KXY_API_KEY', None) is None:
+	os.environ['KXY_API_KEY'] = 'YOUR API KEY GOES HERE'
 import logging
 
 import numpy as np
