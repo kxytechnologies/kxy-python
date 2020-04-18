@@ -57,9 +57,9 @@ def information_adjusted_correlation(x, y, p=0):
 
 	Parameters
 	----------
-	x : (n,) or (n, p) array_like
+	x : (n,) or (n, p) np.array
 		n i.i.d. draws from a scalar or vector random variable.
-	y : (n,) or (n, p) array_like array_like
+	y : (n,) or (n, p) np.array
 		n i.i.d. draws from a scalar or vector random variable jointly sampled with x.
 	p : int
 		The number of lags to use when generating Spearman rank auto-correlation to use 
@@ -68,7 +68,7 @@ def information_adjusted_correlation(x, y, p=0):
 
 	Returns
 	-------
-	c : array_like
+	c : np.array
 		The information-adjusted correlation matrix between the two random variables. 
 
 	Raises

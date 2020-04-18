@@ -40,14 +40,14 @@ def classification_suboptimality(yp, y, x_c, x_d=None):
 
 	Parameters
 	----------
-	x_c : (n, d) array_like
+	x_c : (n, d) np.array
 		n i.i.d. draws from the continuous features generating distribution.
-	x_d : (n,) array_like
+	x_d : (n,) np.array
 		n i.i.d. draws from the discrete features generating distribution, if any, sampled jointly with x_c.
-	y : (n,) array_like
+	y : (n,) np.array
 		n i.i.d. draws from the (discrete) labels generating distribution, sampled
 		jointly with x_c and x_d.
-	yp : (n,) array_like
+	yp : (n,) np.array
 		Discrete predictions of y from our classifier.
 
 

@@ -9,7 +9,7 @@ environment variable ``KXY_API_KEY``.
 """
 import numpy as np
 
-from .utils import avg_pairwise_spearman_corr
+from .utils import avg_pairwise_spearman_corr, pre_conditioner
 from .entropy import least_structured_copula_entropy, least_structured_continuous_entropy, \
 	least_structured_mixed_entropy, max_ent_copula_entropy, discrete_entropy
 
@@ -28,7 +28,7 @@ def least_total_correlation(x):
 
 	Parameters
 	----------
-	x : (n, d) array_like
+	x : (n, d) np.array
 		n i.i.d. draws from the data generating distribution.
 
 	Returns
@@ -73,9 +73,9 @@ def least_continuous_mutual_information(x,  y):
 
 	Parameters
 	----------
-	x : (n, d) array_like
+	x : (n, d) np.array
 		n i.i.d. draws from the features generating distribution.
-	y : (n) array_like
+	y : (n,) np.array
 		n i.i.d. draws from the (continuous) laels generating distribution, sampled
 		jointly with x.
 
@@ -98,9 +98,13 @@ def least_continuous_mutual_information(x,  y):
 	if len(x.shape) == 1 or x.shape[1] == 1:
 		return least_total_correlation(np.hstack([x_, y_]))
 
-	rho_features = avg_pairwise_spearman_corr(x)
-	rho_full = avg_pairwise_spearman_corr(np.hstack([x, y_]))
-	d = x.shape[1]
+	x = x - x.mean(axis=0)
+	a, log_abs_deta = pre_conditioner(x.T)
+	z = np.dot(a, x.T).T
+
+	rho_features = avg_pairwise_spearman_corr(z)
+	rho_full = avg_pairwise_spearman_corr(np.hstack([z, y_]))
+	d = z.shape[1]
 
 	hux = max_ent_copula_entropy(method='average-pairwise-spearman-rho', \
 		rho=rho_features, d=d)
@@ -141,12 +145,12 @@ def least_mixed_mutual_information(x_c, y, x_d=None):
 
 	Parameters
 	----------
-	x_c : (n, d) array_like
+	x_c : (n, d) np.array
 		n i.i.d. draws from the continuous data generating distribution.
-	x_d : (n) array_like or None (default)
+	x_d : (n,) np.array or None (default)
 		n i.i.d. draws from the discrete data generating distribution, jointly sampled with x_c, or None
 		if there are no discrete features.
-	y : (n) array_like
+	y : (n,) np.array
 		n i.i.d. draws from the (discrete) labels generating distribution, sampled jointly with x.
 
 	Returns
@@ -182,9 +186,9 @@ def discrete_mutual_information(x, y):
 
 	Parameters
 	----------
-	x : (n) array_like or None (default)
+	x : (n,) np.array or None (default)
 		n i.i.d. draws from a discrete distribution.
-	y : (n) array_like
+	y : (n,) np.array
 		n i.i.d. draws from another discrete distribution, sampled jointly with x.
 
 	Returns
@@ -206,10 +210,5 @@ def discrete_mutual_information(x, y):
 	hxy = discrete_entropy(np.array([str(x[i]) + '*_*' + str(y[i]) for i in range(x.shape[0])]))
 
 	return max(0., hx+hy-hxy)
-
-
-
-
-
 
 

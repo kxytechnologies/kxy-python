@@ -10,7 +10,7 @@ sys.path.append('.')
 from setuptools import setup, find_packages
 
 setup(name="kxy",
-	version="0.0.3",
+	version="0.0.4",
 	zip_safe=False,
 	license="AGPLv3",
     author="Dr. Yves-Laurent Kom Samo",
@@ -21,8 +21,7 @@ setup(name="kxy",
 		" pre-learning and post-learning. More information at https://docs.kxysolutions.com.",
     project_urls={
         "Documentation": "https://docs.kxysolutions.com",
-        "Source Code": "https://github.com/kxytechnologies/kxy-python/",
-    },
+        "Source Code": "https://github.com/kxytechnologies/kxy-python/"},
 	download_url = "https://github.com/kxytechnologies/kxy-python/archive/v0.0.3.tar.gz",
 	keywords = ["AutoML", "Pre-Learning", "Post-Learning", "Model-Free ML"],
 	packages=find_packages(exclude=["tests"]),

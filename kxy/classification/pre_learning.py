@@ -48,13 +48,13 @@ def classification_feasibility(x_c, y, x_d=None):
 
 	Parameters
 	----------
-	x_c : (n, d) array_like or None
+	x_c : (n, d) np.array or None
 		n i.i.d. draws from the continuous data generating distribution, or None if there no continuous
 		features. x_c and x_d cannot be both None.
-	x_d : (n,) array_like or None (default)
+	x_d : (n,) np.array or None (default)
 		n i.i.d. draws from the discrete data generating distribution, jointly sampled with x_c, or None
 		if there are no discrete features.
-	y : (n,) array_like
+	y : (n,) np.array
 		n i.i.d. draws from the (discrete) labels generating distribution, sampled jointly with x_c and/or x_d.
 
 

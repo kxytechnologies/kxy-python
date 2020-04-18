@@ -57,12 +57,12 @@ def regression_suboptimality(yp, y, x):
 
 	Parameters
 	----------
-	x : (n, d) array_like
+	x : (n, d) np.array
 		n i.i.d. draws from the features generating distribution.
-	y : (n,) array_like
+	y : (n,) np.array
 		n i.i.d. draws from the (continuous) labels generating distribution, sampled
 		jointly with x.
-	yp : (n,) array_like
+	yp : (n,) np.array
 		Predictions of y.
 
 	Returns
@@ -112,9 +112,9 @@ def regression_additive_suboptimality(e, x):
 
 	Parameters
 	----------
-	e : (n,) array_like
+	e : (n,) np.array
 		Regression residuals.
-	x : (n,) array_like
+	x : (n,) np.array
 		Regression features.
 
 

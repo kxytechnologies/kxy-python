@@ -20,9 +20,9 @@ def regression_difficulty(x, y):
 
 	Parameters
 	----------
-	x : (n, d) array_like
+	x : (n, d) np.array
 		n i.i.d. draws from the features generating distribution.
-	y : (n,) array_like
+	y : (n,) np.array
 		n i.i.d. draws from the (continuous) laels generating distribution, sampled
 		jointly with x.
 
@@ -55,9 +55,9 @@ def regression_feasibility(x, y):
 
 	Parameters
 	----------
-	x : (n, d) array_like
+	x : (n, d) np.array
 		n i.i.d. draws from the features generating distribution.
-	y : (n,) array_like
+	y : (n,) np.array
 		n i.i.d. draws from the (continuous) laels generating distribution, sampled
 		jointly with x.
 

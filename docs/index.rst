@@ -6,21 +6,22 @@ Summary
 
 .. toctree::
 
-	toctree/introduction/installation/index
+	latest/introduction/getting_started/index
 
-	toctree/introduction/technical/index
+	latest/introduction/technical/index
 
-	toctree/estimation/index
+	latest/estimation/index
 
-	toctree/classification/index
+	latest/classification/index
 
-	toctree/regression/index
+	latest/regression/index
 
-	toctree/finance/index
+	latest/finance/index
 
-	toctree/pandas/index
+	latest/pandas/index
 
-	toctree/api/index
+	latest/api/index
 
-	toctree/index/index
+	latest/utilities/index
 
+	latest/index/index

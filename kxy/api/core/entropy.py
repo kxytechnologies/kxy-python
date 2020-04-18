@@ -14,7 +14,7 @@ import numpy as np
 import scipy.special as spe
 
 from kxy.api import APIClient
-from .utils import avg_pairwise_spearman_corr
+from .utils import avg_pairwise_spearman_corr, pre_conditioner
 
 def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=None,  \
 		rho_features=None, rho_full=None):
@@ -142,10 +142,10 @@ def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=N
 		return api_response.json()['entropy']
 
 	if api_response.status_code == 403:
-		raise ValueError(api_response.json()['reason'])
+		raise ValueError(api_response.json().get('reason', api_response.json().get('message')))
 
 	if api_response.status_code == 404:
-		raise Exception(api_response.json()['reason'])
+		raise Exception(api_response.json().get('reason', api_response.json().get('message')))
 
 	return None
 
@@ -170,7 +170,7 @@ def scalar_continuous_entropy(x):
 	
 	Parameters
 	----------
-	x : (n) array_like
+	x : (n,) np.array
 		i.i.d. samples from the distribution of interest.
 
 	Returns
@@ -214,7 +214,7 @@ def discrete_entropy(x):
 
 	Parameters
 	----------
-	x : (n) array_like
+	x : (n,) np.array
 		i.i.d. samples from the distribution of interest.
 
 	Returns
@@ -250,7 +250,7 @@ def least_structured_copula_entropy(x):
 
 	Parameters
 	----------
-	x : (n, d) array_like
+	x : (n, d) np.array
 		n i.i.d. draws from the data generating distribution.
 
 	Returns
@@ -286,7 +286,7 @@ def least_structured_continuous_entropy(x):
 
 	Parameters
 	----------
-	x : (n, d) array_like
+	x : (n, d) np.array
 		n i.i.d. draws from the data generating distribution.
 
 	Returns
@@ -306,10 +306,14 @@ def least_structured_continuous_entropy(x):
 	if len(x.shape) == 1 or x.shape[1] == 1:
 		return scalar_continuous_entropy(x)
 
-	ch = least_structured_copula_entropy(x)
-	ih = np.sum([scalar_continuous_entropy(x[:, i]) for i in range(x.shape[1])])
+	x = x - x.mean(axis=0)
+	a, log_abs_deta = pre_conditioner(x.T)
+	z = np.dot(a, x.T).T
 
-	return ih+ch
+	ch = least_structured_copula_entropy(z)
+	ih = np.sum([scalar_continuous_entropy(z[:, i]) for i in range(z.shape[1])])
+
+	return ih+ch-log_abs_det_a
 
 
 def least_structured_mixed_entropy(x_c, x_d):
@@ -342,10 +346,10 @@ def least_structured_mixed_entropy(x_c, x_d):
 
 	Parameters
 	----------
-	x_c : (n, d) array_like
+	x_c : (n, d) np.array
 		n i.i.d. draws from the continuous data generating distribution.
 
-	x_d : (n) array_like
+	x_d : (n,) np.array
 		n i.i.d. draws from the discrete data generating distribution, jointly sampled with x_c.
 
 	Returns

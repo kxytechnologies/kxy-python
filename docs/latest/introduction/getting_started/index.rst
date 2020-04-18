@@ -4,7 +4,7 @@ Getting Started
 ===============
 
 The **KXY platform** is the `only AutoML platform` dedicated to bringing about **business value** by addressing two questions 
-that are fundamental to the data science life cycle in a modeel-free, fast, rigorous and and cost-effective manner:
+that are fundamental to the data science life cycle in a model-free, fast, rigorous and cost-effective manner:
 
 * **Pre-Learning**: How valuable is a dataset for improving decision making, and what datasets should be used in models?
 * **Post-Learning**: Which action would yield a higher ROI, trying to improvee your production model using the same datasets, or investing in acquiring additional and complementary datasets?

@@ -45,9 +45,9 @@ def information_adjusted_beta(r, r_m):
 
 	Parameters
 	----------
-	r : (n,) array_like
+	r : (n,) np.array
 		The array of asset or portfolio returns.
-	r_m : (n,) array_like
+	r_m : (n,) np.array
 		The array of market returns.
 
 

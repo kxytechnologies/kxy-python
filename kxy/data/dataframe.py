@@ -114,7 +114,15 @@ class DataFrame(pd.DataFrame):
 			else list(features_columns)
 		assert label_column not in features_columns, "The output cannot be a feature"
 
-		return regression_feasibility(self[features_columns].values, self[label_column].values)
+		features_importance = self.features_importance(label_column, features_columns=features_columns,\
+			problem='regression')
+
+		# TODO: There shouldn't be any need for this once stronger max-ent constraints are used
+		features_sorted_by_importance = features_importance['feature'].values
+		fs = [regression_feasibility(self[features_sorted_by_importance[:i+1]].values, self[label_column].values) \
+			for i in range(len(features_sorted_by_importance))]
+
+		return np.max(fs)
 
 
 	def classification_feasibility(self, label_column, discrete_features_columns=(), \

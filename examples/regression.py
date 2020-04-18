@@ -9,6 +9,7 @@ import numpy as np
 import kxy
 
 if __name__ == '__main__':
+	logging.basicConfig(format='%(asctime)s - %(process)d - %(levelname)s - %(message)s', level=logging.INFO)
 	# Regression: 
 	df = kxy.read_csv('http://archive.ics.uci.edu/ml/machine-learning-databases/00243/yacht_hydrodynamics.data', \
 		sep='[ ]{1,2}', names=['Longitudinal Position', 'Prismatic Coeefficient', 'Length-Displacement', \
@@ -57,6 +58,5 @@ if __name__ == '__main__':
 	"""
 	# How suboptimal is this linear regression model?
 	print('Additive Suboptimality: %.4f' % test_df.regression_additive_suboptimality('Prediction', label_column))
-
 
 
