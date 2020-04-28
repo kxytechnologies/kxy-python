@@ -10,7 +10,7 @@ sys.path.append('.')
 from setuptools import setup, find_packages
 
 setup(name="kxy",
-	version="0.0.3",
+	version="0.0.4",
 	zip_safe=False,
 	license="AGPLv3",
     author="Dr. Yves-Laurent Kom Samo",
