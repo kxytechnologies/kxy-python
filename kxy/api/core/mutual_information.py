@@ -59,7 +59,7 @@ def least_continuous_mutual_information(x,  y):
 		.. math::
 			I(x, y) &= h(x) + h(y) - h(x, y) \\
 
-			&= h\\left(u_x\\right) - h\\left(u_{x,y}\\right)
+			        &= h\\left(u_x\\right) - h\\left(u_{x,y}\\right)
 		
 		where :math:`u_x` (resp. :math:`u_{x,y}`) is the copula-uniform representation of :math:`x`
 		(resp. :math:`(x, y)`).

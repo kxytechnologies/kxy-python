@@ -1,8 +1,6 @@
 
-Model-Free Estimation
-=====================
-
-COMING UP SOON
+Core Estimation
+===============
 
 .. toctree::
 

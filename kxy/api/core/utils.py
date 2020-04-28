@@ -15,7 +15,7 @@ def avg_pairwise_spearman_corr(x):
 
 	where :math:`R_{ij}` is the rank of :math:`x_{ij}` among :math:`x_{1j} \\dots x_{nj}`. 
 
-	See Eq. (3.3.3) in :cite:`JoeH90`.
+	See Eq. (3.3.3) in [1]_.
 
 
 	Parameters
@@ -35,7 +35,7 @@ def avg_pairwise_spearman_corr(x):
 
 	.. rubric:: References
 
-	.. [JoeH90] Joe, H. Journal of multivariate analysis 35 (1), 12-30, 1990.
+	.. [1] Joe, H. Journal of multivariate analysis 35 (1), 12-30, 1990.
 	"""
 	# R[i,j] is the rank of x[i, j] among x[1, j] ... x[n, j]
 	n, m = x.shape

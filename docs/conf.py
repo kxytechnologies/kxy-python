@@ -31,9 +31,9 @@ autodoc_inherit_docstrings = False
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', \
     'sphinx.ext.todo', 'sphinx.ext.githubpages', 'sphinxcontrib.bibtex', \
-    'sphinx.ext.imgmath', 'sphinx.ext.mathjax']
-imgmath_image_format = 'svg'
-imgmath_font_size = 13
+    'sphinx.ext.mathjax', 'sphinx.ext.autosectionlabel']
+# imgmath_image_format = 'svg'
+# imgmath_font_size = 13
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -62,6 +62,7 @@ html_context = {
 html_theme = 'sphinx_rtd_theme'
 html_logo = 'images/logo.png'
 html_favicon = 'images/favicon.png'
+html_theme_options = {'logo_only': True, 'style_nav_header_background': '#2c3d5e'}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

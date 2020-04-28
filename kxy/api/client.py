@@ -20,7 +20,7 @@ class APIClient(object):
 	Example
 	-------
 	>>> import os
-	>>> os.environ['KXY_API_KEY'] = 'your API key goes here'
+	>>> os.environ['KXY_API_KEY'] = 'YOUR API KEY GOES HERE'
 	"""
 	@staticmethod
 	def stage():

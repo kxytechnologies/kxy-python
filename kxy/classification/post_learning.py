@@ -23,9 +23,9 @@ def classification_suboptimality(yp, y, x_c, x_d=None):
 
 			\\text{subopt}(\\tilde{f}; x) &= h \\left( y \\vert \\tilde{f}(x) \\right) - h \\left( y \\vert x \\right) \\
 
-			:&= I\\left(y, x \\right) - I\\left(y, \\tilde{f}(x) \\right) \\
-
-			&\geq 0.
+										 :&= I\\left(y, x \\right) - I\\left(y, \\tilde{f}(x) \\right) \\
+										 
+										  &\\geq 0.
 
 		This classification suboptimality metric is 0 if and only if :math:`\\tilde{f}(x)` fully captures any information about :math:`y`
 		that is contained in :math:`x`. When 

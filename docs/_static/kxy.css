@@ -1,0 +1,86 @@
+
+
+.rst-content .note .admonition-title {
+	background: #2c3d5e;
+}
+
+.rst-content .note .admonition-title:before {
+	content: "\f0c6";
+}
+
+.rst-content .seealso .admonition-title {
+	background: #343131;
+}
+
+.rst-content .seealso .admonition-title:before {
+	content: "\f140";
+}
+
+.rst-content .admonition, .rst-content .admonition-title {
+	border-radius: 15px;
+}
+
+.rst-content .important .admonition-title:before {
+	content: "\f071";
+}
+
+.rst-content .important .admonition-title {
+	background: #ffa98f;
+}
+
+.rst-content .admonition-important-equation .admonition-title {
+	background: #1abc9c;
+}
+
+.rst-content .admonition-important-equation {
+	background: #eeffcc;
+}
+
+.rst-content .important {
+	background: #ffe4dc;
+}
+
+.underline {
+  text-decoration: underline;
+}
+
+.wy-menu .caption-text {
+	color: #02e966;
+}
+
+.rst-content .admonition-properties .admonition-title:before, 
+.rst-content .admonition-property .admonition-title:before,
+.rst-content .admonition-important-equation .admonition-title:before  {
+	content: "\f08d";
+}
+
+.rst-content .admonition-properties {
+	counter-reset: properties;
+
+}
+
+.rst-content .admonition-properties ol>li {
+	list-style-type: none;
+}
+
+.rst-content .admonition-properties ol>li:before {
+	counter-increment: properties; 
+	content: "P" counter(properties) ".\00a0\00a0";
+	font-weight: bold;
+}
+
+span.eqno {
+    float: right;
+}
+
+
+.rst-content .footnote-reference, .rst-content .citation-reference {
+	top: 0;
+}
+
+
+.math .eqno a.headerlink {
+	visibility: hidden;
+}
+
+

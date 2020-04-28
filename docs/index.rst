@@ -1,14 +1,17 @@
 
 
-Summary
-=======
+Table of Contents
+=================
 
 
 .. toctree::
+	:caption: QUICKSTART
 
 	latest/introduction/getting_started/index
 
-	latest/introduction/technical/index
+
+.. toctree::
+	:caption: CODE DOCUMENTATION
 
 	latest/estimation/index
 
@@ -20,8 +23,21 @@ Summary
 
 	latest/pandas/index
 
+	latest/utilities/index
+
 	latest/api/index
 
-	latest/utilities/index
+
+.. toctree::
+	:caption: THEORETICAL FOUNDATION
+
+	latest/introduction/memoryless/index
+
+	latest/introduction/time_series/index
+
+
+
+.. toctree::
+	:caption: INDEX
 
 	latest/index/index

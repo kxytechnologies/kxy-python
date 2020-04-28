@@ -48,12 +48,13 @@ def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=N
 		coordinates of :math:`x`.
 
 		Given a functional :math:`g` of :math:`c` that can estimated from samples of math:`x` ,
-		this function solves the following optimization problem over the set of all copulas :math:`\mathcal{C}`
+		this function solves the following optimization problem over the set of all copula densities :math:`\mathcal{Co}`
 
 		.. math::
-			&\max_{c \in \mathcal{C}} h(c), \\
 
-			&\\text{subject to } g(c) = \\alpha
+			\\max_{c \in \mathcal{Co}} h(c),
+
+			\\text{subject to } g(c) = \\alpha
 
 
 		Functionals that are currently supported are population versions of the average pairwise 
@@ -62,7 +63,7 @@ def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=N
 		.. math::
 			g(c) = 12 \\left[ \\frac{2}{d(d-1)} \\sum_{j<j^\\prime} E \\left( u_j u_{j^\\prime} \\right) \\right]-3
 
-		For sample estimates based on math:`x`, see Eq. (3.3.3) in :cite:`JoeH90`.
+		For sample estimates based on :math:`x`, see Eq. (3.3.3) in [1]_.
 
 
 	Parameters
@@ -109,7 +110,7 @@ def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=N
 
 	.. rubric:: References
 
-	.. [JoeH90] Joe, H. Journal of multivariate analysis 35 (1), 12-30, 1990.
+	.. [1] Joe, H. Journal of multivariate analysis 35 (1), 12-30, 1990.
 	"""
 	assert method in ('average-pairwise-spearman-rho', 'average-pairwise-spearman-rho-1vd'), \
 		'Method not supported.'
@@ -153,12 +154,12 @@ def max_ent_copula_entropy(method='average-pairwise-spearman-rho', d=None, rho=N
 def scalar_continuous_entropy(x):
 	"""
 	.. _scalar-continuous-entropy:
-	Estimates the (differential) entropy of a continuous scalar random variable using the standard 1-spacing estimator (:cite:`KozN87`, :cite:`BerD97`):
+	Estimates the (differential) entropy of a continuous scalar random variable using the standard 1-spacing estimator (see [2]_ and [3]_):
 
 	.. math::
 		h(x) \\approx - \gamma(1) + \\frac{1}{n-1} \\sum_{i=1}^{n-1} \log \\left[ n \\left(x_{(i+1)} - x_{(i)} \\right) \\right],
 
-	where :math:`x_{(i)}` is the i-th smallest entry in :math:`(x_1, \dots, x_n)`, and :math:`\\gamma` is
+	where :math:`x_{(i)}` is the i-th smallest sample, and :math:`\\gamma` is
 	the digamma function. 
 
 	
@@ -186,10 +187,10 @@ def scalar_continuous_entropy(x):
 
 	.. rubric:: References
 
-	.. [KozN87] Kozachenko, L. F., and Nikolai N. Leonenko. "Sample estimate of the entropy of a random vector." 
+	.. [2] Kozachenko, L. F., and Nikolai N. Leonenko. "Sample estimate of the entropy of a random vector." 
 		Problemy Peredachi Informatsii 23.2 (1987): 9-16.
 
-	.. [BerD97] Beirlant, J., Dudewicz, E.J., Györfi, L., van der Meulen, E.C. "Nonparametric entropy estimation: an overview." 
+	.. [3] Beirlant, J., Dudewicz, E.J., Györfi, L., van der Meulen, E.C. "Nonparametric entropy estimation: an overview." 
 		International Journal of Mathematical and Statistical Sciences. 6 (1): 17–40. (1997) ISSN 1055-7490. 
 	"""
 	assert len(x.shape) == 1 or x.shape[1] == 1, 'x should be a one dimensional numpy array'
@@ -329,7 +330,7 @@ def least_structured_mixed_entropy(x_c, x_d):
 		.. math::
 			h(x, y) &= h(y) + h(x|y) \\
 
-			&= h(y) + E \\left[ h(x \\vert y=.) \\right]
+			        &= h(y) + E \\left[ h(x \\vert y=.) \\right]
 
 		that are true when :math:`x` and :math:`y` are either both continuous or both discrete
 		to extend the definition of the joint entropy to the case where one is continuous and

@@ -3,11 +3,11 @@
 Getting Started
 ===============
 
-The **KXY platform** is the `only AutoML platform` dedicated to bringing about **business value** by addressing two questions 
-that are fundamental to the data science life cycle in a model-free, fast, rigorous and cost-effective manner:
+The **KXY platform** is the `only AutoML platform` dedicated to bringing about **business value** by addressing two classes of questions 
+that are fundamental to the data science life cycle in a rigorous, fast, and cost-effective manner:
 
-* **Pre-Learning**: How valuable is a dataset for improving decision making, and what datasets should be used in models?
-* **Post-Learning**: Which action would yield a higher ROI, trying to improvee your production model using the same datasets, or investing in acquiring additional and complementary datasets?
+* **Pre-Learning Questions**: How valuable is a dataset for improving decision making, in an absolute sense and relative to others?
+* **Post-Learning Questions**: How do you explain what your trained model is doing, including ensuring it is not biased? Which action would yield a higher ROI, trying to improve your trained model using the same datasets, or investing in acquiring additional and complementary datasets?
 
 
 Installation
@@ -27,7 +27,7 @@ Authentication
 
 All heavy-duty operations, including but not limited to solving any maximum-entropy optimization problem, are run on the KXY infrastructure and require an API key. The API key should be set in the environment variable ``KXY_API_KEY``. 
 
-This can be done on MacOS or Linux distributions by running 
+This can be done in MacOS or Linux terminals by running 
 
 .. code-block:: bash
 	
@@ -88,7 +88,7 @@ looking for more relevant dataset to use as features, rather than increasing mod
 Pre-Learning: Feature Importance
 """"""""""""""""""""""""""""""""
 Once we know the problem is feasible using features at hand, the next question before we jump
-into modelling is what are the features that are the most useful for solving this problem. Once
+into modeling is what are the features that are the most useful for solving this problem. Once
 more, this qustion is asked and answered independently from any classification model (hence the expression **pre-learning**),
 and reduces time wasted improving models fitted on irrelevant features.
 
@@ -220,7 +220,7 @@ Pre-Learning
 	>>> # Pre-Learning: How feasible or solvable is this problem? Are features any useful?
 	>>> print('Feasibility: %.4f, Entropy: %.4f' % (\
 	... 	df.regression_feasibility(label_column), kxy.scalar_continuous_entropy(df[label_column].values)))
-	Feasibility: 0.0180, Entropy: 2.8780
+	Feasibility: 1.7618, Entropy: 2.8780
 
 	>>> # Pre-Learning: How useful is each feature individually?
 	>>> importance_df = df.features_importance(label_column, problem='regression')
