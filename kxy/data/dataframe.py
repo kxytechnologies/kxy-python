@@ -242,7 +242,7 @@ class DataFrame(pd.DataFrame):
 
 
 
-	def features_importance(self, label_column, features_columns=(), problem=None):
+	def features_importance(self, label_column, features_columns=(), problem=None, normalize=True):
 		"""
 		Calculates the importance of each feature in the input set at solving the supervised
 		learning problem where the label is defined by the label_column.
@@ -273,6 +273,8 @@ class DataFrame(pd.DataFrame):
 			The type of supervised learning problem. One of None (default), 'classification'
 			or 'regression'. When problem is None, the supervised learning problem is inferred
 			based on whether labels are numeric and the percentage of distinct labels.
+		normalize : bool, optional
+			Whether all feature importance scores should be normalized to sum to 1.
 
 		Returns
 		-------
@@ -306,9 +308,11 @@ class DataFrame(pd.DataFrame):
 				classification_feasibility(self[label_column].values, self[col].values, x_d=None) \
 				for col in features_columns}
 
+		total = np.sum([importance[col] for col in importance.keys()]) if normalize else 1.
+
 		importance_df = DataFrame({
 			'feature': [k for k, v in sorted(importance.items(), key=lambda item: -item[1])], \
-			'importance': [v for k, v in sorted(importance.items(), key=lambda item: -item[1])]})
+			'importance': [v/total for k, v in sorted(importance.items(), key=lambda item: -item[1])]})
 
 		return importance_df
 

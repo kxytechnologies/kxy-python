@@ -130,5 +130,7 @@ dmypy.json
 
 # local files
 local/
+lambdas/
+learners/
 
 .DS_Store

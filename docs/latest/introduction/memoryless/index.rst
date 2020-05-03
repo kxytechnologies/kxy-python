@@ -421,7 +421,7 @@ Finally, we provide the result when :math:`x` and :math:`y` are continuous and :
 
 
 
-c) Quantifying Informativeness
+d) Quantifying Informativeness
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Now that we are equipped with the right tools, we can answer the question that is central to pre-learning and post-learning: `how informative are a collection of inputs` :math:`x` `about a label` :math:`y`?
 
@@ -684,7 +684,9 @@ Hence,
 
 b) Dataset Valuation
 ^^^^^^^^^^^^^^^^^^^^
-Once it has been determined that the trained model cannot be significantly improved without adding new inputs, the next question is what inputs to add? Rather than proceeding by trial and error, we provide a rigorous framework to answer this question, prior to allocating any resources to further modeling. We define the value of adding new inputs :math:`x^\prime` as the difference between the feasibility scores with and without the new inputs:
+Once it has been determined that the trained model cannot be significantly improved without adding new inputs, the next question is what inputs to add? Rather than proceeding by trial and error, we provide a rigorous framework to answer this question, prior to allocating any resources to further modeling. 
+
+We define the value of adding new inputs :math:`x^\prime` as the difference between the feasibility scores with and without the new inputs:
 
 .. admonition:: Important Equation
 
@@ -739,7 +741,7 @@ Often times, models will not directly make use of the category variable :math:`z
 
 	\left\vert I(x_i; y_p) - I(x_i; y_p | z=j) \right\vert.
 
-If this difference is not close to :math:`0`, the data scientist should ask herself whether it is fair or ethical to treat individuals in group :math:`j` differently from another individual with the same input characteristic :math:`x_i`. If the answer is no, then chances are that the empirical distribution :math:`x_i, y | z=j` as per the training dataset was not representative of the true data generating distribution :math:`x_i, y`, in which case the data scientist should collect additional samples from group :math:`j`.
+If this difference is not close to :math:`0`, the data scientist should ask herself whether it is fair or ethical to treat individuals in group :math:`j` differently from another individual with the same input characteristic :math:`x_i`. If the answer is no, then chances are that the empirical distribution :math:`(x_i, y) | z=j` as per the training dataset was not representative of the true data generating distribution :math:`x_i, y`, in which case the data scientist should collect additional samples from group :math:`j`.
 
 
 
@@ -749,10 +751,10 @@ For the purposes of pre-learning and post-learning, estimation ought to be perfo
 
 Similarly, post-learning aims at studying trained supervised learning problems in a general-purpose fashion, as well as courses of action to take to improve their accuracies. This cannot be achieved with a specific choice of a generative model for inputs and the label :math:`(x, y)`. Having said that, before delving further, let's review the elementary quantities we need to estimate from i.i.d. samples.
 
-If we are able to estimate the `Shannon entropy`, the `differential entropy for scalar random variables`, and the `entropy of the copula of a vector random variable`, then we can compute all metrics discussed above. To estimate the entropy of a conditional distribution where the condition is on specific value of a categorical variable, it suffices to use as sample the subset of the full sample where the condition is met, and then estimate the unconditional entropy from foregoing subset. To estimate a conditional entropy (resp. mutual information) where conditioning is based on a categorical variable (not a specific value thereof), we recall that it is equal to the average value of the entropy (resp. mutual information) of the conditional distribution(s), which we estimate as previously discussed, weighted by the probability of each outcome.
+If we are able to estimate the `Shannon entropy`, the `differential entropy for scalar random variables`, and the `entropy of the copula of a vector random variable`, then we can compute all metrics discussed above. To estimate the entropy of a conditional distribution where the condition is on the specific value of a categorical variable, it suffices to use as sample the subset of the full sample where the condition is met, and then estimate the unconditional entropy from the foregoing subset. To estimate a conditional entropy (resp. mutual information) where conditioning is based on a categorical variable (not a specific value thereof), we recall that it is equal to the average value of the entropy (resp. mutual information) of the conditional distribution(s), which we estimate as previously discussed, weighted by the probability of each outcome.
 
 
-We make it a point never to estimate the entropy of continuous random vector directly. As previously discussed, in matters pertaining to quantifying associations, the copula of a random vector plays a more central role than its marginals. While the copula of a random vector fully (and only) captures associations between its coordinates, its marginals are heavily influenced by how the sample was gathered and invertible transformations it might have undergone (e.g. logarithm transformation, standardization, etc.). Intuitively, no invertible transformation applied to coordinates should affect our understanding of associations between them. Such transformations, when increasing, would indeed leave the copula invariant, but would affect the marginals.
+We make it a point never to estimate the entropy of continuous random vector directly. As previously discussed, in matters pertaining to quantifying associations, the copula of a random vector plays a more central role than its marginals. While the copula of a random vector fully (and only) captures associations between its coordinates, its marginals are heavily influenced by how the sample was gathered and invertible feature transformations it might have undergone (e.g. logarithm transformation, standardization, etc.). Intuitively, no invertible transformation applied to coordinates should affect our understanding of associations between them. Such transformations, when increasing, would indeed leave the copula invariant, but would affect the marginals.
 
 
 
@@ -805,14 +807,14 @@ for some function :math:`\phi: [0, 1]^d \to \mathbb{R}^q`, straight from :math:`
 
 b) The Maximum Entropy Principle
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-For a given value :math:`\alpha \in \mathbb{R}^q`, we ask ourselves the question, among all copulas that satisfy 
+For a given value :math:`\alpha \in \mathbb{R}^q`, we ask ourselves the question: among all copulas that satisfy 
 
 .. math::
 	:label: cons_func_alpha
 
 	E\left(\phi(u)\right) = \alpha,
 
-which copula is the most uncertain about anything we have not explicitly observed or, equivalently, which copula posits the least amount of structure or informativeness between coordinates of :math:`u`? This copula happens to be one with the smallest entropy among all copulas satisfying the constraint :eq:`cons_func_alpha`. 
+which copula is the most uncertain about everything we have not explicitly observed or, equivalently, which copula posits the least amount of structure or informativeness between coordinates of :math:`u`? This copula happens to be the one with the smallest entropy among all copulas satisfying the constraint :eq:`cons_func_alpha`. 
 
 This modeling paradigm, known as the principle of maximum entropy, was first pioneered by E.T. Jaynes, one of the most celebrated authors in the probabilistic machine learning community, in his seminal works [6]_ and [7]_.
 
@@ -882,7 +884,7 @@ Kendall's tau cannot be directly utilized within our framework, as the correspon
 
 ii) Spearman's Rho
 """"""""""""""""""
-Let us consider the bivariate random variable :math:`(x, y)` with copula-uniform representation :math:`(u, v)`, and n i.i.d. draws thereof :math:`(x_1, y_1), \dots, (x_n, y_n)`. The population version of the Spearman rank correlation is defined as the Pearson correlation between the rank of :math:`x_i` (among :math:`x_1, \dots, x_n`) and the rank of :math:`y_i` (among :math:`y_1, \dots, y_n`)
+Let us consider the bivariate random variable :math:`(x, y)` with copula-uniform representation :math:`(u, v)`, and n i.i.d. draws thereof :math:`(x_1, y_1), \dots, (x_n, y_n)`. The sample version of the Spearman rank correlation is defined as the Pearson correlation between the rank of :math:`x_i` (among :math:`x_1, \dots, x_n`) and the rank of :math:`y_i` (among :math:`y_1, \dots, y_n`)
 
 .. math::
 
@@ -914,7 +916,7 @@ We refer the reader to Chapter 5 in [4]_ for more details on the link between co
 
 iii) Other Rank Statistics
 """"""""""""""""""""""""""
-Spearman's rho shed some light on the link between the empirical copula-uniform dual representation :math:`\left(\text{rg}(x_i)/n,  \text{rg}(y_i)/n\right)` and the true copula-uniform dual representation :math:`(u, v)`. Under mild conditions, the empirical copula-uniform dual representation converges to the true copula-uniform dual representation and, for a given :math:`\phi`, 
+Spearman's rho shed some light on the link between the empirical copula-uniform dual representation :math:`\left(\text{rg}(x_i)/n,  \text{rg}(y_i)/n\right)` and the true copula-uniform dual representation :math:`(u, v)`. Under mild conditions, the empirical copula-uniform dual representation converges in distribution to the true copula-uniform dual representation and, for a given :math:`\phi`, 
 
 .. math::
 	:label: phi_est
