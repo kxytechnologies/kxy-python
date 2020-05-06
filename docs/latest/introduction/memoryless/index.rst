@@ -816,7 +816,7 @@ For a given value :math:`\alpha \in \mathbb{R}^q`, we ask ourselves the question
 
 which copula is the most uncertain about everything we have not explicitly observed or, equivalently, which copula posits the least amount of structure or informativeness between coordinates of :math:`u`? This copula happens to be the one with the smallest entropy among all copulas satisfying the constraint :eq:`cons_func_alpha`. 
 
-This modeling paradigm, known as the principle of maximum entropy, was first pioneered by E.T. Jaynes, one of the most celebrated authors in the probabilistic machine learning community, in his seminal works [6]_ and [7]_.
+This modeling paradigm, known as `the principle of maximum entropy <https://en.wikipedia.org/wiki/Principle_of_maximum_entropy>`_, was first pioneered by E.T. Jaynes, one of the most celebrated authors in the probabilistic machine learning community, in his seminal works [6]_ and [7]_.
 
 To summarize, to estimate :math:`h(u)` we proceed in 3 stages:
 

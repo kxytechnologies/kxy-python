@@ -8,9 +8,10 @@ Created on Thu Feb 27 10:54:00 2020
 import sys
 sys.path.append('.')
 from setuptools import setup, find_packages
+version = "0.0.9"
 
 setup(name="kxy",
-	version="0.0.7",
+	version=version,
 	zip_safe=False,
 	license="AGPLv3",
     author="Dr. Yves-Laurent Kom Samo",
@@ -22,7 +23,7 @@ setup(name="kxy",
     project_urls={
         "Documentation": "https://docs.kxysolutions.com",
         "Source Code": "https://github.com/kxytechnologies/kxy-python/"},
-	download_url = "https://github.com/kxytechnologies/kxy-python/archive/v0.0.3.tar.gz",
+	download_url = "https://github.com/kxytechnologies/kxy-python/archive/v%s.tar.gz" % version,
 	keywords = ["AutoML", "Pre-Learning", "Post-Learning", "Model-Free ML"],
 	packages=find_packages(exclude=["tests"]),
 	install_requires=["numpy>=1.13.1", "scipy>=1.4.1", "pandas>=0.19.2", "requests==2.22.0"],

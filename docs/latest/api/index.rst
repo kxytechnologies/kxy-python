@@ -1,7 +1,7 @@
 
 
-Maximum Entropy API
-===================
+RESTful API Client
+==================
 
 .. automodule:: kxy.api.client
     :members:

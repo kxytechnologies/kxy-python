@@ -25,7 +25,7 @@ The package only supports python 3.
 Authentication
 --------------
 
-All heavy-duty operations, including but not limited to solving any maximum-entropy optimization problem, are run on the KXY infrastructure and require an API key. The API key should be set in the environment variable ``KXY_API_KEY``. 
+All heavy-duty operations, including but not limited to solving any **maximum-entropy optimization problem**, are run on the KXY infrastructure and require an API key. The API key should be set in the environment variable ``KXY_API_KEY``. 
 
 This can be done in MacOS or Linux terminals by running 
 
@@ -67,7 +67,7 @@ Classification
 Pre-Learning: Feasibility
 """""""""""""""""""""""""
 To what extent can we predict whether the bank note is fake from an image using provided 
-features (irrespective of the classification model)?
+inputs (irrespective of the classification model)?
 
 .. code-block:: python
 
@@ -75,9 +75,9 @@ features (irrespective of the classification model)?
 	0.855179
 
 The higher the number is relative to the entropy of the responsee, the better. A value of 0
-means no model can successfully solve this classification problem using provided features, no
+means no model can successfully solve this classification problem using provided inputs, no
 matter how complex, no matter how deep. In such as case, resources should be allocated to 
-looking for more relevant dataset to use as features, rather than increasing model complexity.
+looking for more relevant dataset to use as inputs, rather than increasing model complexity.
 
 .. code-block:: python
 
@@ -85,24 +85,24 @@ looking for more relevant dataset to use as features, rather than increasing mod
 	0.686998
 
 
-Pre-Learning: Feature Importance
-""""""""""""""""""""""""""""""""
-Once we know the problem is feasible using features at hand, the next question before we jump
-into modeling is what are the features that are the most useful for solving this problem. Once
+Pre-Learning: Input Importance
+""""""""""""""""""""""""""""""
+Once we know the problem is feasible using inputs at hand, the next question before we jump
+into modeling is what are the inputs that are the most useful for solving this problem. Once
 more, this qustion is asked and answered independently from any classification model (hence the expression **pre-learning**),
-and reduces time wasted improving models fitted on irrelevant features.
+and reduces time wasted improving models fitted on irrelevant inputs.
 
 
 .. code-block:: python
 
-	>>> importance_df = df.features_importance('Is Fake')
+	>>> importance_df = df.input_importance('Is Fake')
 	>>> importance_df
-	    feature  importance
-	0  Variance    0.385260
-	1  Skewness    0.226708
-	2  Kurtosis    0.119311
-	3  Entropy     0.000000
-	>>> importance_df.plot.bar(x='feature', y='importance', rot=0)
+	      input importance normalized_importance
+	0  Variance       1.93                  0.94
+	1  Skewness       0.13                  0.06
+	2   Entropy          0                     0
+	3  Kurtosis          0                     0
+	>>> importance_df.plot.bar(x='input', y='importance', rot=0)
 	
 
 .. figure:: ../../../images/bn_importance.png
@@ -143,20 +143,20 @@ Let's train a linear classifier on our dataset.
 Post-Learning: Suboptimality
 """"""""""""""""""""""""""""
 As we train models, we are faced with the following dilemma on resource allocation: are we better off investing time and money 
-trying to improve our existing model with a complex model, or have we already gotten the most out of existing features, and we 
-should instead invest in acquiring complementary and/or more informative features?
+trying to improve our existing model with a complex model, or have we already gotten the most out of existing inputs, and we 
+should instead invest in acquiring complementary and/or more informative inputs?
 
-Back to our bank note example, given how high an out-of-sample accuracy we got, it might seem like a silly question, but can we do better using the same features and a nonlinear model?
+Back to our bank note example, given how high an out-of-sample accuracy we got, it might seem like a silly question, but can we do better using the same inputs and a nonlinear model?
 
 .. code-block:: python
 
 	>>> test_df.classification_suboptimality('prediction', 'Is Fake', \
-	... 	discrete_features_columns=(), continuous_features_columns=())
+	... 	discrete_input_columns=(), continuous_input_columns=())
 	0.012520
 	>>> train_df.classification_feasibility('Is Fake')
 	0.557628
 
-As it turns out, a simple logistic regression allows us to extract 98% of the intrinsic value there is in using the 3 features above to determmine whether a bank note is fake. Thus, using a nonlinear model might not yield the highest ROI. 
+As it turns out, a simple logistic regression allows us to extract 98% of the intrinsic value there is in using the 3 inputs above to determmine whether a bank note is fake. Thus, using a nonlinear model might not yield the highest ROI. 
 
 That a nonlinear model would not perform materially better than a linear model is consistent with the visualization below, where it can be seen that a curve would not necessarily do a much better job at separating geniune (green) from fake (red) notes than a straight line.
 
@@ -217,21 +217,24 @@ Pre-Learning
 .. code-block:: python
 
 	>>> label_column = 'Residuary Resistance'
-	>>> # Pre-Learning: How feasible or solvable is this problem? Are features any useful?
+	>>> # Pre-Learning: How feasible or solvable is this problem? Are inputs any useful?
 	>>> print('Feasibility: %.4f, Entropy: %.4f' % (\
 	... 	df.regression_feasibility(label_column), kxy.scalar_continuous_entropy(df[label_column].values)))
-	Feasibility: 1.7618, Entropy: 2.8780
+	Feasibility: 1.8866, Entropy: 2.2420
 
-	>>> # Pre-Learning: How useful is each feature individually?
-	>>> importance_df = df.features_importance(label_column, problem='regression')
+	>>> # Pre-Learning: How useful is each input individually?
+	>>> importance_df = df.input_importance(label_column, problem='regression')
 	>>> print(importance_df)
-	                  feature  importance
-	0           Froude Number      1.7618
-	1   Longitudinal Position      0.0004
-	2     Length-Displacement      0.0004
-	3      Beam-Draught Ratio      0.0002
-	4       Length-Beam Ratio          -0
-	5  Prismatic Coeefficient          -0
+	                    input importance normalized_importance
+	0           Froude Number     1.8194                0.9975
+	1     Length-Displacement     0.0018                 0.001
+	2   Longitudinal Position      0.001                0.0005
+	3      Beam-Draught Ratio     0.0009                0.0005
+	4  Prismatic Coeefficient     0.0007                0.0004
+	5       Length-Beam Ratio     0.0002                0.0001
+
+
+
 
 
 Post-Learning
@@ -262,9 +265,9 @@ Post-Learning
 	Out-Of-Sample R^2: 0.65
 
 	>>> # How suboptimal is this linear regression model?
-	>>> # Can we do better with a nonlinear model, without new features?
+	>>> # Can we do better with a nonlinear model, without new inputs?
 	>>> print('Additive Suboptimality: %.4f' % \
 	...		test_df.regression_additive_suboptimality('Prediction', label_column))
-	Additive Suboptimality: 0.0015
+	Additive Suboptimality: 0.0279
 
 

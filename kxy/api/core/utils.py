@@ -4,6 +4,35 @@
 import numpy as np 
 from numpy.dual import svd
 
+def spearman_corr(x):
+	"""
+	Calculate the Spearman rank correlation matrix.
+
+	.. math::
+
+		\\text{corr}[i, j] = \\frac{12}{n^2-1} \\left[ \\left( \\frac{1}{n} \\sum_{k=1}^n R_{ki} R_{kj} \\right) - \\frac{(n+1)^2}{4}\\right]
+
+	Parameters
+	----------
+	x : (n, d) np.array
+		Input data representing n i.i.d. draws from the d-dimensional 
+		random variable, whose Spearman rank correlation matrix this 
+		function calculates.
+
+
+	Returns
+	-------
+	corr : np.array
+		The Spearman rank correlation matrix.
+	"""
+	# R[i,j] is the rank of x[i, j] among x[1, j] ... x[n, j]
+	n, m = x.shape
+	R = 1+x.argsort(axis=0).argsort(axis=0)
+	corr = np.cov(R.T, bias=True)/((n*n-1.)/12.)
+
+	return corr
+
+
 def avg_pairwise_spearman_corr(x):
 	"""
 	Calculates the sample average pairwise Spearman rank correlation 
@@ -37,11 +66,8 @@ def avg_pairwise_spearman_corr(x):
 
 	.. [1] Joe, H. Journal of multivariate analysis 35 (1), 12-30, 1990.
 	"""
-	# R[i,j] is the rank of x[i, j] among x[1, j] ... x[n, j]
-	n, m = x.shape
-	R = 1+x.argsort(axis=0).argsort(axis=0)
-	spearman_corr = np.cov(R.T, bias=True)/((n*n-1.)/12.)
-	rho = (np.sum(spearman_corr)-m)/(m*(m-1.))
+	corr = spearman_corr(x)
+	rho = (np.sum(corr)-m)/(m*(m-1.))
 
 	return rho
 

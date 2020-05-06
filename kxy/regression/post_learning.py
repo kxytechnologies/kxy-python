@@ -24,35 +24,35 @@ def regression_suboptimality(yp, y, x):
 
 		More generally, the conditional entropy :math:`h \\left( y \\vert x \\right)` represents 
 		the amount of information about :math:`y` that cannot be explained by :math:`x`, while 
-		:math:`h \\left( y \\vert \\tilde{f}(x) \\right)` represents the amount of information 
+		:math:`h \\left( y \\vert f(x) \\right)` represents the amount of information 
 		about :math:`y` that cannot be explained by the regression model 
 
 		.. math::
 
-			y = \\tilde{f}(x) + \\epsilon.
+			y = f(x) + \\epsilon.
 
 		A natural metric for how suboptimal a particular regression model is can therefore be defined as
 		the difference between the amount of information about :math:`y` that cannot be explained by 
-		:math:`\\tilde{f}(x)` and the amount of information about :math:`y` that cannot be explained by :math:`x`
+		:math:`f(x)` and the amount of information about :math:`y` that cannot be explained by :math:`x`
 
 
 		.. math::
 
-			\\text{subopt}(\\tilde{f}; x) &= h \\left( y \\vert \\tilde{f}(x) \\right) - h \\left( y \\vert x \\right) \\
+			SO(f; x) &= h \\left( y \\vert f(x) \\right) - h \\left( y \\vert x \\right) \\
 
-			:&= I\\left(y, x \\right) - I\\left(y, \\tilde{f}(x) \\right) \\
+			:&= I\\left(y, x \\right) - I\\left(y, f(x) \\right) \\
 
-			&\geq 0.
+			 & \\geq 0.
 
-		This regression suboptimality metric is 0 if and only if :math:`\\tilde{f}(x)` fully captures any information about :math:`y`
+		This regression suboptimality metric is 0 if and only if :math:`f(x)` fully captures any information about :math:`y`
 		that is contained in :math:`x`. When 
 
 		.. math::
 
-			\\text{subopt}(\\tilde{f}; x) > 0 
+			SO(f; x) > 0 
 
 		on the other hand, there exists a regression model using :math:`x` as features that can better predict :math:`y`. The larger 
-		:math:`\\text{subopt}(\\tilde{f}; x)`, the more the regression model is suboptimal and can be improved.
+		:math:`SO(f; x)`, the more the regression model is suboptimal and can be improved.
 
 
 	Parameters
@@ -107,7 +107,7 @@ def regression_additive_suboptimality(e, x):
 
 		.. math::
 
-			\\text{add-subopt}(\\tilde{f}; x) := I\\left( y-\\tilde{f}(x), x \\right)
+			ASO(f; x) := I\\left( y-f(x), x \\right)
 
 
 	Parameters

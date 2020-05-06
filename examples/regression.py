@@ -14,7 +14,7 @@ if __name__ == '__main__':
 	# Regression: 
 	df = kxy.read_csv('http://archive.ics.uci.edu/ml/machine-learning-databases/00243/yacht_hydrodynamics.data', \
 		sep='[ ]{1,2}', names=['Longitudinal Position', 'Prismatic Coeefficient', 'Length-Displacement', \
-		'Beam-Draught Ratio', 'Length-Beam Ratio', 'Froude Number', 'Residuary Resistance'])
+		'Beam-Draught Ratio', 'Length-Beam Ratio', 'Froude Number', 'Residuary Resistance'], engine='python')
 	df.rename(columns={col: col.title() for col in df.columns}, inplace=True)
 	print(df)
 
@@ -22,14 +22,14 @@ if __name__ == '__main__':
 	PRE-LEARNING
 	"""
 	label_column = 'Residuary Resistance'
-	# Pre-Learning: How feasible or solvable is this problem? Are features any useful?
+	# Pre-Learning: How feasible or solvable is this problem? Are inputs any useful?
 	print('Feasibility: %.4f, Entropy: %.4f' % (\
 		df.regression_feasibility(label_column), kxy.scalar_continuous_entropy(df[label_column].values)))
 	
-	# Pre-Learning: How useful is each feature individually?
-	importance_df = df.features_importance(label_column, problem='regression')
-	print(importance_df)
-	importance_df.plot.bar(x='feature', y='importance', rot=90)
+	# Pre-Learning: How useful is each input individually?
+	importance_df = df.input_importance(label_column, problem='regression')
+	print(importance_df.round(4))
+	importance_df.plot.bar(x='input', y='importance', rot=90)
 
 	"""
 	LEARNING (BASIC)

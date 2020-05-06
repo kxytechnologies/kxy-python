@@ -11,31 +11,31 @@ def classification_suboptimality(yp, y, x_c, x_d=None):
 	.. note::
 
 		The conditional entropy :math:`h \\left( y \\vert x \\right)` represents the amount of information 
-		about :math:`y` that cannot be explained by :math:`x`. If we denote :math:`\\tilde{f}(x)` the label 
-		predicted by our classifier, :math:`h \\left( y \\vert \\tilde{f}(x) \\right)` represents the amount
+		about :math:`y` that cannot be explained by :math:`x`. If we denote :math:`f(x)` the label 
+		predicted by our classifier, :math:`h \\left( y \\vert f(x) \\right)` represents the amount
 		of information about :math:`y` that the classifier is not able to explain using :math:`x`.
 
 		A natural metric for how suboptimal a particular classifier is can therefore be defined as the 
 		difference between the amount of information about :math:`y` that cannot be explained by 
-		:math:`\\tilde{f}(x)` and the amount of information about :math:`y` that cannot be explained by :math:`x`
+		:math:`f(x)` and the amount of information about :math:`y` that cannot be explained by :math:`x`
 
 		.. math::
 
-			\\text{subopt}(\\tilde{f}; x) &= h \\left( y \\vert \\tilde{f}(x) \\right) - h \\left( y \\vert x \\right) \\
+			\\text{SO}(f; x) &= h \\left( y \\vert f(x) \\right) - h \\left( y \\vert x \\right) \\
 
-										 :&= I\\left(y, x \\right) - I\\left(y, \\tilde{f}(x) \\right) \\
-										 
+										 :&= I\\left(y, x \\right) - I\\left(y, f(x) \\right) \\
+
 										  &\\geq 0.
 
-		This classification suboptimality metric is 0 if and only if :math:`\\tilde{f}(x)` fully captures any information about :math:`y`
+		This classification suboptimality metric is 0 if and only if :math:`f(x)` fully captures any information about :math:`y`
 		that is contained in :math:`x`. When 
 
 		.. math::
 
-			\\text{subopt}(\\tilde{f}; x) > 0 
+			\\text{SO}(f; x) > 0 
 
 		on the other hand, there exists a classification model using :math:`x` as features that can better predict :math:`y`. The larger 
-		:math:`\\text{subopt}(\\tilde{f}; x)`, the more the classification model is suboptimal and can be improved.
+		:math:`\\text{SO}(f; x)`, the more the classification model is suboptimal and can be improved.
 
 
 	Parameters

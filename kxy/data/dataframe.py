@@ -2,16 +2,18 @@
 # -*- coding: utf-8 -*-
 
 """
-This file extends pandas' dataframe object to allow data scientists to tap into 
+Extension of pandas DataFrame class to allow data scientists to tap into 
 the power of the KXY API within the comfort of their favorite data structure.
 """
 
 from functools import lru_cache, wraps
+from threading import Thread
 
 import numpy as np
 import pandas as pd
 
-from kxy.api.core import least_total_correlation
+from kxy.api.core import least_total_correlation, spearman_corr
+from kxy.api import solve_copula_async
 from kxy.classification import classification_feasibility, classification_suboptimality
 from kxy.finance import information_adjusted_beta, information_adjusted_correlation
 from kxy.regression import regression_feasibility, regression_suboptimality, regression_additive_suboptimality
@@ -49,7 +51,6 @@ class _iAtIndexer(pd.core.indexing._iAtIndexer):
 class _AtIndexer(pd.core.indexing._AtIndexer):
 	pass
 
-
 @decorate_methods(cast_to_kxy_dataframe, include=[\
 	'__add__', '__sub__', '__mul__', '__div__', '__floordiv__', '__truediv__', '__mod__', '__pow__', \
 	'__iadd__', '__isub__', '__imul__', '__idiv__', '__ifloordiv__', '__imod__', '__ipow__', \
@@ -71,13 +72,13 @@ class DataFrame(pd.DataFrame):
 		A wide range of operators and methods inherited from pandas.DataFrame have been overriden to return a kxy.DataFrame
 		instead of a pandas.DataFrame.
 	"""
-	def regression_feasibility(self, label_column, features_columns=()):
+	def regression_feasibility(self, label_column, input_columns=()):
 		"""
 		Quantifies how feasible a regression problem is by computing the amount of uncertainty
-		about the label that can be reduced by knowing the features.
+		about the label that can be reduced by knowing the inputs.
 
 		.. math::
-			\\text{feasibility}(y; x) &= h(y)-h\\left(y \\vert x \\right) \\
+			FE(x; y) &= h(y)-h\\left(y \\vert x \\right) \\
 
 									  &= I(y, x)
 
@@ -96,9 +97,9 @@ class DataFrame(pd.DataFrame):
 		----------
 		label_column : str
 			The name of the column to use as label.
-		features_columns : set, optional
-			The set of columns to as features. When features_columns is the empty set,
-			all columns except for label_column are used as features.
+		input_columns : set, optional
+			The set of columns to as inputs. When input_columns is the empty set,
+			all columns except for label_column are used as inputs.
 
 		Returns
 		-------
@@ -108,31 +109,27 @@ class DataFrame(pd.DataFrame):
 		Raises
 		------
 		AssertionError
-			If label_column is in features_columns.
+			If label_column is in input_columns.
 		"""
-		features_columns = list(set(self.columns)-set([label_column])) if features_columns == () \
-			else list(features_columns)
-		assert label_column not in features_columns, "The output cannot be a feature"
+		input_columns = list(set(self.columns)-set([label_column])) if input_columns == () \
+			else list(input_columns)
+		assert label_column not in input_columns, "The output cannot be a input"
 
-		features_importance = self.features_importance(label_column, features_columns=features_columns,\
+		input_importance = self.input_importance(label_column, input_columns=input_columns,\
 			problem='regression')
+		input_sorted_by_importance = input_importance['input'].values
 
-		# TODO: There shouldn't be any need for this once stronger max-ent constraints are used
-		features_sorted_by_importance = features_importance['feature'].values
-		fs = [regression_feasibility(self[features_sorted_by_importance[:i+1]].values, self[label_column].values) \
-			for i in range(len(features_sorted_by_importance))]
-
-		return np.max(fs)
+		return regression_feasibility(self[input_sorted_by_importance].values, self[label_column].values)
 
 
-	def classification_feasibility(self, label_column, discrete_features_columns=(), \
-			continuous_features_columns=()):
+	def classification_feasibility(self, label_column, discrete_input_columns=(), \
+			continuous_input_columns=()):
 		"""
 		Quantifies how feasible a classification problem is by computing the amount of uncertainty
-		about the label that can be reduced by knowing the features, in a model-free fashion.
+		about the label that can be reduced by knowing the inputs, in a model-free fashion.
 
 		.. math::
-			\\text{feasibility}(y; x) &= h(y)-h\\left(y \\vert x \\right) \\
+			FE(x; y) &= h(y)-h\\left(y \\vert x \\right) \\
 
 									 &= I(y, x)
 
@@ -144,64 +141,64 @@ class DataFrame(pd.DataFrame):
 		----------
 		label_column : str
 			The name of the column to use as label.
-		discrete_features_columns : set, optional
-			The set of columns, if any, to use as features that are discrete.
-		continuous_features_columns : set, optional
-			The set of columns to use as features that are continuous.
+		discrete_input_columns : set, optional
+			The set of columns, if any, to use as inputs that are discrete.
+		continuous_input_columns : set, optional
+			The set of columns to use as inputs that are continuous.
 
 		Returns
 		-------
 		f : float
 			The feasibility score in :math:`[0, \\infty]`. The larger the better.
 		"""
-		assert label_column not in discrete_features_columns, "The output cannot be a feature"
-		assert label_column not in continuous_features_columns, "The output cannot be a feature"
+		assert label_column not in discrete_input_columns, "The output cannot be a input"
+		assert label_column not in continuous_input_columns, "The output cannot be a input"
 
-		continuous_features_columns = [col for col in self.columns if col != label_column and not self.is_discrete(col)] \
-			if continuous_features_columns == () else list(continuous_features_columns)
-		assert len(continuous_features_columns) > 0, "Continuous features are required"
+		continuous_input_columns = [col for col in self.columns if col != label_column and not self.is_discrete(col)] \
+			if continuous_input_columns == () else list(continuous_input_columns)
+		assert len(continuous_input_columns) > 0, "Continuous inputs are required"
 
-		x_d = self[discrete_features_columns].values if len(discrete_features_columns) > 0 else None
-		x_c = self[continuous_features_columns].values
+		x_d = self[discrete_input_columns].values if len(discrete_input_columns) > 0 else None
+		x_c = self[continuous_input_columns].values
 		y = self[label_column].values
 
 		return classification_feasibility(x_c, y, x_d=x_d)
 
 
 
-	def classification_suboptimality(self, prediction_column, label_column, discrete_features_columns=(), \
-			continuous_features_columns=()):
+	def classification_suboptimality(self, prediction_column, label_column, discrete_input_columns=(), \
+			continuous_input_columns=()):
 		"""
-		Quantifies the extent to which a (multinomial) classifier can be improved without requiring additional features.
+		Quantifies the extent to which a (multinomial) classifier can be improved without requiring additional inputs.
 
 		.. note::
 
 			The conditional entropy :math:`h \\left( y \\vert x \\right)` represents the amount of information 
-			about :math:`y` that cannot be explained by :math:`x`. If we denote :math:`\\tilde{f}(x)` the label 
-			predicted by our classifier, :math:`h \\left( y \\vert \\tilde{f}(x) \\right)` represents the amount
+			about :math:`y` that cannot be explained by :math:`x`. If we denote :math:`f(x)` the label 
+			predicted by our classifier, :math:`h \\left( y \\vert f(x) \\right)` represents the amount
 			of information about :math:`y` that the classifier is not able to explain using :math:`x`.
 
 			A natural metric for how suboptimal a particular classifier is can therefore be defined as the 
 			difference between the amount of information about :math:`y` that cannot be explained by 
-			:math:`\\tilde{f}(x)` and the amount of information about :math:`y` that cannot be explained by :math:`x`
+			:math:`f(x)` and the amount of information about :math:`y` that cannot be explained by :math:`x`
 
 			.. math::
 
-				\\text{subopt}(\\tilde{f}; x) &= h \\left( y \\vert \\tilde{f}(x) \\right) - h \\left( y \\vert x \\right) \\
+				\\text{SO}(f; x) &= h \\left( y \\vert f(x) \\right) - h \\left( y \\vert x \\right) \\
 
-				:&= I\\left(y, x \\right) - I\\left(y, \\tilde{f}(x) \\right) \\
+				:&= I\\left(y, x \\right) - I\\left(y, f(x) \\right) \\
 
-				&\geq 0.
+				 &\\geq 0.
 
-			This classification suboptimality metric is 0 if and only if :math:`\\tilde{f}(x)` fully captures any information about :math:`y`
+			This classification suboptimality metric is 0 if and only if :math:`f(x)` fully captures any information about :math:`y`
 			that is contained in :math:`x`. When 
 
 			.. math::
 
-				\\text{subopt}(\\tilde{f}; x) > 0 
+				\\text{SO}(f; x) > 0 
 
-			on the other hand, there exists a classification model using :math:`x` as features that can better predict :math:`y`. The larger 
-			:math:`\\text{subopt}(\\tilde{f}; x)`, the more the classification model is suboptimal and can be improved.
+			on the other hand, there exists a classification model using :math:`x` as inputs that can better predict :math:`y`. The larger 
+			:math:`\\text{SO}(f; x)`, the more the classification model is suboptimal and can be improved.
 
 
 		Parameters
@@ -210,10 +207,10 @@ class DataFrame(pd.DataFrame):
 			The column containing predicted labels.
 		label_column : str
 			The column containing true labels.
-		continuous_features_columns : set
-			The set of columns containing continuous features.
-		discrete_features_columns : set
-			The set of columns containing discrete features, if any.
+		continuous_input_columns : set
+			The set of columns containing continuous inputs.
+		discrete_input_columns : set
+			The set of columns containing discrete input, if any.
 
 
 		Returns
@@ -226,15 +223,15 @@ class DataFrame(pd.DataFrame):
 
 			:ref:`kxy.classification.post_learning.classification_suboptimality <classification-suboptimality>`
 		"""
-		assert label_column not in discrete_features_columns, "The output cannot be a feature"
-		assert label_column not in continuous_features_columns, "The output cannot be a feature"
+		assert label_column not in discrete_input_columns, "The output cannot be a input"
+		assert label_column not in continuous_input_columns, "The output cannot be a input"
 
-		continuous_features_columns = [col for col in self.columns if col not in (label_column, prediction_column) \
-			and not self.is_discrete(col)] if continuous_features_columns == () else list(continuous_features_columns)
-		assert len(continuous_features_columns) > 0, "Continuous features are required"
+		continuous_input_columns = [col for col in self.columns if col not in (label_column, prediction_column) \
+			and not self.is_discrete(col)] if continuous_input_columns == () else list(continuous_input_columns)
+		assert len(continuous_input_columns) > 0, "Continuous inputs are required"
 
-		x_d = self[discrete_features_columns].values if len(discrete_features_columns) > 0 else None
-		x_c = self[continuous_features_columns].values
+		x_d = self[discrete_input_columns].values if len(discrete_input_columns) > 0 else None
+		x_c = self[continuous_input_columns].values
 		y = self[label_column].values
 		yp = self[prediction_column].values
 
@@ -242,18 +239,18 @@ class DataFrame(pd.DataFrame):
 
 
 
-	def features_importance(self, label_column, features_columns=(), problem=None, normalize=True):
+	def input_importance(self, label_column, input_columns=(), problem=None):
 		"""
-		Calculates the importance of each feature in the input set at solving the supervised
+		Calculates the importance of each input in the input set at solving the supervised
 		learning problem where the label is defined by the label_column.
 
 		
 		.. note::
 
-			Feature importance is defined as the mutual information between the feature column 
-			and the label column. The supervised learning problem can either be specified as 'classification' or 
-			'regression' using the problem argument, or inferred from the type of, and the number 
-			of distinct values in the label_column.
+			Input importance is defined as the mutual information between the input column 
+			and the label column. The supervised learning problem can either be specified as :code:`'classification'` or 
+			:code:`'regression'` using the :code:`problem` argument, or inferred from the type of, and the number 
+			of distinct values in the :code:`label_column`.
 
 
 		.. seealso::
@@ -266,30 +263,28 @@ class DataFrame(pd.DataFrame):
 		----------
 		label_column : str
 			The name of the column to use as label.
-		features_columns : set, optional
-			The set of columns to as features. When features_columns is the empty set,
-			all columns except for label_column are used as features.
+		input_columns : set, optional
+			The set of columns to as inputs. When input_columns is the empty set,
+			all columns except for label_column are used as inputs.
 		problem : str or None (default), optional
 			The type of supervised learning problem. One of None (default), 'classification'
 			or 'regression'. When problem is None, the supervised learning problem is inferred
 			based on whether labels are numeric and the percentage of distinct labels.
-		normalize : bool, optional
-			Whether all feature importance scores should be normalized to sum to 1.
 
 		Returns
 		-------
 		importance : DataFrame
-			A dataframe with a feature column and an importance column.
+			A dataframe with as input column, an importance column, and a normalized importance column.
 
 		Raises
 		------
 		AssertionError
-			If problem is neither None nor 'classification' nor 'regression', or if 
-			label_column is in features_columns.
+			If problem is neither :code:`None` nor :code:`'classification'` nor :code:`'regression'`, or if 
+			:code:`label_column` is in :code:`input_columns`.
 		"""
-		features_columns = list(set(self.columns)-set([label_column])) if features_columns == () \
-			else list(features_columns)
-		assert label_column not in features_columns, "The output cannot be a feature"
+		input_columns = list(set(self.columns)-set([label_column])) if input_columns == () \
+			else list(input_columns)
+		assert label_column not in input_columns, "The output cannot be a input"
 		assert problem is None or problem in ('classification', 'regression'), \
 			"The problem should be either None, 'classification' or 'regression'"
 
@@ -300,19 +295,21 @@ class DataFrame(pd.DataFrame):
 			importance = {col: classification_feasibility(\
 							None, self[label_column].values, x_d=self[col].values) if self.is_discrete(col) else \
 							   classification_feasibility(self[col].values, self[label_column].values, x_d=None) \
-							for col in features_columns}
+							for col in input_columns}
 
 		else:
 			importance = {col: regression_feasibility(\
 				self[col].values, self[label_column].values) if not self.is_categorical(col) else \
 				classification_feasibility(self[label_column].values, self[col].values, x_d=None) \
-				for col in features_columns}
+				for col in input_columns}
 
-		total = np.sum([importance[col] for col in importance.keys()]) if normalize else 1.
+		total_importance = np.sum([importance[col] for col in importance.keys() if importance[col]])
+		scale = 1./total_importance if total_importance > 0. else 0.0
 
 		importance_df = DataFrame({
-			'feature': [k for k, v in sorted(importance.items(), key=lambda item: -item[1])], \
-			'importance': [v/total for k, v in sorted(importance.items(), key=lambda item: -item[1])]})
+			'input': [k for k, v in sorted(importance.items(), key=lambda item: -item[1])], \
+			'importance': [v for k, v in sorted(importance.items(), key=lambda item: -item[1])], \
+			'normalized_importance': [v*scale for k, v in sorted(importance.items(), key=lambda item: -item[1])]})
 
 		return importance_df
 
@@ -445,10 +442,10 @@ class DataFrame(pd.DataFrame):
 		return least_total_correlation(self[columns].values)
 
 
-	def regression_suboptimality(self, prediction_column, label_column, features_columns=()):
+	def regression_suboptimality(self, prediction_column, label_column, input_columns=()):
 		"""
 		Quantifies the extent to which a calibrated regression model can be improved without requiring
-		additional features.
+		additional inputs.
 
 
 		.. note::
@@ -466,35 +463,35 @@ class DataFrame(pd.DataFrame):
 
 			More generally, the conditional entropy :math:`h \\left( y \\vert x \\right)` represents 
 			the amount of information about :math:`y` that cannot be explained by :math:`x`, while 
-			:math:`h \\left( y \\vert \\tilde{f}(x) \\right)` represents the amount of information 
+			:math:`h \\left( y \\vert f(x) \\right)` represents the amount of information 
 			about :math:`y` that cannot be explained by the regression model 
 
 			.. math::
 
-				y = \\tilde{f}(x) + \\epsilon.
+				y = f(x) + \\epsilon.
 
 			A natural metric for how suboptimal a particular regression model is can therefore be defined as
 			the difference between what the amount of information about :math:`y` that cannot be explained by 
-			:math:`\\tilde{f}(x)` and the amount of information about :math:`y` that cannot be explained by :math:`x`
+			:math:`f(x)` and the amount of information about :math:`y` that cannot be explained by :math:`x`
 
 
 			.. math::
 
-				\\text{subopt}(\\tilde{f}; x) &= h \\left( y \\vert \\tilde{f}(x) \\right) - h \\left( y \\vert x \\right) \\
+				\\text{SO}(f; x) &= h \\left( y \\vert f(x) \\right) - h \\left( y \\vert x \\right) \\
 
-				:&= I\\left(y, x \\right) - I\\left(y, \\tilde{f}(x) \\right) \\
+				:&= I\\left(y, x \\right) - I\\left(y, f(x) \\right) \\
 
-				&\geq 0.
+				 &\\geq 0.
 
-			This regression suboptimality metric is 0 if and only if :math:`\\tilde{f}(x)` fully captures any information about :math:`y`
+			This regression suboptimality metric is 0 if and only if :math:`f(x)` fully captures any information about :math:`y`
 			that is contained in :math:`x`. When 
 
 			.. math::
 
-				\\text{subopt}(\\tilde{f}; x) > 0 
+				\\text{SO}(f; x) > 0 
 
-			on the other hand, there exists a regression model using :math:`x` as features that can better predict :math:`y`. The larger 
-			:math:`\\text{subopt}(\\tilde{f}; x)`, the more the regression model is suboptimal and can be improved.
+			on the other hand, there exists a regression model using :math:`x` as inputs that can better predict :math:`y`. The larger 
+			:math:`\\text{SO}(f; x)`, the more the regression model is suboptimal and can be improved.
 
 
 		Parameters
@@ -503,8 +500,8 @@ class DataFrame(pd.DataFrame):
 			The name of the column containing regression predictions.
 		label_column : str
 			The name of the column containing regression labels.
-		features_columns: set
-			The set of columns to use as features. When not specified, all columns 
+		input_columns: set
+			The set of columns to use as inputs. When not specified, all columns 
 			are used except. for the prediction and label columns.
 
 		Returns
@@ -521,42 +518,42 @@ class DataFrame(pd.DataFrame):
 		assert not self.is_categorical(prediction_column), "The prediction column should not be categorical"
 		assert not self.is_categorical(label_column), "The label column should not be categorical"
 
-		features_columns = [_ for _ in self.columns if _ not in (prediction_column, label_column) ] \
-			if features_columns == () else list(features_columns)
+		input_columns = [_ for _ in self.columns if _ not in (prediction_column, label_column) ] \
+			if input_columns == () else list(input_columns)
 
 		return regression_suboptimality(self[prediction_column].values, self[label_column].values, \
-			self[features_columns].values)
+			self[input_columns].values)
 
 
 
 
-	def regression_additive_suboptimality(self, prediction_column, label_column, features_columns=()):
+	def regression_additive_suboptimality(self, prediction_column, label_column, input_columns=()):
 		"""
-		Quantifies the extent to which a regression model can be improved without requiring additional features, by evaluating 
-		how informative its residuals still are about the features.
+		Quantifies the extent to which a regression model can be improved without requiring additional inputs, by evaluating 
+		how informative its residuals still are about the inputs.
 
 		.. note::
 
 			Additive regression models aim at breaking down a label :math:`y` as the sum of a component that solely depend on 
-			features :math:`f(x)` and a residual component that is statistically independent from features :math:`\\epsilon`
+			inputs :math:`f(x)` and a residual component that is statistically independent from inputs :math:`\\epsilon`
 
 			.. math::
 
 				y = f(x) + \\epsilon.
 
-			In an ideal scenario, the regreession residual :math:`\\epsilon` would indeed be stastically independent from the features
+			In an ideal scenario, the regreession residual :math:`\\epsilon` would indeed be stastically independent from the inputs
 			:math:`x`. In pratice however, this might not be the case, for instance when the space of candidate functions used by
 			the regression model isn't flexible enough (e.g. linear regression or basis functions regression), or the optimization
 			has not converged to the global optimum. 
 
-			Any departure from statistical independence between residuals :math:`\\epsilon` and features :math:`x` is an indication that what
+			Any departure from statistical independence between residuals :math:`\\epsilon` and inputs :math:`x` is an indication that what
 			:math:`x` can reveal about :math:`y` is not fully captured by :math:`f(x)`, which implies that the regression model can be improved.
 
-			Thus, we define the additive suboptimality of a regression model as the mutual information between its residuals and its features
+			Thus, we define the additive suboptimality of a regression model as the mutual information between its residuals and its inputs
 
 			.. math::
 
-				\\text{add-subopt}(\\tilde{f}; x) := I\\left( y-\\tilde{f}(x), x \\right)
+				\\text{ASO}(f; x) := I\\left( y-f(x), x \\right)
 
 
 		Parameters
@@ -565,8 +562,8 @@ class DataFrame(pd.DataFrame):
 			The name of the column containing regression predictions.
 		label_column : str
 			The name of the column containing regression labels.
-		features_columns: set
-			The set of columns to use as features. When not specified, all columns 
+		input_columns: set
+			The set of columns to use as inputs. When not specified, all columns 
 			are used except. for the prediction and label columns.
 
 
@@ -583,11 +580,11 @@ class DataFrame(pd.DataFrame):
 		assert not self.is_categorical(prediction_column), "The prediction column should not be categorical"
 		assert not self.is_categorical(label_column), "The label column should not be categorical"
 
-		features_columns = [_ for _ in self.columns if _ not in (prediction_column, label_column) ] \
-			if features_columns == () else list(features_columns)
+		input_columns = [_ for _ in self.columns if _ not in (prediction_column, label_column) ] \
+			if input_columns == () else list(input_columns)
 
 		e = (self[prediction_column]-self[label_column]).values
-		x = self[features_columns].values
+		x = self[input_columns].values
 
 		return regression_additive_suboptimality(e, x)
 
@@ -626,6 +623,15 @@ class DataFrame(pd.DataFrame):
 		Ensures the inherited iat operations return a DataFrame instead of a pandas.DataFrame.
 		"""
 		return _iAtIndexer("iat", self)
+
+
+	def _pre_solve(self):
+		"""
+		Pre-emptively solve the max-entropy problems remotely, and in the background.
+		"""
+		data = np.hstack((self.values, np.abs(self.values-self.values.mean(axis=0))))
+		corr = spearman_corr(data)
+		return solve_copula_async(corr)
 		
 	
 

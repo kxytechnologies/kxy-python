@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-This file leverages the KXY API to evaluate mutual information and related measure derived
-from solving maximum entropy copula problems under concordance measures. All optimization 
-problems are solved by the KXY API and users require an API key  that should be set in the 
-environment variable ``KXY_API_KEY``.
-"""
+import json
 import numpy as np
+import requests
 
-from .utils import avg_pairwise_spearman_corr, pre_conditioner
+from kxy.api import APIClient, solve_copula_sync
+
+from .utils import avg_pairwise_spearman_corr, pre_conditioner, spearman_corr
 from .entropy import least_structured_copula_entropy, least_structured_continuous_entropy, \
-	least_structured_mixed_entropy, max_ent_copula_entropy, discrete_entropy
+	least_structured_mixed_entropy, discrete_entropy
 
 
 def least_total_correlation(x):
@@ -46,13 +44,13 @@ def least_total_correlation(x):
 
 
 
-def least_continuous_mutual_information(x,  y):
+def least_continuous_mutual_information(x, y):
 	"""
 	.. _least-continuous-mutual-information:
-	Estimates the mutual information between a d-dimensional random vector :math:`x` of features
+	Estimates the mutual information between a d-dimensional random vector :math:`x` of inputs
 	and a continuous scalar random variable :math:`y` (or label), assuming the least amount of 
 	structure in :math:`x` and :math:`(x, y)`, other than what is necessary to be consistent with some 
-	observed concordance measures. 
+	observed properties.
 
 	.. note::
 
@@ -64,19 +62,15 @@ def least_continuous_mutual_information(x,  y):
 		where :math:`u_x` (resp. :math:`u_{x,y}`) is the copula-uniform representation of :math:`x`
 		(resp. :math:`(x, y)`).
 
-		We use as model for :math:`u_x` the least structured copula that is consistent with with the
-		average pairwise Spearman rank correlation between coordinates of :math:`x`. 
-
-		We use as model for :math:`u_{x, y}` the least structured copula that is consistent with both 
-		the average pairwise Spearman rank correlation between coordinates of :math:`x`, and the 
-		average pairwise Spearman rank correlation between coordinates of :math:`(x, y)`.
+		We use as model for :math:`u_{x, y}` the least structured copula that is consistent with 
+		the Spearman rank correlation matrix of the joint vector :math:`(x, y)`. 
 
 	Parameters
 	----------
 	x : (n, d) np.array
 		n i.i.d. draws from the features generating distribution.
 	y : (n,) np.array
-		n i.i.d. draws from the (continuous) laels generating distribution, sampled
+		n i.i.d. draws from the (continuous) labels generating distribution, sampled
 		jointly with x.
 
 	Returns
@@ -87,32 +81,82 @@ def least_continuous_mutual_information(x,  y):
 	Raises
 	------
 	AssertionError
-		If x is not a two dimensional array.
+		If y is not a one dimensional array or x or y are not numeric.
 	"""
-	assert np.can_cast(x, float) and np.can_cast(y,  float), 'x and y should represent draws from continuous random variables.'
+	assert np.can_cast(x, float) and np.can_cast(y, float), 'x and y should represent draws from continuous random variables.'
 	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
 
 	x_ = np.reshape(x, (len(x), 1)) if len(x.shape) == 1 else x.copy()
 	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
 
-	if len(x.shape) == 1 or x.shape[1] == 1:
-		return least_total_correlation(np.hstack([x_, y_]))
+	corr = spearman_corr(np.hstack([y_, x_, np.abs(x_-x_.mean(axis=0))]))
+	mi = solve_copula_sync(corr, mode='mutual_information_v_output', output_index=0)
 
-	x = x - x.mean(axis=0)
-	a, log_abs_deta = pre_conditioner(x.T)
-	z = np.dot(a, x.T).T
+	return mi
 
-	rho_features = avg_pairwise_spearman_corr(z)
-	rho_full = avg_pairwise_spearman_corr(np.hstack([z, y_]))
-	d = z.shape[1]
 
-	hux = max_ent_copula_entropy(method='average-pairwise-spearman-rho', \
-		rho=rho_features, d=d)
 
-	huxy = max_ent_copula_entropy(method='average-pairwise-spearman-rho-1vd', \
-		rho_full=rho_full, rho_features=rho_features, d=d)
 
-	return max(hux-huxy, 0.0)
+
+def least_continuous_conditional_mutual_information(x, y, z):
+	"""
+	.. _least-continuous-conditional-mutual-information:
+	Estimates the conditional mutual information between a d-dimensional random vector :math:`x` of inputs
+	and a continuous scalar random variable :math:`y` (or label), conditional on a third continuous random 
+	variable :math:`z`, assuming the least amount of structure in :math:`(x, y, z)`, other than what is 
+	necessary to be consistent with some observed properties.
+
+	.. note::
+
+		.. math::
+			I(x, y|z) &= h(x|z) + h(y|z) - h(x, y|z) \\
+
+			        &= h\\left(u_x | u_z \\right) - h\\left(u_{x,y} | u_z \\right)
+		
+		where :math:`u_x` (resp. :math:`u_{x,y}`, :math:`u_z`) is the copula-uniform representation of :math:`x`
+		(resp. :math:`(x, y)`, :math:`u_z`).
+
+		We use as model for :math:`u_{x, y, z}` the least structured copula that is consistent with 
+		the Spearman rank correlation matrix of the joint vector :math:`(x, y, z)`. 
+
+	Parameters
+	----------
+	x : (n, d) np.array
+		n i.i.d. draws from the inputs generating distribution.
+	y : (n,) np.array
+		n i.i.d. draws from the (continuous) labels generating distribution, sampled
+		jointly with x.
+	z : (n,) np.array
+		n i.i.d. draws from the (continuous) labels generating distribution, sampled
+		jointly with z.
+
+	Returns
+	-------
+	i : float
+		The mutual information between x and y, in nats.
+
+	Raises
+	------
+	AssertionError
+		If y is not a one dimensional array or x, y and z are not all numeric.
+	"""
+	assert np.can_cast(x, float) and np.can_cast(y,  float) and np.can_cast(z, float), \
+		'x, y and z should represent draws from continuous random variables.'
+	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
+
+	x_ = np.reshape(x, (len(x), 1)) if len(x.shape) == 1 else x.copy()
+	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
+	z_ = np.reshape(z, (len(z), 1)) if len(z.shape) == 1 else z.copy()
+
+	corr = spearman_corr(np.hstack([y_, x_, np.abs(x_-x_.mean(axis=0)), z_, np.abs(z_-z_.mean(axis=0))]))
+	output_index = 0
+	input_indices = [1+i for i in range(2*x_.shape[1])]
+	condition_indices = [1+2*x_.shape[1]+i for i in range(2*z_.shape[1])] 
+	mi = solve_copula_sync(corr, mode='conditional_mutual_information', output_index=0, \
+		input_indices=input_indices, condition_indices=condition_indices)
+
+	return mi
+
 
 
 
@@ -126,7 +170,7 @@ def least_mixed_mutual_information(x_c, y, x_d=None):
 	.. note::
 
 		.. math::
-			I({x_c, x_d}, y) &= h(y) + h(x_c, x_d) - h(x_c, x_d, y) \\
+			I({x_c, x_d}; y) &= h(y) + h(x_c, x_d) - h(x_c, x_d, y) \\
 
 							 &= h(x_c, x_d) - h\\left(x_c, x_d \\vert y\\right) \\
 
@@ -166,15 +210,21 @@ def least_mixed_mutual_information(x_c, y, x_d=None):
 	assert np.can_cast(x_c, float), 'x_c should represent draws from a continuous random variable.'
 	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
 
+	# Note: By the DPI, I({x, |x-m|}; y) <= I(x; y)
+	x_c_ = np.reshape(x_c, (len(x_c), 1)) if len(x_c.shape) == 1 else x_c.copy()
+	x_c_r = np.hstack((x_c_, np.abs(x_c_-x_c_.mean(axis=0))))
+
 	categories = list(set(list(y)))
 	n = y.shape[0]
 	probas = np.array([1.*len(y[y==cat])/n for cat in categories])
 
-	h = least_structured_continuous_entropy(x_c) if x_d is None else least_structured_mixed_entropy(x_c, x_d)
-	wh = np.sum([probas[i] * least_structured_continuous_entropy(x_c[y==categories[i]]) for i in range(len(categories))]) if x_d is None \
-		else np.sum([probas[i] * least_structured_mixed_entropy(x_c[y==categories[i]], x_d[y==categories[i]]) for i in range(len(categories))])
+	h = least_structured_continuous_entropy(x_c_r) if x_d is None else least_structured_mixed_entropy(x_c_r, x_d)
+	wh = np.sum([probas[i] * least_structured_continuous_entropy(x_c_r[y==categories[i]]) for i in range(len(categories))]) if x_d is None \
+		else np.sum([probas[i] * least_structured_mixed_entropy(x_c_r[y==categories[i]], x_d[y==categories[i]]) for i in range(len(categories))])
 
 	return max(h-wh, 0.0)
+
+
 
 
 

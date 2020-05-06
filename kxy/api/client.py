@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-This file implements a Python client for the KXY API.
+Python client for the KXY RESTful API.
 """
 
 from functools import lru_cache
