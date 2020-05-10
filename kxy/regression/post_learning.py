@@ -115,7 +115,7 @@ def regression_additive_suboptimality(e, x):
 	e : (n,) np.array
 		Regression residuals.
 	x : (n,) np.array
-		Regression features.
+		Regression inputs.
 
 
 	Returns

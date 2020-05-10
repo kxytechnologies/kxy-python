@@ -20,14 +20,8 @@ def scalar_continuous_entropy(x):
 	.. math::
 		h(x) \\approx - \gamma(1) + \\frac{1}{n-1} \\sum_{i=1}^{n-1} \log \\left[ n \\left(x_{(i+1)} - x_{(i)} \\right) \\right],
 
-	where :math:`x_{(i)}` is the i-th smallest sample, and :math:`\\gamma` is
-	the digamma function. 
+	where :math:`x_{(i)}` is the i-th smallest sample, and :math:`\\gamma` is `the digamma function. <https://en.wikipedia.org/wiki/Digamma_function>`_
 
-	
-	.. note::
-
-		A random noise with negligible standard deviation is added to the input
-		for robustness.
 
 	
 	Parameters
@@ -55,10 +49,6 @@ def scalar_continuous_entropy(x):
 		International Journal of Mathematical and Statistical Sciences. 6 (1): 17–40. (1997) ISSN 1055-7490. 
 	"""
 	assert len(x.shape) == 1 or x.shape[1] == 1, 'x should be a one dimensional numpy array'
-	sx = np.unique(x)
-	dx = np.min(sx[1:]-sx[:-1])/100.0
-	eps = np.random.rand(*x.shape)*dx
-	x += eps
 	sorted_x = np.unique(x)
 	n = sorted_x.shape[0]
 	ent = np.sum(np.log(n*(sorted_x[1:]-sorted_x[:-1])))/n - spe.digamma(1)
@@ -128,7 +118,7 @@ def least_structured_copula_entropy(x):
 		return 0.0
 
 	corr = spearman_corr(x)
-	h = solve_copula_sync(corr, mode='copula_entropy')
+	h = solve_copula_sync(corr, mode='copula_entropy', solve_async=False)
 
 	return h
 

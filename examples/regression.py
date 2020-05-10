@@ -27,9 +27,13 @@ if __name__ == '__main__':
 		df.regression_feasibility(label_column), kxy.scalar_continuous_entropy(df[label_column].values)))
 	
 	# Pre-Learning: How useful is each input individually?
-	importance_df = df.input_importance(label_column, problem='regression')
+	importance_df = df.individual_input_importance(label_column, problem='regression')
 	print(importance_df.round(4))
-	importance_df.plot.bar(x='input', y='importance', rot=90)
+	importance_df.plot.bar(x='input', y='individual_importance', rot=90)
+
+	# Incremental importance
+	importance_df = df.incremental_input_importance(label_column)
+	print(importance_df.round(4))
 
 	"""
 	LEARNING (BASIC)

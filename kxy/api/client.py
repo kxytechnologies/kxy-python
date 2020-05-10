@@ -189,7 +189,7 @@ class APIClient(object):
 			If path is None or method is neither 'GET', nor 'POST'.
 		"""
 		if path is None or method is None or \
-				method.upper() not in ('GET', 'PATH'):
+				method.upper() not in ('GET', 'POST'):
 			return None
 
 		if method.upper() == 'GET':

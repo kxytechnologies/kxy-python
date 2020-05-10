@@ -37,21 +37,26 @@ def solve_copula_async(corr):
 	success : bool
 		Whether the request went through successfully.
 	"""
-	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
-	logging.debug('Launching a max-ent solver in the background with corr=%s' % c)
-	api_response = APIClient.route(path='/core/dependence/copula/maximum-entropy/entropy/rv/pre-compute', \
-		method='GET', corr=c)
+	try:
+		c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
+		logging.debug('Launching a max-ent solver in the background with corr=%s' % c)
+		api_response = APIClient.route(path='/core/dependence/copula/maximum-entropy/entropy/rv/pre-compute', \
+			method='POST', corr=c)
 
-	if api_response.status_code == requests.codes.ok:
-		return True
+		if api_response.status_code == requests.codes.ok:
+			return True
 
-	logging.info(api_response.json())
-	return False
+		logging.info(api_response.json())
+		return False
+
+	except:
+		return False
 
 
 
 
-def solve_copula_sync(corr, mode=None, output_index=None, input_indices=None, condition_indices=None):
+
+def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True):
 	"""
 	.. _solve-copula-sync:
 	Solve the maximum-entropy copula problem under Spearman rank correlation matrix constraints synchronously.
@@ -71,7 +76,7 @@ def solve_copula_sync(corr, mode=None, output_index=None, input_indices=None, co
 		The Spearman correlation matrix.
 
 	mode : str
-		One of :code:`'copula_entropy'`, :code:`'mutual_information_v_output'`, and :code:`'conditional_mutual_information'`.
+		One of :code:`'copula_entropy'`, and :code:`'mutual_information_v_output'`.
 
 		When mode is :code:`'copula_entropy'` the function returns the entropy of the copula of the random
 		vector whose Spearman correlation matrix is the input :code:`corr`.
@@ -83,23 +88,10 @@ def solve_copula_sync(corr, mode=None, output_index=None, input_indices=None, co
 		of :math:`(x, y)` is learned as the maximum-entropy copula under the constraint that the Spearman correlation matrix 
 		is the input :code:`corr`.
 
-		When mode is :code:`'conditional_mutual_information'` the function returns the conditional mutual information
-		between output :math:`y` (specified by column :code:`output_index`) and inputs :math:`x` 
-		(specified by columns :code:`input_indices`) conditional on :math:`z` (specified by columns :code:`condition_indices`):
-		:math:`I(x, y\\vert z)`. We recall that the conditional mutual information of two random variables given a third, 
-		is the conditional mutual information between the associated copula-uniform dual representations. The copula of 
-		:math:`(x, y, z)` is learned as the maximum-entropy copula under the constraint that its Spearman correlation matrix 
-		is given by the input :code:`corr`.
 
 	output_index : int
-		The index of the column that should be used as output variable when mode is either :code:`'mutual_information_v_output'` or
-		:code:`'conditional_mutual_information'`.
+		The index of the column that should be used as output variable when mode is :code:`'mutual_information_v_output'`.
 
-	input_indices : list
-		The indices of the columns that should be used as input variables when mode is :code:`'conditional_mutual_information'`.
-
-	condition_indices : list
-		The indices of the columns that should be used as condition variables when mode is :code:`'conditional_mutual_information'`.
 
 
 	Returns
@@ -108,47 +100,42 @@ def solve_copula_sync(corr, mode=None, output_index=None, input_indices=None, co
 		The requested result, namely the copula entropy, the mutual information or the conditional
 		mutual information, depending on the value of the mode.
 	"""
-	assert mode in ('copula_entropy', 'mutual_information_v_output', 'conditional_mutual_information')
+	assert mode in ('copula_entropy', 'mutual_information_v_output')
 
 	if mode in ['mutual_information_v_output', 'conditional_mutual_information']:
 		assert output_index is not None, 'The output index should be provided'
 
-	if mode == 'conditional_mutual_information':
-		assert input_indices is not None, 'Input indices should be provided for conditional mutual information.'
-		assert condition_indices is not None, 'Condition indices should be provided for conditional mutual information.'
-
-	solve_copula_async(corr)
+	if solve_async:
+		solve_copula_async(corr)
 	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
 	opt_launched = False
 	max_retry = 60
 	first_try = True
 	retry_count = 0
 	while (first_try or api_response.status_code == requests.codes.not_found) and retry_count < max_retry:
-		logging.debug('Querying the max-ent solution with corr=%s and mode=%s' % (c, mode))
 		first_try = False
 		if mode == 'copula_entropy':
+			logging.debug('Querying the max-ent solution with corr=%s and mode=%s' % (c, mode))
 			api_response = APIClient.route(\
-				path='/core/dependence/copula/maximum-entropy/entropy/rv/all', method='GET', \
+				path='/core/dependence/copula/maximum-entropy/entropy/rv/all', method='POST', \
 				corr=c, mode='copula_entropy')
 
 		if mode == 'mutual_information_v_output':
+			logging.debug('Querying the max-ent solution with corr=%s, mode=%s and output_index=%d' % (c, mode, output_index))
 			api_response = APIClient.route(\
-				path='/core/dependence/copula/maximum-entropy/entropy/rv/all', method='GET', \
+				path='/core/dependence/copula/maximum-entropy/entropy/rv/all', method='POST', \
 				corr=c, mode='mutual_information_v_output', output_index=output_index)
 
-		if mode == 'conditional_mutual_information':
-			input_indices = json.dumps(input_indices)
-			condition_indices = json.dumps(condition_indices)
-			api_response = APIClient.route(\
-				path='/core/dependence/copula/maximum-entropy/entropy/rv/all', method='GET', \
-				corr=c, mode='conditional_mutual_information', output_index=output_index, \
-				input_indices=input_indices, condition_indices=condition_indices)
 
 		retry_count += 1
 		if api_response.status_code == requests.codes.not_found:
 			sleep(10.)
 
-	logging.debug(api_response.json())
+	try:
+		logging.debug(api_response.json())
+	except:
+		logging.debug('Failed to convert api response to json %s' % api_response)
+
 	if api_response.status_code == requests.codes.ok:
 		if mode == 'copula_entropy':
 			h = api_response.json()['entropy']
@@ -160,10 +147,8 @@ def solve_copula_sync(corr, mode=None, output_index=None, input_indices=None, co
 			if not mi is None:
 				return float(mi)
 
-		if mode == 'conditional_mutual_information':
-			mi = api_response.json()['conditional_mutual_information']
-			if not mi is None:
-				return float(mi)
+	else:
+		logging.warning(api_response.json())
 
 	return None
 

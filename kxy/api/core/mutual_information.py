@@ -90,11 +90,9 @@ def least_continuous_mutual_information(x, y):
 	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
 
 	corr = spearman_corr(np.hstack([y_, x_, np.abs(x_-x_.mean(axis=0))]))
-	mi = solve_copula_sync(corr, mode='mutual_information_v_output', output_index=0)
+	mi = solve_copula_sync(corr, mode='mutual_information_v_output', output_index=0, solve_async=False)
 
 	return mi
-
-
 
 
 
@@ -109,12 +107,15 @@ def least_continuous_conditional_mutual_information(x, y, z):
 	.. note::
 
 		.. math::
-			I(x, y|z) &= h(x|z) + h(y|z) - h(x, y|z) \\
+			I(x; y|z) &= h(x|z) + h(y|z) - h(x, y|z) \\
 
 			        &= h\\left(u_x | u_z \\right) - h\\left(u_{x,y} | u_z \\right)
+
+			        &= I(y; x, z) - I(y; z)
+
 		
 		where :math:`u_x` (resp. :math:`u_{x,y}`, :math:`u_z`) is the copula-uniform representation of :math:`x`
-		(resp. :math:`(x, y)`, :math:`u_z`).
+		(resp. :math:`(x, y)`, :math:`z`).
 
 		We use as model for :math:`u_{x, y, z}` the least structured copula that is consistent with 
 		the Spearman rank correlation matrix of the joint vector :math:`(x, y, z)`. 
@@ -148,14 +149,10 @@ def least_continuous_conditional_mutual_information(x, y, z):
 	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
 	z_ = np.reshape(z, (len(z), 1)) if len(z.shape) == 1 else z.copy()
 
-	corr = spearman_corr(np.hstack([y_, x_, np.abs(x_-x_.mean(axis=0)), z_, np.abs(z_-z_.mean(axis=0))]))
-	output_index = 0
-	input_indices = [1+i for i in range(2*x_.shape[1])]
-	condition_indices = [1+2*x_.shape[1]+i for i in range(2*z_.shape[1])] 
-	mi = solve_copula_sync(corr, mode='conditional_mutual_information', output_index=0, \
-		input_indices=input_indices, condition_indices=condition_indices)
+	mi_y_xz = least_continuous_mutual_information(np.hstack([x_, z_]), y_)
+	mi_y_z = least_continuous_mutual_information(z_, y_)
 
-	return mi
+	return max(mi_y_xz-mi_y_z, 0.0)
 
 
 
@@ -210,7 +207,6 @@ def least_mixed_mutual_information(x_c, y, x_d=None):
 	assert np.can_cast(x_c, float), 'x_c should represent draws from a continuous random variable.'
 	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
 
-	# Note: By the DPI, I({x, |x-m|}; y) <= I(x; y)
 	x_c_ = np.reshape(x_c, (len(x_c), 1)) if len(x_c.shape) == 1 else x_c.copy()
 	x_c_r = np.hstack((x_c_, np.abs(x_c_-x_c_.mean(axis=0))))
 
@@ -224,6 +220,62 @@ def least_mixed_mutual_information(x_c, y, x_d=None):
 
 	return max(h-wh, 0.0)
 
+
+
+
+def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None):
+	"""
+	.. _least-mixed-conditional-mutual-information:
+	Estimates the conditional mutual information between a dimensional random vector :math:`x` of inputs
+	and a discrete scalar random variable :math:`y` (or label), conditional on a third random 
+	variable :math:`z`, assuming the least amount of structure in :math:`(x, y, z)`, other than what is 
+	necessary to be consistent with some observed properties.
+
+	.. math::
+		I(y; x_c, x_d | z_c, z_d) = I(y; x_c, x_d, z_c, z_d) - I(y; z_c, z_d)
+
+		
+
+	Parameters
+	----------
+	x_c : (n, d) np.array
+		n i.i.d. draws from the generating distribution of continuous inputs.
+	z_c : (n, d) np.array
+		n i.i.d. draws from the generating distribution of continuous conditions.
+	x_d : (n, d) np.array or None (default), optional
+		n i.i.d. draws from the generating distribution of categorical inputs.
+	z_d : (n, d) np.array or None (default), optional
+		n i.i.d. draws from the generating distribution of categorical conditions.
+	y : (n,) np.array
+		n i.i.d. draws from the (categorical) labels generating distribution, sampled
+		jointly with x.
+
+
+	Returns
+	-------
+	i : float
+		The mutual information between (x_c, x_d) and y, conditional on (z_c, z_d).
+
+	Raises
+	------
+	AssertionError
+		If y is not a one dimensional array or x and z are not all numeric.
+	"""
+	assert np.can_cast(x_c, float) and np.can_cast(z_c, float), \
+		'x_c, and z_c should represent draws from continuous random variables.'
+	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
+
+	x_ = np.reshape(x_c, (len(x_c), 1)) if len(x_c.shape) == 1 else x_c.copy()
+	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
+	z_ = np.reshape(z_c, (len(z_c), 1)) if len(z_c.shape) == 1 else z_c.copy()
+
+	# I(y; x|z) = h(y, z) + h(x, z) - h(z) - h(x, y, z)
+	#			= I(y; x, z) - I(y; z)
+	xz_d = None if (x_d is None and z_d is None) else z_d if x_d is None else x_d if z_d is None else np.hstack([x_d, z_d])
+	mi_y_xz = least_mixed_mutual_information(np.hstack([x_, z_]), y_.flatten(), x_d=xz_d)
+	mi_y_z = least_mixed_mutual_information(z_, y_.flatten(), x_d=x_d)
+
+	return max(mi_y_xz-mi_y_z, 0.0)
 
 
 

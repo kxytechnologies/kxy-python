@@ -72,7 +72,7 @@ inputs (irrespective of the classification model)?
 .. code-block:: python
 
 	>>> df.classification_feasibility('Is Fake')
-	0.855179
+	3.56
 
 The higher the number is relative to the entropy of the responsee, the better. A value of 0
 means no model can successfully solve this classification problem using provided inputs, no
@@ -82,7 +82,7 @@ looking for more relevant dataset to use as inputs, rather than increasing model
 .. code-block:: python
 
 	>>> kxy.discrete_entropy(df['Is Fake'].values)
-	0.686998
+	0.69
 
 
 Pre-Learning: Input Importance
@@ -95,22 +95,42 @@ and reduces time wasted improving models fitted on irrelevant inputs.
 
 .. code-block:: python
 
-	>>> importance_df = df.input_importance('Is Fake')
-	>>> importance_df
+	>>> importance_df_1 = df.individual_input_importance('Is Fake')
+	>>> importance_df_1
 	      input importance normalized_importance
 	0  Variance       1.93                  0.94
 	1  Skewness       0.13                  0.06
-	2   Entropy          0                     0
-	3  Kurtosis          0                     0
-	>>> importance_df.plot.bar(x='input', y='importance', rot=0)
-	
+	2   Entropy       0.00                  0.00
+	3  Kurtosis       0.00                  0.00
+	>>> importance_df_2 = df.incremental_input_importance('Is Fake')
+	>>> importance_df_2
+	      input selection_order incremental_importance normalized_incremental_importance
+	0  Variance               1                   1.89                              0.65
+	1  Skewness               2                   0.10                              0.03
+	2  Kurtosis               3                   0.91                              0.32
+	3   Entropy               4                   0.00                              0.00
+	>>> importance_df_1 = importance_df_1.set_index(['input'])
+	>>> importance_df_2 = importance_df_2.set_index(['input'])
+	>>> importance_df = pd.concat([importance_df_1, importance_df_2], axis=1)
+	>>> importance_df.reset_index(inplace=True)
+	>>> importance_df = importance_df.rename(columns={\
+	... 	'individual_importance': 'Individual Importance', \
+	... 	'incremental_importance': 'Incremental Importance', \
+	... 	'index': 'Input', 'selection_order': 'Selection Order'})
+	>>> importance_df = importance_df[['Input', 'Individual Importance', \
+	... 	'Incremental Importance']]
+	>>> importance_df = importance_df.sort_values(by=['Incremental Importance'], ascending=True)
+	>>> importance_df[['Input', 'Individual Importance', 'Incremental Importance']].\
+	... 	plot.bar(x='Input', rot=0)
+
 
 .. figure:: ../../../images/bn_importance.png
-	:width: 500px
+	:width: 550px
 	:align: center
-	:height: 300px
+	:height: 400px
 	:alt: Importance bar plot
 	:figclass: align-center
+
 
 
 Learning
@@ -152,13 +172,13 @@ Back to our bank note example, given how high an out-of-sample accuracy we got, 
 
 	>>> test_df.classification_suboptimality('prediction', 'Is Fake', \
 	... 	discrete_input_columns=(), continuous_input_columns=())
-	0.012520
+	2.52
 	>>> train_df.classification_feasibility('Is Fake')
-	0.557628
+	0.00
 
 As it turns out, a simple logistic regression allows us to extract 98% of the intrinsic value there is in using the 3 inputs above to determmine whether a bank note is fake. Thus, using a nonlinear model might not yield the highest ROI. 
 
-That a nonlinear model would not perform materially better than a linear model is consistent with the visualization below, where it can be seen that a curve would not necessarily do a much better job at separating geniune (green) from fake (red) notes than a straight line.
+That a nonlinear model would not perform materially better than a linear model is consistent with the visualization below, where it can be seen that a curved boundary would not necessarily do a much better job at separating geniune (green) from fake (red) notes than a straight line.
 
 
 .. code-block:: python
@@ -184,18 +204,19 @@ That a nonlinear model would not perform materially better than a linear model i
 
 
 
+
 Regression
 ^^^^^^^^^^
 
 .. code-block:: python
 
-	>>> # Regression: 
 	>>> df = kxy.read_csv('http://archive.ics.uci.edu/ml/machine-learning-databases/00243/yacht_hydrodynamics.data', \
-		sep='[ ]{1,2}', names=['Longitudinal Position', 'Prismatic Coeefficient', 'Length-Displacement', \
-		'Beam-Draught Ratio', 'Length-Beam Ratio', 'Froude Number', 'Residuary Resistance'])
+	...		sep='[ ]{1,2}', names=['Longitudinal Position', 'Prismatic Coeefficient', 'Length-Displacement', \
+	...		'Beam-Draught Ratio', 'Length-Beam Ratio', 'Froude Number', 'Residuary Resistance'])
 	>>> df.rename(columns={col: col.title() for col in df.columns}, inplace=True)
 	>>> print(df)
-    Longitudinal Position  Prismatic Coeefficient  Length-Displacement  Beam-Draught Ratio  Length-Beam Ratio  Froude Number  Residuary Resistance
+
+	Longitudinal Position  Prismatic Coeefficient  Length-Displacement  Beam-Draught Ratio  Length-Beam Ratio  Froude Number  Residuary Resistance
 	0                     -2.3                   0.568                 4.78                3.99               3.17          0.125                  0.11
 	1                     -2.3                   0.568                 4.78                3.99               3.17          0.150                  0.27
 	2                     -2.3                   0.568                 4.78                3.99               3.17          0.175                  0.47
@@ -227,8 +248,8 @@ Pre-Learning
 	>>> print(importance_df)
 	                    input importance normalized_importance
 	0           Froude Number     1.8194                0.9975
-	1     Length-Displacement     0.0018                 0.001
-	2   Longitudinal Position      0.001                0.0005
+	1     Length-Displacement     0.0018                0.0010
+	2   Longitudinal Position     0.0010                0.0005
 	3      Beam-Draught Ratio     0.0009                0.0005
 	4  Prismatic Coeefficient     0.0007                0.0004
 	5       Length-Beam Ratio     0.0002                0.0001

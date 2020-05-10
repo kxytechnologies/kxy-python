@@ -8,15 +8,18 @@ the power of the KXY API within the comfort of their favorite data structure.
 
 from functools import lru_cache, wraps
 from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pandas as pd
 
-from kxy.api.core import least_total_correlation, spearman_corr
+from kxy.api.core import least_total_correlation, spearman_corr, least_continuous_conditional_mutual_information
 from kxy.api import solve_copula_async
-from kxy.classification import classification_feasibility, classification_suboptimality
+from kxy.classification import classification_feasibility, classification_suboptimality, \
+	classification_input_incremental_importance
 from kxy.finance import information_adjusted_beta, information_adjusted_correlation
-from kxy.regression import regression_feasibility, regression_suboptimality, regression_additive_suboptimality
+from kxy.regression import regression_feasibility, regression_suboptimality, regression_additive_suboptimality, \
+	regression_input_incremental_importance
 
 from .decorators import decorate_methods, decorate_all_methods
 
@@ -31,6 +34,24 @@ def cast_to_kxy_dataframe(method):
 		if isinstance(res, pd.DataFrame):
 			return DataFrame(data=res.values, columns=res.columns, index=res.index)
 		return res
+
+	return wrapper
+
+
+def pre_solve(method):
+	"""
+	Decorator casting the return of a method to kxy.DataFrame when it returns pd.DataFrame.
+	"""
+	@wraps(method)
+	def wrapper(*args, **kwargs):
+		obj = args[0]
+		has_pre_solved = getattr(obj, 'has_pre_solved', False)
+		if not has_pre_solved:
+			setattr(obj, 'has_pre_solved', True)
+			obj.pre_solve_thread = Thread(target=obj._pre_solve)
+			obj.pre_solve_thread.start()
+
+		return method(*args, **kwargs)
 
 	return wrapper
 
@@ -51,6 +72,10 @@ class _iAtIndexer(pd.core.indexing._iAtIndexer):
 class _AtIndexer(pd.core.indexing._AtIndexer):
 	pass
 
+# @decorate_methods(pre_solve, include=['regression_feasibility', 'classification_feasibility', \
+# 	'classification_suboptimality', 'regression_suboptimality', 'regression_additive_suboptimality', \
+# 	'classification_input_incremental_importance', 'regression_input_incremental_importance', \
+# 	'individual_input_importance'])
 @decorate_methods(cast_to_kxy_dataframe, include=[\
 	'__add__', '__sub__', '__mul__', '__div__', '__floordiv__', '__truediv__', '__mod__', '__pow__', \
 	'__iadd__', '__isub__', '__imul__', '__idiv__', '__ifloordiv__', '__imod__', '__ipow__', \
@@ -90,7 +115,7 @@ class DataFrame(pd.DataFrame):
 
 		.. seealso::
 
-			:ref:`kxy.regression.pre_leanring.regression-feasibility <regression-feasibility>`.
+			:ref:`kxy.regression.pre_learning.regression-feasibility <regression-feasibility>`.
 
 
 		Parameters
@@ -115,11 +140,37 @@ class DataFrame(pd.DataFrame):
 			else list(input_columns)
 		assert label_column not in input_columns, "The output cannot be a input"
 
-		input_importance = self.input_importance(label_column, input_columns=input_columns,\
+		input_importance = self.individual_input_importance(label_column, input_columns=input_columns,\
 			problem='regression')
 		input_sorted_by_importance = input_importance['input'].values
 
 		return regression_feasibility(self[input_sorted_by_importance].values, self[label_column].values)
+
+
+
+
+	def adjust_quantized_values(self):
+		"""
+		Add a negligible random gitter to columns that are continuous but quantized in an attempt 
+		to make observations unique and to avoid theoretical incongruities.
+		"""
+		previously_adjusted = getattr(self, 'previously_adjusted', False)
+		if not previously_adjusted:
+			random_state = np.random.RandomState(0)
+			for col in self.columns:
+				if self.is_discrete(col):
+					continue
+
+				x = self[col].values.copy()
+				sx = np.unique(x)
+				dx = min(np.min(sx[1:]-sx[:-1])/100.0, 0.00001)
+				eps = random_state.rand(*x.shape)*dx
+				x += eps
+				self[col] = x
+
+		setattr(self, 'previously_adjusted', True)
+
+
 
 
 	def classification_feasibility(self, label_column, discrete_input_columns=(), \
@@ -135,7 +186,7 @@ class DataFrame(pd.DataFrame):
 
 		.. seealso::
 
-			:ref:`kxy.classification.pre_leanring.classification_feasibility <classification-feasibility>`.
+			:ref:`kxy.classification.pre_learning.classification_feasibility <classification-feasibility>`.
 
 		Parameters
 		----------
@@ -151,6 +202,7 @@ class DataFrame(pd.DataFrame):
 		f : float
 			The feasibility score in :math:`[0, \\infty]`. The larger the better.
 		"""
+		self.adjust_quantized_values()
 		assert label_column not in discrete_input_columns, "The output cannot be a input"
 		assert label_column not in continuous_input_columns, "The output cannot be a input"
 
@@ -225,7 +277,7 @@ class DataFrame(pd.DataFrame):
 		"""
 		assert label_column not in discrete_input_columns, "The output cannot be a input"
 		assert label_column not in continuous_input_columns, "The output cannot be a input"
-
+		self.adjust_quantized_values()
 		continuous_input_columns = [col for col in self.columns if col not in (label_column, prediction_column) \
 			and not self.is_discrete(col)] if continuous_input_columns == () else list(continuous_input_columns)
 		assert len(continuous_input_columns) > 0, "Continuous inputs are required"
@@ -239,8 +291,9 @@ class DataFrame(pd.DataFrame):
 
 
 
-	def input_importance(self, label_column, input_columns=(), problem=None):
+	def individual_input_importance(self, label_column, input_columns=(), problem=None):
 		"""
+		.. _dataframe-input-importance:
 		Calculates the importance of each input in the input set at solving the supervised
 		learning problem where the label is defined by the label_column.
 
@@ -255,8 +308,8 @@ class DataFrame(pd.DataFrame):
 
 		.. seealso::
 
-			* :ref:`kxy.classification.pre_leanring.classification_feasibility <classification-feasibility>`
-			* :ref:`kxy.classification.pre_leanring.regression_feasibility <regression-feasibility>`
+			* :ref:`kxy.classification.pre_learning.classification_feasibility <classification-feasibility>`
+			* :ref:`kxy.classification.pre_learning.regression_feasibility <regression-feasibility>`
 
 
 		Parameters
@@ -274,7 +327,7 @@ class DataFrame(pd.DataFrame):
 		Returns
 		-------
 		importance : DataFrame
-			A dataframe with as input column, an importance column, and a normalized importance column.
+			A dataframe with an input column, an individual importance column, and a normalized individual importance column.
 
 		Raises
 		------
@@ -291,27 +344,37 @@ class DataFrame(pd.DataFrame):
 		if problem is None:
 			problem = 'classification' if self.is_discrete(label_column) else 'regression'
 
-		if problem == 'classification':
-			importance = {col: classification_feasibility(\
-							None, self[label_column].values, x_d=self[col].values) if self.is_discrete(col) else \
-							   classification_feasibility(self[col].values, self[label_column].values, x_d=None) \
-							for col in input_columns}
 
-		else:
-			importance = {col: regression_feasibility(\
-				self[col].values, self[label_column].values) if not self.is_categorical(col) else \
-				classification_feasibility(self[label_column].values, self[col].values, x_d=None) \
-				for col in input_columns}
+		importance = {}
+		with ThreadPoolExecutor(max_workers=10) as p:
+			args = [(col, label_column, problem) for col in input_columns]
+			for imp in p.map(self.__individual_input_importance, args):
+				importance.update(imp)
 
 		total_importance = np.sum([importance[col] for col in importance.keys() if importance[col]])
 		scale = 1./total_importance if total_importance > 0. else 0.0
 
 		importance_df = DataFrame({
 			'input': [k for k, v in sorted(importance.items(), key=lambda item: -item[1])], \
-			'importance': [v for k, v in sorted(importance.items(), key=lambda item: -item[1])], \
-			'normalized_importance': [v*scale for k, v in sorted(importance.items(), key=lambda item: -item[1])]})
+			'individual_importance': [v for k, v in sorted(importance.items(), key=lambda item: -item[1])], \
+			'normalized_individual_importance': [v*scale for k, v in sorted(importance.items(), key=lambda item: -item[1])]})
 
 		return importance_df
+
+
+	def __individual_input_importance(self, args):
+		col, label_column, problem = args
+		if problem == 'classification':
+			self.adjust_quantized_values()
+			return {col: classification_feasibility(\
+							None, self[label_column].values, x_d=self[col].values) if self.is_discrete(col) else \
+							   classification_feasibility(self[col].values, self[label_column].values, x_d=None)}
+
+		else:
+			return {col: regression_feasibility(\
+				self[col].values, self[label_column].values) if not self.is_categorical(col) else \
+				classification_feasibility(self[label_column].values, self[col].values, x_d=None)}
+
 
 
 	def is_discrete(self, column):
@@ -326,7 +389,7 @@ class DataFrame(pd.DataFrame):
 
 	def is_categorical(self, column):
 		"""
-		Determinee whether the input column is not numeric.
+		Determine whether the input column is not numeric.
 		"""
 		return not np.can_cast(self[column].values, float)
 
@@ -635,6 +698,231 @@ class DataFrame(pd.DataFrame):
 		
 	
 
+	def regression_input_incremental_importance(self, label_column, input_columns=()):
+		"""
+		Quantifies how important each input is at solving a regression problem,
+		taking into possible information redundancy between inputs.
+
+		
+		.. note::
+
+			The incremental importance of input :math:`x` for predicting label :math:`y` once we already
+			know inputs :math:`z` is defined as the conditional mutual information :math:`I(y; x|z)`.
+
+			We first select the column with the highest mutual information with the label. Then we 
+			sequentially select, among all remaining input columns, the one with the highest conditional mutual
+			information with the label, conditional on all previously selected inputs, until there is no
+			input left to select.
+
+		.. important::
+
+			This function only supports continuous inputs.
+
+
+		.. seealso::
+
+			* :ref:`kxy.data.dataframe.DataFrame.individual_input_importance <dataframe-input-importance>`
+			* :ref:`kxy.regression.pre_learning.regression_input_incremental_importance <regression-input-incremental-importance>`
+
+
+
+		Parameters
+		----------
+		label_column : str
+			The name of the column to use as label.
+		input_columns : set, optional
+			The set of columns to as inputs. When input_columns is the empty set,
+			all columns except for label_column are used as inputs.
+		problem : str or None (default), optional
+			The type of supervised learning problem. One of None (default), 'classification'
+			or 'regression'. When problem is None, the supervised learning problem is inferred
+			based on whether labels are numeric and the percentage of distinct labels.
+
+		Returns
+		-------
+		importance : DataFrame
+			A dataframe with an input column, an incremental importance column, a normalized incremental importance column, 
+			and a column with the order in which variables were selected.
+
+		Raises
+		------
+		AssertionError
+			If :code:`label_column` is in :code:`input_columns`.
+		"""
+		input_columns = list(set(self.columns)-set([label_column])) if input_columns == () \
+			else list(input_columns)
+
+		res = {}
+		order = {} # Order in which inputs where selected
+		conditions = []
+		continuous_inputs = [col for col in input_columns if not self.is_categorical(col)]
+
+		while len(continuous_inputs) > 0:
+			importance = {}
+			with ThreadPoolExecutor(max_workers=10) as p:
+				args = [(col, label_column, conditions) for col in continuous_inputs]
+				for imp in p.map(self.__regression_input_incremental_importance, args):
+					importance.update(imp)
+
+			for key, value in sorted(importance.items(), key=lambda x: -x[1]):
+				res[key] = value
+				continuous_inputs.remove(key)
+				conditions += [key]
+				order[key] = len(conditions)
+				break
+
+		# Step 3: Normalize and format as a dataframe.
+		total_importance = np.sum([res[col] for col in res.keys() if res[col]])
+		scale = 1./total_importance if total_importance > 0. else 0.0
+
+		importance_df = DataFrame({
+			'input': [k for k, v in sorted(order.items(), key=lambda item: item[1])], \
+			'selection_order': [v for k, v in sorted(order.items(), key=lambda item: item[1])], \
+			'incremental_importance': [res[k] for k, v in sorted(order.items(), key=lambda item: item[1])], \
+			'normalized_incremental_importance': [res[k]*scale for k, v in sorted(order.items(), key=lambda item: item[1])]})
+
+		return importance_df
+
+
+
+	def __regression_input_incremental_importance(self, args):
+		col, label_column, conditions = args
+
+		if len(conditions) == 0:
+			return {col: regression_feasibility(self[col].values, self[label_column].values)}
+
+		return {col: regression_input_incremental_importance(\
+				self[col].values, self[label_column].values, self[conditions].values)}
+
+
+
+
+
+
+
+	def classification_input_incremental_importance(self, label_column, input_columns=()):
+		"""
+		Quantifies how important each input is at solving a classification problem,
+		taking into possible information redundancy between inputs.
+
+		
+		.. note::
+
+			The incremental importance of input :math:`x` for predicting label :math:`y` once we already
+			know inputs :math:`z` is defined as the conditional mutual information :math:`I(y; x|z)`.
+
+			We first select the column with the highest mutual information with the label. Then we 
+			sequentially select, among all remaining input columns, the one with the highest conditional mutual
+			information with the label, conditional on all previously selected inputs, until there is no
+			input left to select.
+
+
+		.. seealso::
+
+			* :ref:`kxy.data.dataframe.DataFrame.individual_input_importance <dataframe-input-importance>`
+			* :ref:`kxy.classification.pre_learning.classification_input_incremental_importance <classification-input-incremental-importance>`
+
+
+
+		Parameters
+		----------
+		label_column : str
+			The name of the column to use as label.
+		input_columns : set, optional
+			The set of columns to as inputs. When input_columns is the empty set,
+			all columns except for label_column are used as inputs.
+
+
+		Returns
+		-------
+		importance : DataFrame
+			A dataframe with an input column, an incremental importance column, a normalized incremental importance column, 
+			and a column with the order in which variables were selected.
+		Raises
+		------
+		AssertionError
+			If :code:`label_column` is in :code:`input_columns`.
+		"""
+		self.adjust_quantized_values()
+		input_columns = list(set(self.columns)-set([label_column])) if input_columns == () \
+			else list(input_columns)
+
+		res = {}
+		order = {} # Order in which inputs where selected
+		categorical_conditions = []
+		continuous_conditions = []
+
+		while len(input_columns) > 0:
+			importance = {}
+			with ThreadPoolExecutor(max_workers=10) as p:
+				args = [(col, label_column, continuous_conditions, categorical_conditions) for col in input_columns]
+				for imp in p.map(self.__classification_input_incremental_importance, args):
+					importance.update(imp)
+
+			for key, value in sorted(importance.items(), key=lambda x: -x[1]):
+				res[key] = value
+				input_columns.remove(key)
+				if self.is_discrete(key):
+					categorical_conditions += [key]
+				else:
+					continuous_conditions += [key]
+				order[key] = len(categorical_conditions) + len(continuous_conditions)
+				break
+		
+		# Step 3: Normalize and format as a dataframe.
+		total_importance = np.sum([res[col] for col in res.keys() if res[col]])
+		scale = 1./total_importance if total_importance > 0. else 0.0
+
+		importance_df = DataFrame({
+			'input': [k for k, v in sorted(order.items(), key=lambda item: item[1])], \
+			'selection_order': [v for k, v in sorted(order.items(), key=lambda item: item[1])], \
+			'incremental_importance': [res[k] for k, v in sorted(order.items(), key=lambda item: item[1])], \
+			'normalized_incremental_importance': [res[k]*scale for k, v in sorted(order.items(), key=lambda item: item[1])]})
+
+		return importance_df
+
+
+
+	def __classification_input_incremental_importance(self, args):
+		col, label_column, continuous_conditions, categorical_conditions = args
+
+		if len(continuous_conditions) == 0 and len(categorical_conditions) == 0:
+			return {col: classification_feasibility(\
+						None, self[label_column].values, x_d=self[col].values) if self.is_discrete(col) else \
+						   classification_feasibility(self[col].values, self[label_column].values, x_d=None)}
+
+		return {col: \
+				classification_input_incremental_importance(\
+					None, self[label_column].values, None if len(continuous_conditions) == 0 \
+					else self[continuous_conditions].values, x_d=self[col].values, \
+					z_d=None if len(categorical_conditions) == 0 else self[categorical_conditions].values) \
+					if self.is_discrete(col) else
+				classification_input_incremental_importance(\
+					self[col].values, self[label_column].values, None if len(continuous_conditions) == 0 \
+					else self[continuous_conditions].values, x_d=None, \
+					z_d=None if len(categorical_conditions) == 0 else self[categorical_conditions].values)}
+
+
+
+	def incremental_input_importance(self, label_column, input_columns=()):
+		"""
+		Returns DataFrame.classification_input_incremental_importance or 
+		DataFrame.regression_input_incremental_importance depending on whether the label 
+		is categorical or continuous
+		"""
+		problem = 'classification' if self.is_discrete(label_column) else 'regression'
+
+		if problem == 'classification':
+			self.adjust_quantized_values()
+			return self.classification_input_incremental_importance(label_column, input_columns=input_columns)
+
+		else:
+			return self.regression_input_incremental_importance(label_column, input_columns=input_columns)
+
+
+
+	def __hash__(self):
+		return hash(self.to_string())
 
 
 @cast_to_kxy_dataframe

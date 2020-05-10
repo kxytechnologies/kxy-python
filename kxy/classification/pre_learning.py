@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import numpy as np
 
-from kxy.api.core import least_mixed_mutual_information, discrete_mutual_information
+
+from kxy.api.core import least_mixed_mutual_information, discrete_mutual_information, \
+	least_mixed_conditional_mutual_information
 
 
 def classification_difficulty(x_c, y, x_d=None):
@@ -80,5 +83,53 @@ def classification_feasibility(x_c, y, x_d=None):
 		return discrete_mutual_information(x_d, y)
 
 	return least_mixed_mutual_information(x_c, y, x_d=x_d)
+
+
+
+
+def classification_input_incremental_importance(x_c, y, z_c, x_d=None, z_d=None):
+	"""
+	.. _classification-input-incremental-importance:
+	Quantifies the value of adding input :math:`x=(x_c, x_d)` to inputs :math:`z=(z_c, z_d)` for forecasting :math:`y` as the conditional 
+	mutual information :math:`I(y; x|z)`.
+
+
+	Parameters
+	----------
+	x_c : (n, d) np.array
+		n i.i.d. draws from the generating distribution of candidate continuous inputs.
+	z_c : (n, d) np.array
+		n i.i.d. draws from the generating distribution of existing continuous conditions.
+	x_d : (n, d) np.array or None (default), optional
+		n i.i.d. draws from the generating distribution of candidate categorical inputs.
+	z_d : (n, d) np.array or None (default), optional
+		n i.i.d. draws from the generating distribution of existing categorical conditions.
+	y : (n,) np.array
+		n i.i.d. draws from the (categorical) labels generating distribution, sampled
+		jointly with x.
+
+
+	Returns
+	-------
+	i : float
+		The incremental importance.
+
+
+	.. seealso:: 
+
+		:ref:`kxy.classification.pre_learning.classification_feasibility <classification-feasibility>`
+	"""
+	assert len(y.shape) == 1 or y.shape[1] == 1, 'y should be a one dimensional numpy array'
+
+	x_ = np.reshape(x_c, (len(x_c), 1)) if len(x_c.shape) == 1 else x_c.copy()
+	z_ = np.reshape(z_c, (len(z_c), 1)) if len(z_c.shape) == 1 else z_c.copy()
+
+	cmi = least_mixed_conditional_mutual_information(\
+		np.hstack((x_, np.abs(x_-x_.mean(axis=0)))), y, \
+		np.hstack((z_, np.abs(z_-z_.mean(axis=0)))), x_d=x_d, z_d=z_d)
+
+	return cmi
+
+
 
 

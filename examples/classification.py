@@ -6,6 +6,8 @@ import os
 if os.environ.get('KXY_API_KEY', None) is None:
 	os.environ['KXY_API_KEY'] = 'YOUR API KEY GOES HERE'
 import pylab as plt
+import pandas as pd
+
 import kxy
 
 if __name__ == '__main__':
@@ -20,14 +22,32 @@ if __name__ == '__main__':
 	"""
 	# Pre-Learning: How feasible or solvable is this problem? Are inputs any useful?
 	print('Overall Classification Feasibility: %.2f nats' % df.classification_feasibility('Is Fake'))
+	print('Entropy: %.6f' % kxy.discrete_entropy(df['Is Fake'].values))
 
 	# Pre-Learning: How useful is each input individually?
-	importance_df = df.input_importance('Is Fake')
+	importance_df_1 = df.individual_input_importance('Is Fake')
 	print('Feature Importance')
-	print(importance_df.round(2))
-	ax = importance_df.plot.bar(x='input', y='importance', rot=0)
-	ax.set_ylabel('Feature Importance (nats)')
+	print(importance_df_1.round(2))
+	importance_df_1 = importance_df_1.set_index(['input'])
+
+	# Incremental importance
+	importance_df_2 = df.incremental_input_importance('Is Fake')
+	print(importance_df_2.round(2))
+	importance_df_2 = importance_df_2.set_index(['input'])
+
+	importance_df = pd.concat([importance_df_1, importance_df_2], axis=1)
+	importance_df.reset_index(inplace=True)
+	importance_df = importance_df.rename(columns={'individual_importance': 'Individual Importance', \
+		'incremental_importance': 'Incremental Importance', 'index': 'Input', 'selection_order': 'Selection Order'})
+	importance_df = importance_df[['Input', 'Individual Importance', 'Incremental Importance', 'Selection Order']]
+	importance_df = importance_df.sort_values(by=['Selection Order'], ascending=True)
+	ax = importance_df[['Input', 'Individual Importance', 'Incremental Importance']].plot.bar(x='Input', rot=0)
+	ax.set_ylabel('Importance (nats)')
 	plt.savefig('/Users/yl/Dropbox/KXY Technologies, Inc./GitHubCodeBase/kxy-python/docs/images/bn_importance.png', dpi=500)
+
+	# ax = importance_df.plot.bar(x='input', y='incremental_importance', rot=0)
+	# ax.set_ylabel('Input Incremental Importance (nats)')
+	# plt.savefig('/Users/yl/Dropbox/KXY Technologies, Inc./GitHubCodeBase/kxy-python/docs/images/bn_incremental_importance.png', dpi=500)
 
 
 	"""
@@ -57,7 +77,7 @@ if __name__ == '__main__':
 	POST-LEARNING
 	"""
 	# How suboptimal is this logistic regression model?
-	print('Suboptimality: %.2f' %test_df.classification_suboptimality('prediction', 'Is Fake', discrete_input_columns=(), \
+	print('Suboptimality: %.6f' %test_df.classification_suboptimality('prediction', 'Is Fake', discrete_input_columns=(), \
 				continuous_input_columns=()))
 	# How does it compare to the best case scenario
 	print('Training Classification Feasibility: %.2f nats' % train_df.classification_feasibility('Is Fake'))

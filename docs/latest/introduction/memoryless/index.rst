@@ -350,8 +350,9 @@ Similarly, we can define the **condition mutual information** between random var
 	I(x; y|z) :&= h(x|z) + h(y|z) - h(x, y|z) \\
 			   &= h(x|z) - h(x|y,z) \\
 			   &= h(y|z) - h(y|x,z) \\
-			   &= h(x, z) + h(y, z) - h(z) - h(x, y, z).
-
+			   &= h(x, z) + h(y, z) - h(z) - h(x, y, z) \\
+			   &= h(x, z) + h(y) - h(x, y, z) - h(y) - h(z) + h(y, z) \\
+			   &= I(y; x, z) - I(y; z).
 
 .. note::
 
