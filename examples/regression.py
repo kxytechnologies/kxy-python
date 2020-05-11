@@ -63,5 +63,5 @@ if __name__ == '__main__':
 	"""
 	# How suboptimal is this linear regression model?
 	print('Additive Suboptimality: %.4f' % test_df.regression_additive_suboptimality('Prediction', label_column))
-
+	print('Suboptimality: %.4f' % test_df.regression_suboptimality('Prediction', label_column))
 

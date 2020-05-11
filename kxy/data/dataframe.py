@@ -13,7 +13,8 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pandas as pd
 
-from kxy.api.core import least_total_correlation, spearman_corr, least_continuous_conditional_mutual_information
+from kxy.api.core import least_total_correlation, spearman_corr, least_continuous_conditional_mutual_information, \
+	scalar_continuous_entropy
 from kxy.api import solve_copula_async
 from kxy.classification import classification_feasibility, classification_suboptimality, \
 	classification_input_incremental_importance
@@ -578,14 +579,24 @@ class DataFrame(pd.DataFrame):
 
 			:ref:`kxy.regression.post_learning.regression_suboptimality <regression-suboptimality>`
 		"""
+		self.adjust_quantized_values()
 		assert not self.is_categorical(prediction_column), "The prediction column should not be categorical"
 		assert not self.is_categorical(label_column), "The label column should not be categorical"
 
 		input_columns = [_ for _ in self.columns if _ not in (prediction_column, label_column) ] \
 			if input_columns == () else list(input_columns)
 
-		return regression_suboptimality(self[prediction_column].values, self[label_column].values, \
+		# Direct estimation of SO
+		result_1 = regression_suboptimality(self[prediction_column].values, self[label_column].values, \
 			self[input_columns].values)
+
+		# SO = ASO + h(y) - h(e)
+		result_2 = self.regression_additive_suboptimality(prediction_column, label_column, \
+			input_columns=input_columns)
+		e = (self[prediction_column]-self[label_column]).values
+		result_2 += scalar_continuous_entropy(self[label_column].values) - scalar_continuous_entropy(e)
+
+		return max(result_1, result_2)
 
 
 

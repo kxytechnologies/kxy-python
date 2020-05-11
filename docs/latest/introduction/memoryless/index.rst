@@ -15,7 +15,7 @@ how fancy or deep can infer :math:`y` from :math:`x`, and any attempt to do so w
 
 1 - Pre-Learning
 ----------------
-This waste of resources would be avoided if one would quantify how informative datasets intended to be used as inputs are about our label of interest :math:`y` prior to, and independently from any modeling, incluing features engineering. This endeavour is what we refer to as **pre-learning**.
+This waste of resources would be avoided if one would quantify how informative datasets intended to be used as inputs are about our label of interest :math:`y` prior to, and independently from any modeling, including feature engineering. This endeavour is what we refer to as **pre-learning**.
 
 .. admonition:: Definition
 
@@ -50,12 +50,12 @@ Our approach to quantifying the information content of a random variable and how
 
 1 - Quantifying Information
 ---------------------------
-The canonical way of quantifying the information content of a probability distribution :math:`\mathbb{P}` having density :math:`p` with respect to a base measure :math:`\mu` is its **entropy**, defined as
+The canonical way of quantifying the information content of a probability distribution :math:`\mathbb{P}_x` having density :math:`p` with respect to a base measure :math:`\mu` is its **entropy**, defined as
 
 .. math::
 	:label: rel_ent
 
-	h(\mathbb{P}) := - \int p(x) \log p(x)  d\mu(x).
+	h\left(\mathbb{P}_x\right) := - \int p(x) \log p(x)  d\mu(x).
 
 This notion extends to random variables in that the entropy of a random variable is, by definition, the entropy of its probability distribution
 
@@ -63,11 +63,11 @@ This notion extends to random variables in that the entropy of a random variable
 
 	h(x) := h(\mathbb{P}_x).
 
-When the logarithm above is the natural logarithm, which will be the case throughout unless stated otherwise, the unit of the entropy is nats. When the binary logarithm is used instead, the entropy is expressed in bits.
+When the logarithm above is the natural logarithm, which will be the case throughout unless stated otherwise, the unit of the entropy is `nats`. When the binary logarithm is used instead, the entropy is expressed in `bits`.
 
 a) Shannon Entropy
 ^^^^^^^^^^^^^^^^^^
-For a categorical random variable :math:`x` taking :math:`q` distinct values, the `i`-th with probability :math:`p_i`, the base measure is the counting measure, the density is the probability mass function (pmf), and the entropy reads
+For a categorical random variable :math:`x` taking :math:`q` distinct values, the `i`-th with probability :math:`p_i`, the base measure is the counting measure, the density is the probability mass function (pmf) :math:`i \to p_i`, and the entropy reads
 
 .. math::
 	:label: sha_ent
@@ -96,7 +96,7 @@ When the random variable :math:`x` is continuous, takes values in :math:`\mathca
 
 The base measure in this case is the Lebesgue measure, and :math:`p` is otherwise known as the `probability density function` (pdf) of :math:`x`. 
 
-The differential entropy enjoys much of the same properties as Shannon's entropy, plus some scaling propertiees. A notable exception, however, is that `it is not necessarily non-negative`.
+The differential entropy enjoys much of the same properties as Shannon's entropy, plus some scaling properties. A notable exception, however, is that `it is not necessarily non-negative`.
 
 .. admonition:: Properties
 	
@@ -110,42 +110,44 @@ The differential entropy enjoys much of the same properties as Shannon's entropy
 	#. :math:`h(Ax) = h(x) + \log |\text{det}(A)|` for any deterministic invertible square matrix :math:`A`.
 
 
-The fact that thee differential entropy can be negative warrants a slight detour to provide an intuition for why it is an appropriate measure of information content.
+The fact that the differential entropy can be negative warrants a slight detour to provide an intuition for why it is an appropriate measure of information content.
 
 
 c) Typical Sets
 ^^^^^^^^^^^^^^^
-Let :math:`x^{(n)}` be n i.i.d. draws from a (continuous or categorical) distribution :math:`\pi` with range :math:`\mathcal{C}` and (Shannon or differential) entropy :math:`h(\pi)`, and let :math:`p\left(x^{(n)}\right)` their likelihood. It follows from the weak law of large numbers that :math:`-\frac{1}{n} \log p\left(x^{(n)}\right)` converges in probability to :math:`h(\pi)`, meaning that
+Let :math:`x^{(n)}` be n i.i.d. draws from a (continuous or categorical) distribution :math:`\mathbb{P}_x` with range :math:`\mathcal{C}` and (Shannon or differential) entropy :math:`h(\mathbb{P}_x)`, and let :math:`p\left(x^{(n)}\right)` their likelihood. It follows from the weak law of large numbers that :math:`-\frac{1}{n} \log p\left(x^{(n)}\right)` converges in probability to :math:`h(\mathbb{P}_x)`, meaning that
 
 .. math::
 
-	\forall \epsilon>0, ~~ \mathbb{P} \left( \left\vert -\frac{1}{n} \log p\left(x^{(n)}\right) - h(\pi) \right\vert > \epsilon \right) \underset{n \to + \infty}{\longrightarrow} 0.
+	\forall \epsilon>0, ~~ \mathbb{P} \left( \left\vert -\frac{1}{n} \log p\left(x^{(n)}\right) - h\left(\mathbb{P}_x\right) \right\vert > \epsilon \right) \underset{n \to + \infty}{\longrightarrow} 0.
 
 	
 Thus, if we define the sets
 
 .. math::
 
-	\mathcal{A}_\epsilon^{(n)} := \left\{ x^{(n)} \in \mathcal{C}^n ~~ \text{s.t.}~~  \left\vert - \frac{1}{n}\log p\left(x^{(n)}\right) - h(\pi) \right\vert \leq \epsilon  \right\}
+	\mathcal{A}_\epsilon^{(n)} := \left\{ x^{(n)} \in \mathcal{C}^n ~~ \text{s.t.}~~  \left\vert - \frac{1}{n}\log p\left(x^{(n)}\right) - h\left(\mathbb{P}_x\right) \right\vert \leq \epsilon \right\}
 
-then for any :math:`\epsilon>0`, no matter how small, we can always find :math:`n` large enough so that the full sequence :math:`x^{(n)}` lies in :math:`\mathcal{A}_\epsilon^{(n)}` with probability greater than :math:`1-\epsilon`:
+then for any :math:`\epsilon>0`, no matter how small, we can always find :math:`n` large enough so that the full sequence :math:`x^{(n)}` lies in :math:`\mathcal{A}_\epsilon^{(n)}` with probability greater than :math:`1-\epsilon`,
 
 .. math::
 
 	\mathbb{P} \left( x^{(n)} \in \mathcal{A}_\epsilon^{(n)} \right) > 1-\epsilon.
 
-As large enough sequences are very likely to belong to the sets :math:`\mathcal{A}_\epsilon^{(n)}`, they are called the **typical sets** of the distribution :math:`\pi`. Moreover, the size of typical sets can be used as proxy for gauging the information content or variability of a distribution. 
+As large enough sequences are very likely to belong to the sets :math:`\mathcal{A}_\epsilon^{(n)}`, these sets are called the **typical sets of the distribution** :math:`\mathbb{P}_x`. Moreover, the size of typical sets can be used as proxy for gauging the information content or variability of a distribution. 
 
-If we denote :math:`\text{Vol}\left( \mathcal{A}_\epsilon^{(n)}\right)` the volume (resp. cardinality) of :math:`\mathcal{A}_\epsilon^{(n)}` when :math:`\pi` is continuous (resp. categorical), then it can be shown that [*]_ for any :math:`\epsilon > 0` and for any large enough :math:`n`
+If we denote :math:`\text{Vol}\left( \mathcal{A}_\epsilon^{(n)}\right)` the volume (resp. cardinality) of :math:`\mathcal{A}_\epsilon^{(n)}` when :math:`\mathbb{P}_x` is continuous (resp. categorical), then it can be shown that [*]_ for any :math:`\epsilon > 0` and for any large enough :math:`n`
 
 .. math::
 	:label: ent_ineq
 
 
-	(1-\epsilon) e^{n(h(\pi) - \epsilon)} \leq \text{Vol}\left( \mathcal{A}_\epsilon^{(n)}\right) \leq e^{n(h(\pi) + \epsilon)}.
+	(1-\epsilon) e^{n\left[h\left(\mathbb{P}_x\right) - \epsilon\right]} \leq \text{Vol}\left( \mathcal{A}_\epsilon^{(n)}\right) \leq e^{n\left[h\left(\mathbb{P}_x\right) + \epsilon\right]}.
 
 
-Given that we can choose :math:`\epsilon` arbitrarily small, it follows from inequalities :eq:`ent_ineq` that the information content of a continuous (resp. categorical) distribution or random variable increases with its differential (resp. Shannon) entropy. Consequently, the differential entropy, even when negative, measures the information content of a random variable. In fact, :math:`e^{nh(\pi)}` can be interpreted as the number of nats (:math:`1\text{nat}=(1/\log2)\text{bit})` required to encode the sequence :math:`x^{(n)}`, whether the distribution is categorical or continuous.
+Given that we can choose :math:`\epsilon` arbitrarily small, it follows from inequalities :eq:`ent_ineq` that the information content of a continuous (resp. categorical) distribution or random variable increases with its differential (resp. Shannon) entropy. 
+
+Consequently, the differential entropy, even when negative, measures the information content of a random variable. In fact, :math:`e^{nh\left(\mathbb{P}_x \right)}` can be interpreted as the number of nats (:math:`1\text{nat}=(1/\log2) \approx 3.32 \text{bits})` required to encode the sequence :math:`x^{(n)}`, whether the distribution is categorical or continuous.
 
 
 d) Conditional Entropy
@@ -289,7 +291,7 @@ Another perspective on why copulas capture association between random variables 
 
 	c(u_1, \dots, u_d) = \frac{p(x_1, \dots, x_d)}{ \prod_{i=1}^d p(x_i)} = \frac{p\left(x_i \vert \dots, x_j, \dots, i \neq j \right)}{p(x_i)}.
 
-The copula density is the ratio of the actual joint (resp. conditional) density, and the joint (resp. conditional) density had there been no association betweeen coordinates. 
+The copula density is the ratio of the actual joint (resp. conditional) density, and the hypothetical joint (resp. conditional) density had there been no association betweeen coordinates. 
 
 Moreover, the copula-uniform dual distribution is the uniform distribution on the hypercube :math:`[0, 1]^d` if and only if coordinates :math:`x_i` are statistically independent.
 
@@ -392,8 +394,8 @@ When one of the two variables is categorical, for instance :math:`y`, and the ot
 		:label: fund_mi_2
 
 		I(x; y) :&= h(x) - \sum_{i=1}^q p_i h(x|y=i) \\
-	             &= \underbrace{\left[h(u) - \sum_{i=1}^q p_i h(u|y=i) \right]}_{\text{Copula Mutual Information}} + \underbrace{\left[\sum_{j=1}^d h(x_j) - \sum_{i=1}^q p_i h(x_j|y=i) \right]}_{\text{Marginal Mutual Information}} \\
-	             &= I(u; y) + \sum_{j=1}^d I(x_j; y)
+	             &= \underbrace{\left[h(u) - \sum_{i=1}^q p_i h(u|y=i) \right]}_{\text{Copula Mutual Information}} + \underbrace{\left[\sum_{j=1}^d h\left(x_j\right) - \sum_{i=1}^q p_i h\left(x_j|y=i\right) \right]}_{\text{Marginal Mutual Information}} \\
+	             &= I(u; y) + \sum_{j=1}^d I\left(x_j; y\right)
 
 
 A similar result can be obtained for the mutual information between :math:`(x, z)` and :math:`y` when :math:`x` is continuous and :math:`z` and :math:`y` are categorical.
@@ -406,7 +408,7 @@ A similar result can be obtained for the mutual information between :math:`(x, z
 	.. math::
 		:label: fund_mi_3
 
-		I(x, z; y) = I(y; z) + I(u; y|z) + \sum_{j=1}^d I(x_j; y | z).
+		I(x, z; y) = I(y; z) + I(u; y|z) + \sum_{j=1}^d I \left(x_j; y | z\right).
 
 
 Finally, we provide the result when :math:`x` and :math:`y` are continuous and :math:`z` is categorical.
@@ -418,7 +420,7 @@ Finally, we provide the result when :math:`x` and :math:`y` are continuous and :
 	.. math::
 		:label: fund_mi_4
 
-		I(x, z; y) = I(y; z) + I(u_x; u_y | z).
+		I(x, z; y) = I(y; z) + I\left(u_x; u_y | z\right).
 
 
 
@@ -437,18 +439,18 @@ Now that we are equipped with the right tools, we can answer the question that i
 III - Applications
 ==================
 
-In this section we consider memoryless classification and regression problems. We refer the reader to the :ref:`Time Series` section for problems exhiting temporal structures and methods actively attempting to exploit those.
+In this section we consider memoryless classification and regression problems. We refer the reader to the :ref:`Time Series` section for problems exhibiting temporal structures and methods actively and directly attempting to exploit those.
 
 
 1 - Pre-Learning Problems
 -------------------------
 Pre-learning problems are problems arising in the study and selection of datasets to use to solve a supervised learning problem, prior to, and independently from any modeling (or feature engineering).
 
-a) Input Importance
-^^^^^^^^^^^^^^^^^^^
-We consider using an input :math:`x_i` to predict the label :math:`y`. To do so, we need to determine how relevant this input is for the task at hand, prior to and independently from doing any modeling. We do this by computing the mutual information between :math:`x_i` and :math:`y`, in a model-free fashion. 
+a) Individual Input Importance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+We consider using an input :math:`x_i` to predict the label :math:`y`. To do so, we need to determine how relevant this input is on its own for the task at hand, prior to and independently from doing any modeling. We do this by computing the mutual information between :math:`x_i` and :math:`y`, in a model-free fashion. 
 
-Thanks to the invariance of mutual information by invertible transformations, this answer is robust to any (invertible) feature engineering transformation applied to :math:`x_i`. Thus, we may quantify how important an input is for predicting the label of interest prior to, and independent from feature engineering. 
+Thanks to the invariance of mutual information by invertible transformations, this answer is robust to any (invertible) feature engineering transformation applied to :math:`x_i`. Thus, we may quantify how important an input is for predicting the label of interest prior to, and independently from feature engineering. 
 
 We do not need to learn an accurate generative model for :math:`(y, x_i)` as a pre-requisite for quantifying feature importance either. We discuss model-free estimation in depth in section :ref:`IV - Model-Free Estimation`. For now it suffices to say that we will gather nonparametric empirical evidence illustrating the association between :math:`x_i` and :math:`y`, and use as probability distribution for :math:`(x_i, y)` the one,  among all possible probability distributions that are consistent with observed empirical evidence, under which :math:`x_i` is the least informative about :math:`y`.
 
@@ -490,7 +492,7 @@ where :math:`h(x_i | y=j)` is simply the differential entropy (Equation :eq:`dif
 	:height: 550px
 	:figclass: align-center
 
-	Fig 2. Illustration of classification input importance metric.
+	Fig 2. Illustration of classification individual input importance metric.
 
 The entropy of the Gaussian mixture can be found to be :math:`h(x_i) \approx 1.9457`. In Scheme I, the conditional distributions :math:`x_i | y=j` are both Gaussian with standard deviation 1, but different means. Their entropy is :math:`0.5\log \left(2\pi e\right) \approx 1.4189`, which yields an input importance score of :math:`0.5268` nats. In Scheme II on the other hand, the conditional distributions :math:`x_i | y=j` are the same as the unconditional distribution of :math:`x_i`, leading to an input importance score of :math:`0` nat.
 
@@ -504,7 +506,7 @@ In practical terms, a smaller entropy reflects less variability (see section `c)
 
 The best case scenario occurs when the conditional distributions :math:`x_i|y=j` have as little an overlap as possible, for instance when the distribution of the input :math:`x_i` is multi-modal with deep valleys between modes, and :math:`y` indicates the mode cluster to which the associated :math:`x_i` belongs. 
 
-The worst case scenario always occurs when conditional distributions are identical, in which case they ought to be identical to the input unconditional distribution. This point is further illustrated in the animation below, where we vary the mean term :math:`\mu` between :math:`-3` and :math:`3`.
+The worst case scenario always occurs when conditional distributions are identical, in which case they ought to be identical to the input unconditional distribution. This point is further illustrated in the animation below, where we vary the mean term :math:`\mu` between :math:`-3` and :math:`3` and observe the effect on individual input importance.
 
 
 .. figure:: ../../../images/gm_separability_mov.gif
@@ -513,12 +515,12 @@ The worst case scenario always occurs when conditional distributions are identic
 	:height: 550px
 	:figclass: align-center
 
-	Fig 3. Impact of clustering on classification input importance.
+	Fig 3. Impact of clustering on classification individual input importance.
 
 
 ii) Regression
 """"""""""""""
-In regression problems, :math:`y` is continuous. When :math:`x_i` is continuous, the input importance is the negative of the differential entropy of their copula:
+In regression problems, :math:`y` is continuous. When :math:`x_i` is continuous, the individual input importance is the negative of the differential entropy of their copula:
 
 .. admonition:: Important Equation
 
@@ -533,13 +535,49 @@ where :math:`u_{x_i}` (resp. :math:`u_y`) is the copula-uniform dual representat
 When :math:`x_i` is discrete, the input importance is the same as in classification problems with a continuous features (Equation :eq:`fi_cd`), except that :math:`x_i` becomes :math:`y` and vice versa.
 
 
-b) Problem Feasibility
+b) Incremental Input Importance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Despite being a useful indicator of how relevant an input is, `individual input importance` does not paint the full picture. 
+
+Two inputs with very high `individual input importance` scores could be so redundant that using both inputs would add negligible value compared to using only one of the two inputs. When this is the case, it is important to be able to automatically prune such inputs, so as to avoid numerical instabilities such as ill-conditioning and to mitigate overfitting.
+
+Similarly, an input can also have a small utility to predict a label in isolation, while adding value when it comes to predicting the label in conjunction with other inputs. To illustrate this, we consider the toy classification problem in Fig 4.
+
+.. figure:: ../../../images/incremental_input_importance.png
+	:width: 600px
+	:align: center
+	:height: 600px
+	:alt: Illustration of the difference between individual and incremental input importance on a binary classification where an input has complementary usefulness but little usefulness in isolation.
+	:figclass: align-center
+
+	Fig 4. Illustration of the difference between individual and incremental input importance on a binary classification where an input has complementary usefulness but little usefulness in isolation.
+
+
+Clearly, red and green (resp. blue and black) points can hardly be distinguished using input :math:`x` alone. Similarly, red and blue (resp. green and black) points can hardly be distinguished using input :math:`z` alone. However, using input :math:`x` alongside input :math:`z`, all four categories are perfectly distinguishable.
+
+
+To address these limitations, the first input is selected as the input with the highest `individual input importance`, which is also its **incremental input importance** by convention. Remaining inputs are selected one at a time, and the (i+1)-th input is selected as the input with the highest conditional mutual information with the label, given previously selected inputs. Its **incremental input importance** is said conditional mutual information.
+
+
+.. admonition:: Definition
+
+	We define the **incremental input importance** of a set of :math:`d` inputs :math:`(x_1, \dots, x_d)` to predict label :math:`y` as 
+
+	.. math::
+		:label: fi_b
+
+		& \bar{FI}\left(x_{(1)}; y \right) = I\left(y; x_{(1)}\right), ~~ \text{ with } x_{(1)} = \underset{x_i \in \{x_1, \dots, x_d\}}{\text{argmax}}  I(y; x_i) \\
+		& \bar{FI}\left(x_{(i+1)}; y \right) = I\left(y; x_{(i+1)} \vert x_{(1)}, \dots, x_{(i)}  \right) \\ 
+		& \text{with } x_{(i+1)} = \underset{x_i \in \{x_1, \dots, x_d\} - \{x_{(1)}, \dots, x_{(i)}\}}{\text{argmax}} I\left(y; x_i \vert x_{(1)}, \dots, x_{(i)} \right).
+
+
+
+c) Problem Feasibility
 ^^^^^^^^^^^^^^^^^^^^^^
 The feasibility question is the generalization of the input importance question to a collection of inputs. Given :math:`d` inputs :math:`x=(x_1, \dots, x_d)` we would like to know how informative they are, collectively, about a label :math:`y`. 
 
 If the inputs are not informative about our label, no model, no matter how fancy, can successfully predict our label :math:`y` using :math:`x`. In such an event, no model based solely on :math:`x` should be expected to consistently outperform the naive strategy consisting of always predicting that :math:`y` is equal to its mode.
 
-To quantify how useful a set of inputs are collectively at predicting the label of interest, it is not enough to evaluate the importance of each input in isolation. Some inputs might be redundant, leading to a collective informativeness smaller than the sum of the individual input importance scores. Some inputs might be complementary, to the point that their collective informativeness might be greater than the sum of their individual input importance scores.
 
 .. admonition:: Definition
 
@@ -702,7 +740,7 @@ c) Model Explanation
 Understanding how models arrive at their decisions is a key requirement and challenge for many industries. It comes with multiple needs, one of which is understanding what inputs drive the learned model the most, in general, or under specific circumstances.
 
 
-Assessing how much a trained model :math:`\mathcal{M}` relies on a specific input :math:`x_i` on average is identical to the discussion of section :ref:`a) Input Importance`, except that the true label :math:`y` is replaced by the predicted label :math:`y_p=f(x)`:
+Assessing how much a trained model :math:`\mathcal{M}` relies on a specific input :math:`x_i` on average is identical to the discussion of section :ref:`a) Individual Input Importance`, except that the true label :math:`y` is replaced by the predicted label :math:`y_p=f(x)`:
 
 .. admonition:: Important Equation
 
@@ -742,13 +780,13 @@ Often times, models will not directly make use of the category variable :math:`z
 
 	\left\vert I(x_i; y_p) - I(x_i; y_p | z=j) \right\vert.
 
-If this difference is not close to :math:`0`, the data scientist should ask herself whether it is fair or ethical to treat individuals in group :math:`j` differently from another individual with the same input characteristic :math:`x_i`. If the answer is no, then chances are that the empirical distribution :math:`(x_i, y) | z=j` as per the training dataset was not representative of the true data generating distribution :math:`x_i, y`, in which case the data scientist should collect additional samples from group :math:`j`.
+If this difference is not close to :math:`0`, the data scientist should ask herself whether it is fair or ethical to treat individuals in group :math:`j` differently from another individual with the same input characteristic :math:`x_i`. If the answer is no, then chances are that the empirical distribution :math:`(x_i, y) | z=j` as per the training dataset was not representative of the true data generating distribution :math:`(x_i, y)`, in which case the data scientist should consider collecting additional samples from group :math:`j`.
 
 
 
 IV - Model-Free Estimation
 ==========================
-For the purposes of pre-learning and post-learning, estimation ought to be performed in a model-free fashion. In effect, pre-learning problems are concerned with studying and selecting datasets to solve a supervised learning problem, prior to, and independently from any modeling. As such, they cannot be constrained by a specific choice of a generative model for inputs and the label :math:`(x, y)`. Not to mention that some pre-learning metrics (e.g. Equations :eq:`fi_cc` and :eq:`fe_c_reg`) do not depend on marginal distributions, in which case it would be a shame to posit an arbitrary and possibly restrictive full generative model for inputs and the label, only to make use of their copulas.
+For the purposes of pre-learning and post-learning, estimation ought to be performed in a model-free fashion. In effect, pre-learning problems are concerned with studying and selecting datasets to solve a supervised learning problem, prior to, and independently from any modeling. As such, they cannot be constrained by a specific choice of a generative model for inputs and the label :math:`(x, y)`. Moreover, some pre-learning metrics (e.g. Equations :eq:`fi_cc` and :eq:`fe_c_reg`) do not depend on marginal distributions, in which case it would be a shame to posit an arbitrary and possibly restrictive full generative model for inputs and the label, only to make use of their copulas.
 
 Similarly, post-learning aims at studying trained supervised learning problems in a general-purpose fashion, as well as courses of action to take to improve their accuracies. This cannot be achieved with a specific choice of a generative model for inputs and the label :math:`(x, y)`. Having said that, before delving further, let's review the elementary quantities we need to estimate from i.i.d. samples.
 
@@ -782,7 +820,7 @@ We estimate the entropy of a continuous scalar random variable :math:`x` from n 
 
 	\hat{h}(x) = - \gamma(1) + \frac{1}{n-1} \sum_{i=1}^{n-1} \log \left[ n \left(x_{(i+1)} - x_{(i)} \right) \right],
 
-where :math:`x_{(i)}` is the i-th smallest sample, and :math:`\gamma` is the digamma function. See [5]_ and references therein for a review of its statistical properties.
+where :math:`x_{(i)}` is the i-th smallest sample, and :math:`\gamma` is `the digamma function. <https://en.wikipedia.org/wiki/Digamma_function>`_ See [5]_ and references therein for a review of its statistical properties.
 
 
 3 - Multivariate Copula Entropy
@@ -855,7 +893,7 @@ An example directly in line with this interpretation is Kendall's tau (or Kendal
 
 .. math::
 
-	\tau = \mathbb{P} \left((x_1-x_2)(y_1-y_2) > 0\right) - \mathbb{P} \left((x_1-x_2)(y_1-y_2) < 0\right)
+	\tau = \mathbb{P} \left[(x_1-x_2)(y_1-y_2) > 0\right] - \mathbb{P} \left[(x_1-x_2)(y_1-y_2) < 0\right]
 
 
 where :math:`(x_1, y_1)` and :math:`(x_2, y_2)` are independent draws from the same bivariate distribution with copula-uniform dual representation :math:`(u, v)` and copula :math:`C(u, v)`. It can be expressed in terms of the copula-uniform dual representation as 
@@ -871,7 +909,7 @@ and its sample estimate from n i.i.d. draws of :math:`(x, y)` reads
 	\hat{\tau} = \frac{2}{n(n-1)} \sum_{i<j} \text{sgn}(x_i-x_j)\text{sgn}(y_i-y_j).
 
 
-**Interpretation:** :math:`\mathbb{P} \left((x_1-x_2)(y_1-y_2) > 0\right)` measures the propensity for two random variables :math:`(x, y)` to be concordant (i.e. increase simultaneously or decrese simultaneously across independent random draws), while :math:`\mathbb{P} \left((x_1-x_2)(y_1-y_2) < 0\right)` measures their propensity to be discordant (i.e. one decreases while the other increases between random draws). Thus, :math:`\tau \in [-1, 1]` is :math:`0` if and only if the directions of changes of :math:`x` and :math:`y` across independent random draws are unrelated. :math:`\tau=-1` (resp. :math:`\tau=1`) if and only if the directions of changes of :math:`x` and :math:`y` across independent random draws are always opposite (resp. the same). In fact, :math:`\tau` can also be interpreted as the Pearson correlation between the signs of increments of :math:`x` and :math:`y` across two independent draws:
+**Interpretation:** :math:`\mathbb{P} \left[(x_1-x_2)(y_1-y_2) > 0\right]` measures the propensity for two random variables :math:`(x, y)` to be concordant (i.e. increase simultaneously or decrese simultaneously across independent random draws), while :math:`\mathbb{P} \left[(x_1-x_2)(y_1-y_2) < 0\right]` measures their propensity to be discordant (i.e. one decreases while the other increases between random draws). Thus, :math:`\tau \in [-1, 1]` is :math:`0` if and only if the directions of changes of :math:`x` and :math:`y` across independent random draws are unrelated. :math:`\tau=-1` (resp. :math:`\tau=1`) if and only if the directions of changes of :math:`x` and :math:`y` across independent random draws are always opposite (resp. the same). In fact, :math:`\tau` can also be interpreted as the Pearson correlation between the signs of increments of :math:`x` and :math:`y` across two independent draws:
 
 .. math::
 
@@ -943,7 +981,36 @@ and that can be estimated in the primal space as
 
 iv) Implemented Constraints
 """""""""""""""""""""""""""
-At the current time, the API only implements constraints based on Spearman's rank correlation. Note that, although we only discussed bivariate constraint functions above, the extension to the multivariate case is trivial, for instance by considering all pairwise constraints, or their average.
+At the current time, the API only implements constraints based on Spearman's rank correlation. Note that, although we only discussed bivariate constraint functions above, the extension to the multivariate case is trivial, and would consist of choosing a vector-valued :math:`\phi` with coordinates all pairwise constraints.
+
+
+
+v) Beyond Concordance
+"""""""""""""""""""""
+A blindspot of concordance measures is that they only capture monotonic associations in data. To illustrate this, let us consider a toy example. We consider a scalar random variable :math:`x` drawn from a distribution whose pdf is symmetric about :math:`0` (for instance a centered Gaussian, or the uniform distribution on :math:`[-1, 1]`), and the random variable :math:`y=x^2`. 
+
+By symmetry, :math:`(x, y)` and :math:`(-x, y)` have the same joint distributions, and therefore the same Spearman rank correlation (or any concordance measure for that matter). Additionally, the Spearman rank correlation (resp. any concordance measure) between :math:`-x` and :math:`y` should be the opposite of the Spearman rank correlation (resp. the concordance measure) between :math:`x` and :math:`y`. Hence the Spearman rank correlation (and any other concordance measure) between :math:`x` and :math:`y` should be :math:`0`. 
+
+This implies that an application of the principle of maximum entropy to :math:`(x, y)` using as empirical evidence their Spearman rank correlation (or any other concordance measure) would suggest that they are statistically independent. 
+
+The foregoing observation neither invalidates the pertinence of the maximum entropy principle, nor does it invalidate the utility of using concordance measures as maximum entropy constraints. It simply stresses the fact that concordance measures can only capture monotonic association in data.
+
+To mitigate this limitation, we use the fact that when :math:`y` and :math:`x` are both continuous,
+
+.. math::
+
+	I\left(y; x \right) = I\left(y; x, \vert x - \mu \vert \right).
+
+We then apply the maximum entropy principle to the right handside using Spearman rank correlations as constraints, which allows us to capture associations that are monotonic in :math:`x` and/or in :math:`\vert x - \mu \vert`, where we choose :math:`\mu` to be the sample mean of :math:`x`.
+
+Going back to our toy example, the Spearman rank correlation between :math:`y` and :math:`|x|` is :math:`1`, and association in our data is fully reflected by the maximum entropy constraints. More generally, :math:`\vert x - \mu \vert` allows us to capture any non-monotonic association that is symmetric about the hyperplane :math:`x=\mu` and monotonic in :math:`\vert x - \mu \vert`.
+
+
+.. note::
+
+	The current version of the python package does not yet fully capture all non-monotonic associations; a notable exception is periodic associations. Support for periodic associations will be added in the near future.
+
+
 
 
 .. rubric:: References

@@ -89,7 +89,7 @@ Pre-Learning: Input Importance
 """"""""""""""""""""""""""""""
 Once we know the problem is feasible using inputs at hand, the next question before we jump
 into modeling is what are the inputs that are the most useful for solving this problem. Once
-more, this qustion is asked and answered independently from any classification model (hence the expression **pre-learning**),
+more, this question is asked and answered independently from any classification model (hence the expression **pre-learning**),
 and reduces time wasted improving models fitted on irrelevant inputs.
 
 
@@ -172,11 +172,11 @@ Back to our bank note example, given how high an out-of-sample accuracy we got, 
 
 	>>> test_df.classification_suboptimality('prediction', 'Is Fake', \
 	... 	discrete_input_columns=(), continuous_input_columns=())
-	2.52
-	>>> train_df.classification_feasibility('Is Fake')
 	0.00
+	>>> train_df.classification_feasibility('Is Fake')
+	2.52
 
-As it turns out, a simple logistic regression allows us to extract 98% of the intrinsic value there is in using the 3 inputs above to determmine whether a bank note is fake. Thus, using a nonlinear model might not yield the highest ROI. 
+As it turns out, a simple logistic regression allows us to extract nearly all of the intrinsic value there is in using the 3 inputs above to determmine whether a bank note is fake. Thus, using a nonlinear model might not yield the highest ROI. 
 
 That a nonlinear model would not perform materially better than a linear model is consistent with the visualization below, where it can be seen that a curved boundary would not necessarily do a much better job at separating geniune (green) from fake (red) notes than a straight line.
 
@@ -241,18 +241,18 @@ Pre-Learning
 	>>> # Pre-Learning: How feasible or solvable is this problem? Are inputs any useful?
 	>>> print('Feasibility: %.4f, Entropy: %.4f' % (\
 	... 	df.regression_feasibility(label_column), kxy.scalar_continuous_entropy(df[label_column].values)))
-	Feasibility: 1.8866, Entropy: 2.2420
+	Feasibility: 2.1038, Entropy: 3.3815
 
 	>>> # Pre-Learning: How useful is each input individually?
 	>>> importance_df = df.input_importance(label_column, problem='regression')
 	>>> print(importance_df)
-	                    input importance normalized_importance
-	0           Froude Number     1.8194                0.9975
-	1     Length-Displacement     0.0018                0.0010
-	2   Longitudinal Position     0.0010                0.0005
-	3      Beam-Draught Ratio     0.0009                0.0005
-	4  Prismatic Coeefficient     0.0007                0.0004
-	5       Length-Beam Ratio     0.0002                0.0001
+	                    input individual_importance normalized_individual_importance
+	0           Froude Number                2.1038                           0.9978
+	1     Length-Displacement                0.0018                           0.0009
+	2   Longitudinal Position                0.0010                           0.0005
+	3      Beam-Draught Ratio                0.0009                           0.0004
+	4  Prismatic Coeefficient                0.0007                           0.0003
+	5       Length-Beam Ratio                0.0002                           0.0001
 
 
 
@@ -289,6 +289,10 @@ Post-Learning
 	>>> # Can we do better with a nonlinear model, without new inputs?
 	>>> print('Additive Suboptimality: %.4f' % \
 	...		test_df.regression_additive_suboptimality('Prediction', label_column))
-	Additive Suboptimality: 0.0279
+	Additive Suboptimality: 0.6424
+	>>> print('Suboptimality: %.4f' % \
+	...		test_df.regression_suboptimality('Prediction', label_column))
+	Suboptimality: 0.8506
+
 
 

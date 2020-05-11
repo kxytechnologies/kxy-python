@@ -75,7 +75,7 @@ def regression_suboptimality(yp, y, x):
 
 		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`
 	"""
-	return least_continuous_mutual_information(x, y)-least_continuous_mutual_information(yp, y)
+	return max(least_continuous_mutual_information(x, y)-least_continuous_mutual_information(yp, y), 0.0)
 
 
 

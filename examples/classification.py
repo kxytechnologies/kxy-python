@@ -37,10 +37,11 @@ if __name__ == '__main__':
 
 	importance_df = pd.concat([importance_df_1, importance_df_2], axis=1)
 	importance_df.reset_index(inplace=True)
-	importance_df = importance_df.rename(columns={'individual_importance': 'Individual Importance', \
-		'incremental_importance': 'Incremental Importance', 'index': 'Input', 'selection_order': 'Selection Order'})
-	importance_df = importance_df[['Input', 'Individual Importance', 'Incremental Importance', 'Selection Order']]
-	importance_df = importance_df.sort_values(by=['Selection Order'], ascending=True)
+	importance_df.rename(columns={'individual_importance': 'Individual Importance', \
+		'incremental_importance': 'Incremental Importance', 'index': 'Input', 'selection_order': 'Selection Order', \
+		'input': 'Input'}, inplace=True)
+	print(importance_df)
+	importance_df = importance_df[['Input', 'Individual Importance', 'Incremental Importance', 'Selection Order']].sort_values(by=['Selection Order'], ascending=True)
 	ax = importance_df[['Input', 'Individual Importance', 'Incremental Importance']].plot.bar(x='Input', rot=0)
 	ax.set_ylabel('Importance (nats)')
 	plt.savefig('/Users/yl/Dropbox/KXY Technologies, Inc./GitHubCodeBase/kxy-python/docs/images/bn_importance.png', dpi=500)
