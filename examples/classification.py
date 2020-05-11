@@ -40,7 +40,6 @@ if __name__ == '__main__':
 	importance_df.rename(columns={'individual_importance': 'Individual Importance', \
 		'incremental_importance': 'Incremental Importance', 'index': 'Input', 'selection_order': 'Selection Order', \
 		'input': 'Input'}, inplace=True)
-	print(importance_df)
 	importance_df = importance_df[['Input', 'Individual Importance', 'Incremental Importance', 'Selection Order']].sort_values(by=['Selection Order'], ascending=True)
 	ax = importance_df[['Input', 'Individual Importance', 'Incremental Importance']].plot.bar(x='Input', rot=0)
 	ax.set_ylabel('Importance (nats)')

@@ -807,10 +807,6 @@ class DataFrame(pd.DataFrame):
 
 
 
-
-
-
-
 	def classification_input_incremental_importance(self, label_column, input_columns=()):
 		"""
 		Quantifies how important each input is at solving a classification problem,
@@ -917,8 +913,8 @@ class DataFrame(pd.DataFrame):
 
 	def incremental_input_importance(self, label_column, input_columns=()):
 		"""
-		Returns DataFrame.classification_input_incremental_importance or 
-		DataFrame.regression_input_incremental_importance depending on whether the label 
+		Returns :code:`DataFrame.classification_input_incremental_importance` or 
+		:code:`DataFrame.regression_input_incremental_importance` depending on whether the label 
 		is categorical or continuous
 		"""
 		problem = 'classification' if self.is_discrete(label_column) else 'regression'
