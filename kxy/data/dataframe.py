@@ -976,3 +976,13 @@ def read_sql(*args, **kwargs):
 	"""
 	return pd.read_sql(*args, **kwargs)
 
+
+@cast_to_kxy_dataframe
+def read_parquet(*args, **kwargs):
+	"""
+	.. _read-parquet:
+	Same as pandas.read_parquet, but returns a kxy.DataFrame object.
+	"""
+	return pd.read_parquet(*args, **kwargs)
+
+
