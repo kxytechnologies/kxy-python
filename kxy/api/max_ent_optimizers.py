@@ -4,7 +4,7 @@
 import json
 import logging
 import requests
-from time import sleep
+from time import sleep, time
 
 from .client import APIClient
 
@@ -112,33 +112,46 @@ def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True):
 	max_retry = 60
 	first_try = True
 	retry_count = 0
-	while (first_try or api_response.status_code == requests.codes.not_found) and retry_count < max_retry:
+	request_id = ''
+	while (first_try or api_response.status_code == requests.codes.retry) and retry_count < max_retry:
 		first_try = False
-		if mode == 'copula_entropy':
-			logging.debug('Querying the max-ent solution with corr=%s and mode=%s' % (c, mode))
-			api_response = APIClient.route(\
-				path='/core/dependence/copula/maximum-entropy/entropy/rv/all', method='POST', \
-				corr=c, mode='copula_entropy')
 
-		if mode == 'mutual_information_v_output':
-			logging.debug('Querying the max-ent solution with corr=%s, mode=%s and output_index=%d' % (c, mode, output_index))
-			api_response = APIClient.route(\
-				path='/core/dependence/copula/maximum-entropy/entropy/rv/all', method='POST', \
-				corr=c, mode='mutual_information_v_output', output_index=output_index)
+		if request_id == '':
+			query_start_time = time()
+			# First attempt
+			if mode == 'copula_entropy':
+				logging.debug('Querying the max-ent solution with corr=%s and mode=%s' % (c, mode))
+				api_response = APIClient.route(path='/rv/copula-entropy-analysis', method='POST', corr=c, \
+					request_id=request_id, timestamp=int(time()))
 
+			if mode == 'mutual_information_v_output':
+				logging.debug('Querying the max-ent solution with corr=%s, mode=%s and output_index=%d' % (c, mode, output_index))
+				api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
+					corr=c, output_index=output_index, request_id=request_id, timestamp=int(time()))
+			query_duration = time()-query_start_time
+
+		else:
+			query_start_time = time()
+			# Subsequent attempt: refer to the initial request
+			logging.debug('Querying the max-ent solution for request_id=%s' % request_id)
+			if mode == 'copula_entropy':
+				api_response = APIClient.route(path='/rv/copula-entropy-analysis', method='POST', \
+					request_id=request_id, timestamp=int(time()))
+
+			if mode == 'mutual_information_v_output':
+				api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
+					request_id=request_id, timestamp=int(time()))
+			query_duration = time()-query_start_time
 
 		retry_count += 1
-		if api_response.status_code == requests.codes.not_found:
-			sleep(10.)
+		if api_response.status_code == requests.codes.retry:
+			request_id = api_response.json()['request_id']
+			sleep(.1 if query_duration > 10. else 10.)
 
-	try:
-		logging.debug(api_response.json())
-	except:
-		logging.debug('Failed to convert api response to json %s' % api_response)
 
 	if api_response.status_code == requests.codes.ok:
 		if mode == 'copula_entropy':
-			h = api_response.json()['entropy']
+			h = api_response.json()['copula_entropy']
 			if h is not None:
 				return float(h)
 

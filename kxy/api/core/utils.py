@@ -29,6 +29,7 @@ def spearman_corr(x):
 	n, m = x.shape
 	R = 1+x.argsort(axis=0).argsort(axis=0)
 	corr = np.cov(R.T, bias=True)/((n*n-1.)/12.)
+	corr = np.round(corr, 3)
 
 	return corr
 

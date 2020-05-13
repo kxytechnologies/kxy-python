@@ -105,10 +105,11 @@ and reduces time wasted improving models fitted on irrelevant inputs.
 	>>> importance_df_2 = df.incremental_input_importance('Is Fake')
 	>>> importance_df_2
 	      input selection_order incremental_importance normalized_incremental_importance
-	0  Variance               1                   1.89                              0.65
-	1  Skewness               2                   0.10                              0.03
-	2  Kurtosis               3                   0.91                              0.32
+	0  Variance               1                   1.89                              0.82
+	1  Skewness               2                   0.29                              0.13
+	2  Kurtosis               3                   0.11                              0.05
 	3   Entropy               4                   0.00                              0.00
+
 	>>> importance_df_1 = importance_df_1.set_index(['input'])
 	>>> importance_df_2 = importance_df_2.set_index(['input'])
 	>>> importance_df = pd.concat([importance_df_1, importance_df_2], axis=1)
@@ -244,17 +245,26 @@ Pre-Learning
 	Feasibility: 2.1038, Entropy: 3.3815
 
 	>>> # Pre-Learning: How useful is each input individually?
-	>>> importance_df = df.input_importance(label_column, problem='regression')
-	>>> print(importance_df)
+	>>> importance_df = df.individual_input_importance(label_column, problem='regression')
+	>>> importance_df
 	                    input individual_importance normalized_individual_importance
-	0           Froude Number                2.1038                           0.9978
-	1     Length-Displacement                0.0018                           0.0009
-	2   Longitudinal Position                0.0010                           0.0005
-	3      Beam-Draught Ratio                0.0009                           0.0004
-	4  Prismatic Coeefficient                0.0007                           0.0003
-	5       Length-Beam Ratio                0.0002                           0.0001
+	0           Froude Number                2.1038                           0.9798
+	1  Prismatic Coeefficient                0.0228                           0.0106
+	2     Length-Displacement                0.0135                           0.0063
+	3      Beam-Draught Ratio                0.0034                           0.0016
+	4   Longitudinal Position                0.0032                           0.0015
+	5       Length-Beam Ratio                0.0004                           0.0002
 
-
+	>>> # Pre-Learning: How much value does each input add marginally?
+	>>> importance_df = df.incremental_input_importance(label_column, problem='regression')
+	>>> importance_df
+	                    input selection_order incremental_importance normalized_incremental_importance
+	0           Froude Number               1                 2.1038                                 1
+	1      Beam-Draught Ratio               2                      0                                 0
+	2  Prismatic Coeefficient               3                      0                                 0
+	3     Length-Displacement               4                      0                                 0
+	4   Longitudinal Position               5                      0                                 0
+	5       Length-Beam Ratio               6                      0                                 0
 
 
 

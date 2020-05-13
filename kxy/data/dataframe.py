@@ -13,8 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pandas as pd
 
-from kxy.api.core import least_total_correlation, spearman_corr, least_continuous_conditional_mutual_information, \
-	scalar_continuous_entropy
+from kxy.api.core import least_total_correlation, spearman_corr, scalar_continuous_entropy
 from kxy.api import solve_copula_async
 from kxy.classification import classification_feasibility, classification_suboptimality, \
 	classification_input_incremental_importance

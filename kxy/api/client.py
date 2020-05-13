@@ -91,7 +91,8 @@ class APIClient(object):
 				for more information.
 		"""
 		url = APIClient.url(path)
-		response = requests.get(url, params=params, headers={'x-api-key': API_KEY})
+		response = requests.get(url, params=params, headers={'x-api-key': API_KEY, \
+			'content-type': 'application/json'})
 
 		return response
 
@@ -136,7 +137,8 @@ class APIClient(object):
 				for more information.
 		"""
 		url = APIClient.url(path)
-		response = requests.post(url, json=params, headers={'x-api-key': API_KEY})
+		response = requests.post(url, json=params, headers={'x-api-key': API_KEY, \
+			'content-type': 'application/json'})
 
 		return response
 
