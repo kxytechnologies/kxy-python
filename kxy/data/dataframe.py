@@ -7,14 +7,16 @@ the power of the KXY API within the comfort of their favorite data structure.
 """
 
 from functools import lru_cache, wraps
+import logging
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pandas as pd
 
-from kxy.api.core import least_total_correlation, spearman_corr, scalar_continuous_entropy
-from kxy.api import solve_copula_async
+from kxy.api.core import least_total_correlation, spearman_corr, scalar_continuous_entropy, \
+	pearson_corr
+from kxy.api import solve_copula_async, mutual_information_analysis
 from kxy.classification import classification_feasibility, classification_suboptimality, \
 	classification_input_incremental_importance
 from kxy.finance import information_adjusted_beta, information_adjusted_correlation
@@ -291,7 +293,7 @@ class DataFrame(pd.DataFrame):
 
 
 
-	def individual_input_importance(self, label_column, input_columns=(), problem=None):
+	def individual_input_importance(self, label_column, input_columns=(), problem=None, space='dual'):
 		"""
 		.. _dataframe-input-importance:
 		Calculates the importance of each input in the input set at solving the supervised
@@ -347,7 +349,7 @@ class DataFrame(pd.DataFrame):
 
 		importance = {}
 		with ThreadPoolExecutor(max_workers=10) as p:
-			args = [(col, label_column, problem) for col in input_columns]
+			args = [(col, label_column, problem, space) for col in input_columns]
 			for imp in p.map(self.__individual_input_importance, args):
 				importance.update(imp)
 
@@ -363,17 +365,17 @@ class DataFrame(pd.DataFrame):
 
 
 	def __individual_input_importance(self, args):
-		col, label_column, problem = args
+		col, label_column, problem, space = args
 		if problem == 'classification':
 			self.adjust_quantized_values()
 			return {col: classification_feasibility(\
-							None, self[label_column].values, x_d=self[col].values) if self.is_discrete(col) else \
-							   classification_feasibility(self[col].values, self[label_column].values, x_d=None)}
+							None, self[label_column].values, x_d=self[col].values, space=space) if self.is_discrete(col) else \
+							   classification_feasibility(self[col].values, self[label_column].values, x_d=None, space=space)}
 
 		else:
 			return {col: regression_feasibility(\
-				self[col].values, self[label_column].values) if not self.is_categorical(col) else \
-				classification_feasibility(self[label_column].values, self[col].values, x_d=None)}
+				self[col].values, self[label_column].values, space=space) if not self.is_categorical(col) else \
+				classification_feasibility(self[label_column].values, self[col].values, x_d=None, space=space)}
 
 
 
@@ -708,7 +710,7 @@ class DataFrame(pd.DataFrame):
 		
 	
 
-	def regression_input_incremental_importance(self, label_column, input_columns=()):
+	def regression_input_incremental_importance(self, label_column, input_columns=(), space='dual'):
 		"""
 		Quantifies how important each input is at solving a regression problem,
 		taking into possible information redundancy between inputs.
@@ -759,29 +761,36 @@ class DataFrame(pd.DataFrame):
 		AssertionError
 			If :code:`label_column` is in :code:`input_columns`.
 		"""
+		# TODO: Turn this into a one-shot sync call.
+
 		input_columns = list(set(self.columns)-set([label_column])) if input_columns == () \
 			else list(input_columns)
-
-		res = {}
-		order = {} # Order in which inputs where selected
-		conditions = []
 		continuous_inputs = [col for col in input_columns if not self.is_categorical(col)]
 
-		while len(continuous_inputs) > 0:
-			importance = {}
-			with ThreadPoolExecutor(max_workers=10) as p:
-				args = [(col, label_column, conditions) for col in continuous_inputs]
-				for imp in p.map(self.__regression_input_incremental_importance, args):
-					importance.update(imp)
+		data = np.hstack((self[label_column].values[:, None], self[continuous_inputs].values, \
+			np.abs(self[continuous_inputs].values-np.nanmean(self[continuous_inputs].values, axis=0))))
+		corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
+		mi_analysis = mutual_information_analysis(corr, 0, space=space)
+		columns = [label_column] + continuous_inputs + continuous_inputs
 
-			for key, value in sorted(importance.items(), key=lambda x: -x[1]):
-				res[key] = value
-				continuous_inputs.remove(key)
-				conditions += [key]
-				order[key] = len(conditions)
-				break
+		if mi_analysis is None:
+			return {}
 
-		# Step 3: Normalize and format as a dataframe.
+		remaining_columns = continuous_inputs
+
+		res = {}
+		order = {}
+		idx = 1
+		for i in range(1, 1+2*len(continuous_inputs)):
+			column_id = mi_analysis['selection_order'][str(i)]
+			column = columns[column_id]
+			if column in remaining_columns:
+				res[column] = mi_analysis['conditional_mutual_informations'][str(i)]
+				order[column] = idx
+				idx += 1
+				remaining_columns.remove(column)
+
+		# Normalize and format as a dataframe.
 		total_importance = np.sum([res[col] for col in res.keys() if res[col]])
 		scale = 1./total_importance if total_importance > 0. else 0.0
 
@@ -795,18 +804,7 @@ class DataFrame(pd.DataFrame):
 
 
 
-	def __regression_input_incremental_importance(self, args):
-		col, label_column, conditions = args
-
-		if len(conditions) == 0:
-			return {col: regression_feasibility(self[col].values, self[label_column].values)}
-
-		return {col: regression_input_incremental_importance(\
-				self[col].values, self[label_column].values, self[conditions].values)}
-
-
-
-	def classification_input_incremental_importance(self, label_column, input_columns=()):
+	def classification_input_incremental_importance(self, label_column, input_columns=(), space='dual'):
 		"""
 		Quantifies how important each input is at solving a classification problem,
 		taking into possible information redundancy between inputs.
@@ -861,7 +859,7 @@ class DataFrame(pd.DataFrame):
 		while len(input_columns) > 0:
 			importance = {}
 			with ThreadPoolExecutor(max_workers=10) as p:
-				args = [(col, label_column, continuous_conditions, categorical_conditions) for col in input_columns]
+				args = [(col, label_column, continuous_conditions, categorical_conditions, space) for col in input_columns]
 				for imp in p.map(self.__classification_input_incremental_importance, args):
 					importance.update(imp)
 
@@ -873,6 +871,8 @@ class DataFrame(pd.DataFrame):
 				else:
 					continuous_conditions += [key]
 				order[key] = len(categorical_conditions) + len(continuous_conditions)
+				logging.info('Selected column %s as the %s most important input, with incremental importance %.6f' % \
+					(key, '1st' if order[key] == 1 else '2nd' if order[key] == 2 else '%d-th' % order[key], res[key]))
 				break
 		
 		# Step 3: Normalize and format as a dataframe.
@@ -890,27 +890,28 @@ class DataFrame(pd.DataFrame):
 
 
 	def __classification_input_incremental_importance(self, args):
-		col, label_column, continuous_conditions, categorical_conditions = args
+		col, label_column, continuous_conditions, categorical_conditions, space = args
 
 		if len(continuous_conditions) == 0 and len(categorical_conditions) == 0:
 			return {col: classification_feasibility(\
-						None, self[label_column].values, x_d=self[col].values) if self.is_discrete(col) else \
-						   classification_feasibility(self[col].values, self[label_column].values, x_d=None)}
+						None, self[label_column].values, x_d=self[col].values, space=space) if self.is_discrete(col) else \
+						   classification_feasibility(self[col].values, self[label_column].values, x_d=None, space=space)}
 
 		return {col: \
 				classification_input_incremental_importance(\
 					None, self[label_column].values, None if len(continuous_conditions) == 0 \
 					else self[continuous_conditions].values, x_d=self[col].values, \
-					z_d=None if len(categorical_conditions) == 0 else self[categorical_conditions].values) \
-					if self.is_discrete(col) else
+					z_d=None if len(categorical_conditions) == 0 else self[categorical_conditions].values, \
+					space=space) if self.is_discrete(col) else \
 				classification_input_incremental_importance(\
 					self[col].values, self[label_column].values, None if len(continuous_conditions) == 0 \
 					else self[continuous_conditions].values, x_d=None, \
-					z_d=None if len(categorical_conditions) == 0 else self[categorical_conditions].values)}
+					z_d=None if len(categorical_conditions) == 0 else self[categorical_conditions].values, \
+					space=space)}
 
 
 
-	def incremental_input_importance(self, label_column, input_columns=()):
+	def incremental_input_importance(self, label_column, input_columns=(), space='dual'):
 		"""
 		Returns :code:`DataFrame.classification_input_incremental_importance` or 
 		:code:`DataFrame.regression_input_incremental_importance` depending on whether the label 
@@ -920,10 +921,12 @@ class DataFrame(pd.DataFrame):
 
 		if problem == 'classification':
 			self.adjust_quantized_values()
-			return self.classification_input_incremental_importance(label_column, input_columns=input_columns)
+			return self.classification_input_incremental_importance(label_column, input_columns=input_columns, \
+				space=space)
 
 		else:
-			return self.regression_input_incremental_importance(label_column, input_columns=input_columns)
+			return self.regression_input_incremental_importance(label_column, input_columns=input_columns, \
+				space=space)
 
 
 

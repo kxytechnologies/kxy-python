@@ -4,7 +4,7 @@
 from kxy.api.core import least_continuous_mutual_information
 
 
-def regression_suboptimality(yp, y, x):
+def regression_suboptimality(yp, y, x, space='dual'):
 	"""
 	.. _regression-suboptimality:
 	Quantifies the extent to which a regression model can be improved without requiring adding features.
@@ -75,12 +75,12 @@ def regression_suboptimality(yp, y, x):
 
 		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`
 	"""
-	return max(least_continuous_mutual_information(x, y)-least_continuous_mutual_information(yp, y), 0.0)
+	return max(least_continuous_mutual_information(x, y, space=space)-least_continuous_mutual_information(yp, y, space=space), 0.0)
 
 
 
 
-def regression_additive_suboptimality(e, x):
+def regression_additive_suboptimality(e, x, space='dual'):
 	"""
 	.. _regression-additive-suboptimality:
 	Quantifies the extent to which a regression model can be improved without requiring additional features, by evaluating 
@@ -128,5 +128,5 @@ def regression_additive_suboptimality(e, x):
 
 		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`
 	"""
-	return least_continuous_mutual_information(x, e)
+	return least_continuous_mutual_information(x, e, space=space)
 

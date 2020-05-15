@@ -7,7 +7,7 @@ from kxy.api.core import least_mixed_mutual_information, discrete_mutual_informa
 	least_mixed_conditional_mutual_information
 
 
-def classification_difficulty(x_c, y, x_d=None):
+def classification_difficulty(x_c, y, x_d=None, space='dual'):
 	"""
 	Estimates how difficult a classification problem is, using as 
 	metric the inverse of the mutual information between features and output.
@@ -35,11 +35,11 @@ def classification_difficulty(x_c, y, x_d=None):
 
 		:ref:`kxy.api.core.mutual_information.least_mixed_mutual_information <least-mixed-mutual-information>`.
 	"""
-	return 1./least_mixed_mutual_information(x_c, y, x_d=x_d)
+	return 1./least_mixed_mutual_information(x_c, y, x_d=x_d, space=space)
 
 
 
-def classification_feasibility(x_c, y, x_d=None):
+def classification_feasibility(x_c, y, x_d=None, space='dual'):
 	"""
 	.. _classification-feasibility:
 	Estimates how feasible a classification problem is, using as 
@@ -82,12 +82,12 @@ def classification_feasibility(x_c, y, x_d=None):
 	if x_c is None:
 		return discrete_mutual_information(x_d, y)
 
-	return least_mixed_mutual_information(x_c, y, x_d=x_d)
+	return least_mixed_mutual_information(x_c, y, x_d=x_d, space=space)
 
 
 
 
-def classification_input_incremental_importance(x_c, y, z_c, x_d=None, z_d=None):
+def classification_input_incremental_importance(x_c, y, z_c, x_d=None, z_d=None, space='dual'):
 	"""
 	.. _classification-input-incremental-importance:
 	Quantifies the value of adding input :math:`x=(x_c, x_d)` to inputs :math:`z=(z_c, z_d)` for forecasting :math:`y` as the conditional 
@@ -126,7 +126,7 @@ def classification_input_incremental_importance(x_c, y, z_c, x_d=None, z_d=None)
 
 	cmi = least_mixed_conditional_mutual_information(\
 		np.hstack((x_, np.abs(x_-x_.mean(axis=0)))), y, \
-		np.hstack((z_, np.abs(z_-z_.mean(axis=0)))), x_d=x_d, z_d=z_d)
+		np.hstack((z_, np.abs(z_-z_.mean(axis=0)))), x_d=x_d, z_d=z_d, space=space)
 
 	return cmi
 

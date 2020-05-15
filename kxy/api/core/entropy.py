@@ -9,10 +9,10 @@ import numpy as np
 import scipy.special as spe
 
 from kxy.api import APIClient, solve_copula_sync
-from .utils import avg_pairwise_spearman_corr, pre_conditioner, spearman_corr
+from .utils import pre_conditioner, spearman_corr, pearson_corr
 
 
-def scalar_continuous_entropy(x):
+def scalar_continuous_entropy(x, space='dual'):
 	"""
 	.. _scalar-continuous-entropy:
 	Estimates the (differential) entropy of a continuous scalar random variable using the standard 1-spacing estimator (see [2]_ and [3]_):
@@ -49,6 +49,9 @@ def scalar_continuous_entropy(x):
 		International Journal of Mathematical and Statistical Sciences. 6 (1): 17–40. (1997) ISSN 1055-7490. 
 	"""
 	assert len(x.shape) == 1 or x.shape[1] == 1, 'x should be a one dimensional numpy array'
+	if space == 'primal':
+		return 0.5*np.log(2.*np.pi*np.e*np.var(x))
+
 	sorted_x = np.unique(x)
 	n = sorted_x.shape[0]
 	ent = np.sum(np.log(n*(sorted_x[1:]-sorted_x[:-1])))/n - spe.digamma(1)
@@ -89,7 +92,7 @@ def discrete_entropy(x):
 	return -np.dot(np.log(probas), probas)
 
 
-def least_structured_copula_entropy(x):
+def least_structured_copula_entropy(x, space='dual'):
 	"""
 	.. _least-structured-copula-entropy:
 	Estimates the entropy of the least informative copula model whose average pairwise
@@ -117,13 +120,13 @@ def least_structured_copula_entropy(x):
 		# of a 1d random variable is the uniform[0, 1].
 		return 0.0
 
-	corr = spearman_corr(x)
-	h = solve_copula_sync(corr, mode='copula_entropy', solve_async=False)
+	corr = pearson_corr(x) if space == 'primal' else spearman_corr(x)
+	h = solve_copula_sync(corr, mode='copula_entropy', solve_async=False, space=space)
 
 	return h
 
 
-def least_structured_continuous_entropy(x):
+def least_structured_continuous_entropy(x, space='dual'):
 	""" 
 	.. _least-structured-continuous-entropy:
 	Estimates the entropy of a continuous d-dimensional random variable under the 
@@ -156,19 +159,19 @@ def least_structured_continuous_entropy(x):
 		return 0.0
 
 	if len(x.shape) == 1 or x.shape[1] == 1:
-		return scalar_continuous_entropy(x)
+		return scalar_continuous_entropy(x, space=space)
 
 	x = x - x.mean(axis=0)
 	a, log_abs_det_a = pre_conditioner(x.T)
 	z = np.dot(a, x.T).T
 
-	ch = least_structured_copula_entropy(z)
-	ih = np.sum([scalar_continuous_entropy(z[:, i]) for i in range(z.shape[1])])
+	ch = least_structured_copula_entropy(z, space=space)
+	ih = np.sum([scalar_continuous_entropy(z[:, i], space=space) for i in range(z.shape[1])])
 
 	return ih+ch-log_abs_det_a
 
 
-def least_structured_mixed_entropy(x_c, x_d):
+def least_structured_mixed_entropy(x_c, x_d, space='dual'):
 	"""
 	.. _least-structured-mixed-entropy:
 	Estimates the joint entropy :math:`h(x_c, x_d)`, where :math:`x_c` is continuous
@@ -216,7 +219,7 @@ def least_structured_mixed_entropy(x_c, x_d):
 	n = labels.shape[0]
 	probas = np.array([1.*len(labels[labels==cat])/n for cat in categories])
 	h = -np.dot(probas, np.log(probas))
-	h += np.sum([probas[i] * least_structured_continuous_entropy(x_c[labels==categories[i]]) for i in range(len(categories))])
+	h += np.sum([probas[i] * least_structured_continuous_entropy(x_c[labels==categories[i]], space=space) for i in range(len(categories))])
 
 	return h
 

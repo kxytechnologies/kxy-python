@@ -6,7 +6,7 @@ import numpy as np
 from kxy.api.core import least_continuous_mutual_information, least_continuous_conditional_mutual_information
 
 
-def regression_difficulty(x, y):
+def regression_difficulty(x, y, space='dual'):
 	"""
 	Estimates how difficult a regression problem is, using as 
 	metric the inverse of the mutual information between features and output, :math:`1/I\\left(x, y\\right)`.
@@ -38,11 +38,11 @@ def regression_difficulty(x, y):
 
 		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`
 	"""
-	return 1./least_continuous_mutual_information(x, y)
+	return 1./least_continuous_mutual_information(x, y, space=space)
 
 
 
-def regression_feasibility(x, y):
+def regression_feasibility(x, y, space='dual'):
 	"""
 	.. _regression-feasibility:
 	Estimates how feasible a regression problem is, using as 
@@ -73,11 +73,11 @@ def regression_feasibility(x, y):
 
 		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`
 	"""
-	return least_continuous_mutual_information(x, y)
+	return least_continuous_mutual_information(x, y, space=space)
 
 
 
-def regression_input_incremental_importance(x, y, z):
+def regression_input_incremental_importance(x, y, z, space='dual'):
 	"""
 	.. _regression-input-incremental-importance:
 	Quantifies the value of adding inputss :math:`x` to inputs :math:`z` for forecasting :math:`y` as the conditional 
@@ -111,7 +111,8 @@ def regression_input_incremental_importance(x, y, z):
 
 	cmi = least_continuous_conditional_mutual_information(\
 		np.hstack((x_, np.abs(x_-x_.mean(axis=0)))), y, \
-		np.hstack((z_, np.abs(z_-z_.mean(axis=0)))))
+		np.hstack((z_, np.abs(z_-z_.mean(axis=0)))), \
+		space=space)
 
 	return cmi
 

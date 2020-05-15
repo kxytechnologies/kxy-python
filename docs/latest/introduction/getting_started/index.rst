@@ -72,7 +72,7 @@ inputs (irrespective of the classification model)?
 .. code-block:: python
 
 	>>> df.classification_feasibility('Is Fake')
-	3.56
+	3.58
 
 The higher the number is relative to the entropy of the responsee, the better. A value of 0
 means no model can successfully solve this classification problem using provided inputs, no
@@ -97,17 +97,17 @@ and reduces time wasted improving models fitted on irrelevant inputs.
 
 	>>> importance_df_1 = df.individual_input_importance('Is Fake')
 	>>> importance_df_1
-	      input importance normalized_importance
-	0  Variance       1.93                  0.94
-	1  Skewness       0.13                  0.06
-	2   Entropy       0.00                  0.00
-	3  Kurtosis       0.00                  0.00
+	      input individual_importance normalized_individual_importance
+	0  Variance                  1.89                             0.84
+	1  Skewness                  0.37                             0.16
+	2  Kurtosis                  0.00                             0.00
+	3   Entropy                  0.00                             0.00
 	>>> importance_df_2 = df.incremental_input_importance('Is Fake')
 	>>> importance_df_2
 	      input selection_order incremental_importance normalized_incremental_importance
-	0  Variance               1                   1.89                              0.82
-	1  Skewness               2                   0.29                              0.13
-	2  Kurtosis               3                   0.11                              0.05
+	0  Variance               1                   1.89                              0.85
+	1  Skewness               2                   0.24                              0.11
+	2  Kurtosis               3                   0.08                              0.04
 	3   Entropy               4                   0.00                              0.00
 
 	>>> importance_df_1 = importance_df_1.set_index(['input'])
@@ -175,7 +175,7 @@ Back to our bank note example, given how high an out-of-sample accuracy we got, 
 	... 	discrete_input_columns=(), continuous_input_columns=())
 	0.00
 	>>> train_df.classification_feasibility('Is Fake')
-	2.52
+	2.54
 
 As it turns out, a simple logistic regression allows us to extract nearly all of the intrinsic value there is in using the 3 inputs above to determmine whether a bank note is fake. Thus, using a nonlinear model might not yield the highest ROI. 
 
@@ -248,12 +248,12 @@ Pre-Learning
 	>>> importance_df = df.individual_input_importance(label_column, problem='regression')
 	>>> importance_df
 	                    input individual_importance normalized_individual_importance
-	0           Froude Number                2.1038                           0.9798
-	1  Prismatic Coeefficient                0.0228                           0.0106
-	2     Length-Displacement                0.0135                           0.0063
-	3      Beam-Draught Ratio                0.0034                           0.0016
-	4   Longitudinal Position                0.0032                           0.0015
-	5       Length-Beam Ratio                0.0004                           0.0002
+	0           Froude Number                2.1038                           0.9983
+	1     Length-Displacement                0.0013                           0.0006
+	2   Longitudinal Position                0.0010                           0.0005
+	3  Prismatic Coeefficient                0.0007                           0.0003
+	4      Beam-Draught Ratio                0.0006                           0.0003
+	5       Length-Beam Ratio                0.0001                           0.0000
 
 	>>> # Pre-Learning: How much value does each input add marginally?
 	>>> importance_df = df.incremental_input_importance(label_column, problem='regression')

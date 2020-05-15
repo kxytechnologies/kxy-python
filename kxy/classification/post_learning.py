@@ -3,7 +3,7 @@
 
 from kxy.api.core import least_mixed_mutual_information, discrete_mutual_information
 
-def classification_suboptimality(yp, y, x_c, x_d=None):
+def classification_suboptimality(yp, y, x_c, x_d=None, space='dual'):
 	"""
 	.. _classification-suboptimality:
 	Quantifies the extent to which a (multinomial) classifier can be improved without requiring additional features.
@@ -61,6 +61,6 @@ def classification_suboptimality(yp, y, x_c, x_d=None):
 
 		:ref:`kxy.api.core.mutual_information.least_mixed_mutual_information <least-mixed-mutual-information>`
 	"""
-	return least_mixed_mutual_information(x_c, y, x_d=x_d)-discrete_mutual_information(y, yp)
+	return least_mixed_mutual_information(x_c, y, x_d=x_d, space=space)-discrete_mutual_information(y, yp)
 
 

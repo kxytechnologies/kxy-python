@@ -7,12 +7,12 @@ import requests
 
 from kxy.api import APIClient, solve_copula_sync
 
-from .utils import avg_pairwise_spearman_corr, pre_conditioner, spearman_corr
+from .utils import spearman_corr, pearson_corr
 from .entropy import least_structured_copula_entropy, least_structured_continuous_entropy, \
 	least_structured_mixed_entropy, discrete_entropy
 
 
-def least_total_correlation(x):
+def least_total_correlation(x, space='dual'):
 	""" 
 	.. _least-total-correlation:
 	Estimates the smallest total correlation of a continuous d-dimensional random vector,
@@ -40,11 +40,11 @@ def least_total_correlation(x):
 		If x is not a two dimensional array.
 	"""
 	assert len(x.shape) == 2
-	return -least_structured_copula_entropy(x)
+	return -least_structured_copula_entropy(x, space=space)
 
 
 
-def least_continuous_mutual_information(x, y):
+def least_continuous_mutual_information(x, y, space='dual'):
 	"""
 	.. _least-continuous-mutual-information:
 	Estimates the mutual information between a d-dimensional random vector :math:`x` of inputs
@@ -89,14 +89,16 @@ def least_continuous_mutual_information(x, y):
 	x_ = np.reshape(x, (len(x), 1)) if len(x.shape) == 1 else x.copy()
 	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
 
-	corr = spearman_corr(np.hstack([y_, x_, np.abs(x_-x_.mean(axis=0))]))
-	mi = solve_copula_sync(corr, mode='mutual_information_v_output', output_index=0, solve_async=False)
+	corr = pearson_corr(np.hstack([y_, x_])) if space == 'primal' else \
+		spearman_corr(np.hstack([y_, x_, np.abs(x_-x_.mean(axis=0))]))
+	mi = solve_copula_sync(corr, mode='mutual_information_v_output', output_index=0, solve_async=False, \
+		space=space)
 
 	return mi
 
 
 
-def least_continuous_conditional_mutual_information(x, y, z):
+def least_continuous_conditional_mutual_information(x, y, z, space='dual'):
 	"""
 	.. _least-continuous-conditional-mutual-information:
 	Estimates the conditional mutual information between a d-dimensional random vector :math:`x` of inputs
@@ -149,15 +151,15 @@ def least_continuous_conditional_mutual_information(x, y, z):
 	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
 	z_ = np.reshape(z, (len(z), 1)) if len(z.shape) == 1 else z.copy()
 
-	mi_y_xz = least_continuous_mutual_information(np.hstack([x_, z_]), y_)
-	mi_y_z = least_continuous_mutual_information(z_, y_)
+	mi_y_xz = least_continuous_mutual_information(np.hstack([x_, z_]), y_, space=space)
+	mi_y_z = least_continuous_mutual_information(z_, y_, space=space)
 
 	return max(mi_y_xz-mi_y_z, 0.0)
 
 
 
 
-def least_mixed_mutual_information(x_c, y, x_d=None):
+def least_mixed_mutual_information(x_c, y, x_d=None, space='dual'):
 	"""
 	.. _least-mixed-mutual-information:
 	Estimates the mutual inforrmation between some features (a d-dimensional random vector
@@ -214,16 +216,16 @@ def least_mixed_mutual_information(x_c, y, x_d=None):
 	n = y.shape[0]
 	probas = np.array([1.*len(y[y==cat])/n for cat in categories])
 
-	h = least_structured_continuous_entropy(x_c_r) if x_d is None else least_structured_mixed_entropy(x_c_r, x_d)
-	wh = np.sum([probas[i] * least_structured_continuous_entropy(x_c_r[y==categories[i]]) for i in range(len(categories))]) if x_d is None \
-		else np.sum([probas[i] * least_structured_mixed_entropy(x_c_r[y==categories[i]], x_d[y==categories[i]]) for i in range(len(categories))])
+	h = least_structured_continuous_entropy(x_c_r, space=space) if x_d is None else least_structured_mixed_entropy(x_c_r, x_d, space=space)
+	wh = np.sum([probas[i] * least_structured_continuous_entropy(x_c_r[y==categories[i]], space=space) for i in range(len(categories))]) if x_d is None \
+		else np.sum([probas[i] * least_structured_mixed_entropy(x_c_r[y==categories[i]], x_d[y==categories[i]], space=space) for i in range(len(categories))])
 
 	return max(h-wh, 0.0)
 
 
 
 
-def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None):
+def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, space='dual'):
 	"""
 	.. _least-mixed-conditional-mutual-information:
 	Estimates the conditional mutual information between a dimensional random vector :math:`x` of inputs
@@ -272,8 +274,8 @@ def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None):
 	# I(y; x|z) = h(y, z) + h(x, z) - h(z) - h(x, y, z)
 	#			= I(y; x, z) - I(y; z)
 	xz_d = None if (x_d is None and z_d is None) else z_d if x_d is None else x_d if z_d is None else np.hstack([x_d, z_d])
-	mi_y_xz = least_mixed_mutual_information(np.hstack([x_, z_]), y_.flatten(), x_d=xz_d)
-	mi_y_z = least_mixed_mutual_information(z_, y_.flatten(), x_d=x_d)
+	mi_y_xz = least_mixed_mutual_information(np.hstack([x_, z_]), y_.flatten(), x_d=xz_d, space=space)
+	mi_y_z = least_mixed_mutual_information(z_, y_.flatten(), x_d=x_d, space=space)
 
 	return max(mi_y_xz-mi_y_z, 0.0)
 

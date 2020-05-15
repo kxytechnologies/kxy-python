@@ -34,6 +34,38 @@ def spearman_corr(x):
 	return corr
 
 
+
+def pearson_corr(x):
+	"""
+	Calculate the Pearson correlation matrix, ignoring nan.
+
+	Parameters
+	----------
+	x : (n, d) np.array
+		Input data representing n i.i.d. draws from the d-dimensional 
+		random variable, whose Pearson correlation matrix this 
+		function calculates.
+
+
+	Returns
+	-------
+	corr : np.array
+		The Pearson correlation matrix.
+	"""
+	mask = np.all(~np.isnan(x), axis=1)
+	nx = x[mask]
+
+	nx = nx - np.mean(nx, axis=0)
+	nx /= np.std(nx, axis=0)
+
+	n = nx.shape[0]
+	c = np.dot(nx.T, nx)/(n-1)
+
+	return c
+
+
+
+
 def avg_pairwise_spearman_corr(x):
 	"""
 	Calculates the sample average pairwise Spearman rank correlation 

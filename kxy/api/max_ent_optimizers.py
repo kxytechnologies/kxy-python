@@ -56,7 +56,7 @@ def solve_copula_async(corr):
 
 
 
-def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True):
+def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True, space='dual'):
 	"""
 	.. _solve-copula-sync:
 	Solve the maximum-entropy copula problem under Spearman rank correlation matrix constraints synchronously.
@@ -107,6 +107,67 @@ def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True):
 
 	if solve_async:
 		solve_copula_async(corr)
+
+	if mode == 'mutual_information_v_output':
+		res = mutual_information_analysis(corr, output_index, space=space)
+		if res is None:
+			return None
+
+		return res['mutual_information']
+
+	if mode == 'copula_entropy':
+		res = copula_entropy_analysis(corr, space=space)
+		if res is None:
+			return None
+		return res['copula_entropy']
+
+
+	return None
+
+
+
+def mutual_information_analysis(corr, output_index, space='dual'):
+	'''
+	Analyzes the dependency between :math:`d`-dimensional continuous random vector :math:`x=\\left(x_1, \\dots, x_d \\right)` and
+	a continuous random scalar :math:`y` whose joint correlation matrix is :code:`corr`, the column :code:`output_index` of which 
+	represents the variable :math:`y` and the others the variable :math:`x`.
+
+
+	Recall that, for any permutation :math:`(1), \\dots, (d)` of :math:`1, \\dots, d`, by the tower law,
+
+	.. math::
+
+		I\\left(y; x_1, \\dots, x_d\\right) = I\\left(y; x_{(1)}\\right) + \\sum_{i=2}^d I\\left(y; x_{(i)} \\vert x_{(i-1)}, \\dots, x_{(1)} \\right).
+
+
+	This function estimates the mutual information :math:`I(y; x)` by learning the following permutation:
+
+	* :math:`x_{(1)}` is the input with the largest maximum entropy mutual information with :math:`y` under Spearman
+	rank correlation constraints.
+
+	* :math:`x_{(i)}` for :math:`i>1` is the input with the largest maximum entropy conditional mutual information 
+	:math:`I\\left(y; * \\vert x_{(i-1)}, \\dots, x_{(1)}\\right)`. Note that by the time :math:`(i)` is selected, 
+	:math:`I\\left(y; x_{(i-1)}, \\dots, x_{(1)}\\right)` is already known, so that the maximum entropy conditional 
+	mutual information is simply derived from the maximum entropy copula distribution of :math:`I\\left(y; x_{(i)}, \\dots, x_{(1)}\\right)`.
+
+	This function returns the learned permutation of inputs, the association conditional mutual informations (a.k.a, the incremental input 
+	importancee scores), as well as the mutual information :math:`I\\left(y; x_1, \\dots, x_d\\right)`.
+
+
+	Parameters
+	----------
+	corrr : np.array
+		The Spearman correlation matrix.
+
+	output_index: int
+		The index of the column to use as output.
+
+
+	Returns
+	-------
+	res : dict
+		Dictionary with keys :code:`mutual_information`, :code:`selection_order`, and :code:`conditional_mutual_informations`.
+	'''
 	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
 	opt_launched = False
 	max_retry = 60
@@ -119,28 +180,18 @@ def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True):
 		if request_id == '':
 			query_start_time = time()
 			# First attempt
-			if mode == 'copula_entropy':
-				logging.debug('Querying the max-ent solution with corr=%s and mode=%s' % (c, mode))
-				api_response = APIClient.route(path='/rv/copula-entropy-analysis', method='POST', corr=c, \
-					request_id=request_id, timestamp=int(time()))
-
-			if mode == 'mutual_information_v_output':
-				logging.debug('Querying the max-ent solution with corr=%s, mode=%s and output_index=%d' % (c, mode, output_index))
-				api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
-					corr=c, output_index=output_index, request_id=request_id, timestamp=int(time()))
+			logging.debug('Querying mutual information analysis with corr=%s and output_index=%d' % (c, output_index))
+			api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
+				corr=c, output_index=output_index, request_id=request_id, timestamp=int(time()), \
+				space=space)
 			query_duration = time()-query_start_time
 
 		else:
 			query_start_time = time()
 			# Subsequent attempt: refer to the initial request
-			logging.debug('Querying the max-ent solution for request_id=%s' % request_id)
-			if mode == 'copula_entropy':
-				api_response = APIClient.route(path='/rv/copula-entropy-analysis', method='POST', \
-					request_id=request_id, timestamp=int(time()))
-
-			if mode == 'mutual_information_v_output':
-				api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
-					request_id=request_id, timestamp=int(time()))
+			logging.debug('Querying mutual information analysis for request_id=%s' % request_id)
+			api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
+				request_id=request_id, timestamp=int(time()))
 			query_duration = time()-query_start_time
 
 		retry_count += 1
@@ -150,19 +201,92 @@ def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True):
 
 
 	if api_response.status_code == requests.codes.ok:
-		if mode == 'copula_entropy':
-			h = api_response.json()['copula_entropy']
-			if h is not None:
-				return float(h)
-
-		if mode == 'mutual_information_v_output':
-			mi = api_response.json()['mutual_information']
-			if not mi is None:
-				return float(mi)
+		return api_response.json()
 
 	else:
 		logging.warning(api_response.json())
 
 	return None
 
+
+
+def copula_entropy_analysis(corr, space='dual'):
+	'''
+	Analyzes the entropy of the copula of a :math:`d`-dimensional continuous random vector :math:`x=\\left(x_1, \\dots, x_d \\right)`, 
+	with copula-uniform representation :math:`u=\\left(u_1, \\dots, u_d \\right)`
+
+	Recall that, for any permutation :math:`(1), \\dots, (d)` of :math:`1, \\dots, d`, by the tower law,
+
+	.. math::
+
+		h\\left(u_1, \\dots, u_d\\right) = \\sum_{i=2}^d h\\left( u_{(i)} \\vert u_{(i-1)}, \\dots, u_{(1)} \\right).
+
+
+	This function estimates the copula entropy  :math:`h(u)` by learning the following permutation:
+
+	* :math:`x_{(1)}` and :math:`x_{(2)}` are chosen to be the two random variables with smallest copula entropy 
+	(or equivalently, the highest mutual information).
+
+	* :math:`x_{(i)}` for :math:`i>1` is the input with the smallest conditional copula entropy 
+	:math:`h\\left(* \\vert u_{(i-1)}, \\dots, u_{(1)} \\right)` (or equivalently, the highest mutual information
+	:math:`I\\left(*; x_{(1)}, \\dots, x_{(i-1)}\\right)`). Note that by the time :math:`(i)` is selected, 
+	:math:`h\\left(u_{(i-1)}, \\dots, u_{(1)}\\right)` is already known, so that the maximum entropy conditional 
+	entropy is simply derived from the maximum entropy copula distribution of :math:`\\left(x_{(i)}, \\dots, x_{(1)}\\right)`.
+
+	This function returns the learned permutation of inputs, the association conditional entropies, as well as 
+	the copula entropy :math:`h(u)`.
+
+
+	Parameters
+	----------
+	corrr : np.array
+		The Spearman correlation matrix.
+
+	output_index: int
+		The index of the column to use as output.
+
+
+	Returns
+	-------
+	res : dict
+		Dictionary with keys :code:`copula_entropy`, :code:`selection_order`, and :code:`conditional_copula_entropies`.
+	'''
+	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
+	opt_launched = False
+	max_retry = 60
+	first_try = True
+	retry_count = 0
+	request_id = ''
+	while (first_try or api_response.status_code == requests.codes.retry) and retry_count < max_retry:
+		first_try = False
+
+		if request_id == '':
+			query_start_time = time()
+			# First attempt
+			logging.debug('Querying copula entropy analysis with corr=%s' % (c))
+			api_response = APIClient.route(path='/rv/copula-entropy-analysis', method='POST', corr=c, \
+				request_id=request_id, timestamp=int(time()), space=space)
+			query_duration = time()-query_start_time
+
+		else:
+			query_start_time = time()
+			# Subsequent attempt: refer to the initial request
+			logging.debug('Querying copula entropy analysis for request_id=%s' % request_id)
+			api_response = APIClient.route(path='/rv/copula-entropy-analysis', method='POST', \
+				request_id=request_id, timestamp=int(time()))
+			query_duration = time()-query_start_time
+
+		retry_count += 1
+		if api_response.status_code == requests.codes.retry:
+			request_id = api_response.json()['request_id']
+			sleep(.1 if query_duration > 10. else 10.)
+
+
+	if api_response.status_code == requests.codes.ok:
+		return api_response.json()
+
+	else:
+		logging.warning(api_response.json())
+
+	return None
 
