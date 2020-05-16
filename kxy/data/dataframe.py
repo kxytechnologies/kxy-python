@@ -361,6 +361,8 @@ class DataFrame(pd.DataFrame):
 			'individual_importance': [v for k, v in sorted(importance.items(), key=lambda item: -item[1])], \
 			'normalized_individual_importance': [v*scale for k, v in sorted(importance.items(), key=lambda item: -item[1])]})
 
+		importance_df['cum_normalized_individual_importance'] = importance_df['normalized_individual_importance'].cumsum()
+
 		return importance_df
 
 
@@ -710,7 +712,7 @@ class DataFrame(pd.DataFrame):
 		
 	
 
-	def regression_input_incremental_importance(self, label_column, input_columns=(), space='dual'):
+	def regression_input_incremental_importance(self, label_column, input_columns=(), space='dual', greedy=False):
 		"""
 		Quantifies how important each input is at solving a regression problem,
 		taking into possible information redundancy between inputs.
@@ -721,10 +723,12 @@ class DataFrame(pd.DataFrame):
 			The incremental importance of input :math:`x` for predicting label :math:`y` once we already
 			know inputs :math:`z` is defined as the conditional mutual information :math:`I(y; x|z)`.
 
-			We first select the column with the highest mutual information with the label. Then we 
+			When greedy=True, we first select the column with the highest mutual information with the label. Then we 
 			sequentially select, among all remaining input columns, the one with the highest conditional mutual
 			information with the label, conditional on all previously selected inputs, until there is no
 			input left to select.
+
+			When greedy=False, inputs are selected in decreasing order of their mutual information with the output.
 
 		.. important::
 
@@ -770,7 +774,7 @@ class DataFrame(pd.DataFrame):
 		data = np.hstack((self[label_column].values[:, None], self[continuous_inputs].values, \
 			np.abs(self[continuous_inputs].values-np.nanmean(self[continuous_inputs].values, axis=0))))
 		corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
-		mi_analysis = mutual_information_analysis(corr, 0, space=space)
+		mi_analysis = mutual_information_analysis(corr, 0, space=space, greedy=greedy)
 		columns = [label_column] + continuous_inputs + continuous_inputs
 
 		if mi_analysis is None:
@@ -799,6 +803,7 @@ class DataFrame(pd.DataFrame):
 			'selection_order': [v for k, v in sorted(order.items(), key=lambda item: item[1])], \
 			'incremental_importance': [res[k] for k, v in sorted(order.items(), key=lambda item: item[1])], \
 			'normalized_incremental_importance': [res[k]*scale for k, v in sorted(order.items(), key=lambda item: item[1])]})
+		importance_df['cum_normalized_incremental_importance'] = importance_df['normalized_incremental_importance'].cumsum()
 
 		return importance_df
 
@@ -884,6 +889,7 @@ class DataFrame(pd.DataFrame):
 			'selection_order': [v for k, v in sorted(order.items(), key=lambda item: item[1])], \
 			'incremental_importance': [res[k] for k, v in sorted(order.items(), key=lambda item: item[1])], \
 			'normalized_incremental_importance': [res[k]*scale for k, v in sorted(order.items(), key=lambda item: item[1])]})
+		importance_df['cum_normalized_incremental_importance'] = importance_df['normalized_incremental_importance'].cumsum()
 
 		return importance_df
 
@@ -911,7 +917,7 @@ class DataFrame(pd.DataFrame):
 
 
 
-	def incremental_input_importance(self, label_column, input_columns=(), space='dual'):
+	def incremental_input_importance(self, label_column, input_columns=(), space='dual', greedy=False):
 		"""
 		Returns :code:`DataFrame.classification_input_incremental_importance` or 
 		:code:`DataFrame.regression_input_incremental_importance` depending on whether the label 
@@ -926,7 +932,7 @@ class DataFrame(pd.DataFrame):
 
 		else:
 			return self.regression_input_incremental_importance(label_column, input_columns=input_columns, \
-				space=space)
+				space=space, greedy=greedy)
 
 
 

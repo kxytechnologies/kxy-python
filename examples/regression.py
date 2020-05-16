@@ -33,11 +33,11 @@ if __name__ == '__main__':
 
 	# Incremental importance
 	logging.info('Incremenal Input Importance (Dual)')
-	importance_df = df.incremental_input_importance(label_column)
+	importance_df = df.incremental_input_importance(label_column, greedy=True)
 	logging.info('\n %s' % importance_df.round(4))
 
 	logging.info('Incremenal Input Importance (Primal)')
-	importance_df = df.incremental_input_importance(label_column, space='primal')
+	importance_df = df.incremental_input_importance(label_column, space='primal', greedy=True)
 	logging.info('\n %s ' % importance_df.round(4))
 
 	"""

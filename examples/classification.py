@@ -35,13 +35,13 @@ if __name__ == '__main__':
 	logging.info('')
 	logging.info('')
 	logging.info('Incremental Input Importance (Dual)')
-	importance_df_2 = df.incremental_input_importance('Is Fake')
+	importance_df_2 = df.incremental_input_importance('Is Fake', greedy=True)
 	logging.info('\n %s' % importance_df_2.round(2))
 
 	logging.info('')
 	logging.info('')
 	logging.info('Incremental Input Importance (Primal)')
-	importance_df_3 = df.incremental_input_importance('Is Fake', space='primal')
+	importance_df_3 = df.incremental_input_importance('Is Fake', space='primal', greedy=True)
 	logging.info('\n %s' % importance_df_3.round(2))
 	importance_df_2 = importance_df_2.set_index(['input'])
 

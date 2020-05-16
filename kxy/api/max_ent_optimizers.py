@@ -126,7 +126,7 @@ def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True, spac
 
 
 
-def mutual_information_analysis(corr, output_index, space='dual'):
+def mutual_information_analysis(corr, output_index, space='dual', greedy=False):
 	'''
 	Analyzes the dependency between :math:`d`-dimensional continuous random vector :math:`x=\\left(x_1, \\dots, x_d \\right)` and
 	a continuous random scalar :math:`y` whose joint correlation matrix is :code:`corr`, the column :code:`output_index` of which 
@@ -140,7 +140,9 @@ def mutual_information_analysis(corr, output_index, space='dual'):
 		I\\left(y; x_1, \\dots, x_d\\right) = I\\left(y; x_{(1)}\\right) + \\sum_{i=2}^d I\\left(y; x_{(i)} \\vert x_{(i-1)}, \\dots, x_{(1)} \\right).
 
 
-	This function estimates the mutual information :math:`I(y; x)` by learning the following permutation:
+	This function estimates the mutual information :math:`I(y; x)` by learning the following permutation. 
+
+	When greedy is True:
 
 	* :math:`x_{(1)}` is the input with the largest maximum entropy mutual information with :math:`y` under Spearman
 	rank correlation constraints.
@@ -152,6 +154,8 @@ def mutual_information_analysis(corr, output_index, space='dual'):
 
 	This function returns the learned permutation of inputs, the association conditional mutual informations (a.k.a, the incremental input 
 	importancee scores), as well as the mutual information :math:`I\\left(y; x_1, \\dots, x_d\\right)`.
+
+	When greedy is False, (i) is the input with the i-th largest mutual information with the output.
 
 
 	Parameters
@@ -183,7 +187,7 @@ def mutual_information_analysis(corr, output_index, space='dual'):
 			logging.debug('Querying mutual information analysis with corr=%s and output_index=%d' % (c, output_index))
 			api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
 				corr=c, output_index=output_index, request_id=request_id, timestamp=int(time()), \
-				space=space)
+				space=space, greedy=int(greedy))
 			query_duration = time()-query_start_time
 
 		else:
@@ -191,7 +195,7 @@ def mutual_information_analysis(corr, output_index, space='dual'):
 			# Subsequent attempt: refer to the initial request
 			logging.debug('Querying mutual information analysis for request_id=%s' % request_id)
 			api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
-				request_id=request_id, timestamp=int(time()))
+				request_id=request_id, timestamp=int(time()), space=space)
 			query_duration = time()-query_start_time
 
 		retry_count += 1
@@ -273,7 +277,7 @@ def copula_entropy_analysis(corr, space='dual'):
 			# Subsequent attempt: refer to the initial request
 			logging.debug('Querying copula entropy analysis for request_id=%s' % request_id)
 			api_response = APIClient.route(path='/rv/copula-entropy-analysis', method='POST', \
-				request_id=request_id, timestamp=int(time()))
+				request_id=request_id, timestamp=int(time()), space=space)
 			query_duration = time()-query_start_time
 
 		retry_count += 1
