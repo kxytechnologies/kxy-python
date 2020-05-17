@@ -712,7 +712,7 @@ class DataFrame(pd.DataFrame):
 		
 	
 
-	def regression_input_incremental_importance(self, label_column, input_columns=(), space='dual', greedy=False):
+	def regression_input_incremental_importance(self, label_column, input_columns=(), space='dual', greedy=True):
 		"""
 		Quantifies how important each input is at solving a regression problem,
 		taking into possible information redundancy between inputs.
@@ -877,7 +877,8 @@ class DataFrame(pd.DataFrame):
 					continuous_conditions += [key]
 				order[key] = len(categorical_conditions) + len(continuous_conditions)
 				logging.info('Selected column %s as the %s most important input, with incremental importance %.6f' % \
-					(key, '1st' if order[key] == 1 else '2nd' if order[key] == 2 else '%d-th' % order[key], res[key]))
+					(key, '1st' if order[key] == 1 else '2nd' if order[key] == 2 else '3rd' \
+						if order[key] == 3 else '%dth' % order[key], res[key]))
 				break
 		
 		# Step 3: Normalize and format as a dataframe.
@@ -917,7 +918,7 @@ class DataFrame(pd.DataFrame):
 
 
 
-	def incremental_input_importance(self, label_column, input_columns=(), space='dual', greedy=False):
+	def incremental_input_importance(self, label_column, input_columns=(), space='dual', greedy=True):
 		"""
 		Returns :code:`DataFrame.classification_input_incremental_importance` or 
 		:code:`DataFrame.regression_input_incremental_importance` depending on whether the label 
