@@ -44,7 +44,7 @@ def least_total_correlation(x, space='dual'):
 
 
 
-def least_continuous_mutual_information(x, y, space='dual'):
+def least_continuous_mutual_information(x, y, space='dual', non_monotonic_extension=True):
 	"""
 	.. _least-continuous-mutual-information:
 	Estimates the mutual information between a d-dimensional random vector :math:`x` of inputs
@@ -89,7 +89,7 @@ def least_continuous_mutual_information(x, y, space='dual'):
 	x_ = np.reshape(x, (len(x), 1)) if len(x.shape) == 1 else x.copy()
 	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
 
-	corr = pearson_corr(np.hstack([y_, x_])) if space == 'primal' else \
+	corr = pearson_corr(np.hstack([y_, x_])) if space == 'primal' or not non_monotonic_extension else \
 		spearman_corr(np.hstack([y_, x_, np.abs(x_-x_.mean(axis=0))]))
 	mi = solve_copula_sync(corr, mode='mutual_information_v_output', output_index=0, solve_async=False, \
 		space=space)
@@ -98,7 +98,7 @@ def least_continuous_mutual_information(x, y, space='dual'):
 
 
 
-def least_continuous_conditional_mutual_information(x, y, z, space='dual'):
+def least_continuous_conditional_mutual_information(x, y, z, space='dual', non_monotonic_extension=True):
 	"""
 	.. _least-continuous-conditional-mutual-information:
 	Estimates the conditional mutual information between a d-dimensional random vector :math:`x` of inputs
@@ -151,15 +151,17 @@ def least_continuous_conditional_mutual_information(x, y, z, space='dual'):
 	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
 	z_ = np.reshape(z, (len(z), 1)) if len(z.shape) == 1 else z.copy()
 
-	mi_y_xz = least_continuous_mutual_information(np.hstack([x_, z_]), y_, space=space)
-	mi_y_z = least_continuous_mutual_information(z_, y_, space=space)
+	mi_y_xz = least_continuous_mutual_information(np.hstack([x_, z_]), y_, space=space, \
+		non_monotonic_extension=non_monotonic_extension)
+	mi_y_z = least_continuous_mutual_information(z_, y_, space=space, \
+		non_monotonic_extension=non_monotonic_extension)
 
 	return max(mi_y_xz-mi_y_z, 0.0)
 
 
 
 
-def least_mixed_mutual_information(x_c, y, x_d=None, space='dual'):
+def least_mixed_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic_extension=True):
 	"""
 	.. _least-mixed-mutual-information:
 	Estimates the mutual inforrmation between some features (a d-dimensional random vector
@@ -210,7 +212,7 @@ def least_mixed_mutual_information(x_c, y, x_d=None, space='dual'):
 	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
 
 	x_c_ = np.reshape(x_c, (len(x_c), 1)) if len(x_c.shape) == 1 else x_c.copy()
-	x_c_r = np.hstack((x_c_, np.abs(x_c_-x_c_.mean(axis=0))))
+	x_c_r = np.hstack((x_c_, np.abs(x_c_-x_c_.mean(axis=0)))) if non_monotonic_extension else x_c_
 
 	categories = list(set(list(y)))
 	n = y.shape[0]
@@ -225,7 +227,7 @@ def least_mixed_mutual_information(x_c, y, x_d=None, space='dual'):
 
 
 
-def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, space='dual'):
+def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, space='dual', non_monotonic_extension=True):
 	"""
 	.. _least-mixed-conditional-mutual-information:
 	Estimates the conditional mutual information between a dimensional random vector :math:`x` of inputs
@@ -274,8 +276,10 @@ def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, 
 	# I(y; x|z) = h(y, z) + h(x, z) - h(z) - h(x, y, z)
 	#			= I(y; x, z) - I(y; z)
 	xz_d = None if (x_d is None and z_d is None) else z_d if x_d is None else x_d if z_d is None else np.hstack([x_d, z_d])
-	mi_y_xz = least_mixed_mutual_information(np.hstack([x_, z_]), y_.flatten(), x_d=xz_d, space=space)
-	mi_y_z = least_mixed_mutual_information(z_, y_.flatten(), x_d=x_d, space=space)
+	mi_y_xz = least_mixed_mutual_information(np.hstack([x_, z_]), y_.flatten(), x_d=xz_d, space=space, \
+		non_monotonic_extension=non_monotonic_extension)
+	mi_y_z = least_mixed_mutual_information(z_, y_.flatten(), x_d=x_d, space=space, \
+		non_monotonic_extension=non_monotonic_extension)
 
 	return max(mi_y_xz-mi_y_z, 0.0)
 

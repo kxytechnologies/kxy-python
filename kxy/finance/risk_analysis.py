@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 
 from kxy.api.core import least_continuous_mutual_information
@@ -82,17 +83,23 @@ def information_adjusted_correlation(x, y, p=0):
 	squared = (x_.shape == y_.shape) and np.allclose(x_, y_)
 
 	c = np.empty((x_.shape[1], y_.shape[1]))
-	for i in range(c.shape[0]):
-		for j in range(c.shape[1]):
-			if squared and i == j:
-				c[i, j] = 1.
-				continue
 
-			p_corr = np.corrcoef(x_[:, i], y_[:, j])[0, 1]
-			s = 1. if p_corr >= 0.0 else -1.
-			# TODO: When implemented, replace this with mutual information rate
-			mi = least_continuous_mutual_information(x_[:, i], y_[:, j])
-			c[i, j] = s * np.sqrt(1.-np.exp(-2.*mi))
+	def f(args):
+		i, j = args
+		if (i == j) and np.allclose(x_[:, i], y_[:, j]):
+			return ((i, j), 1.0)
 
+		mi = least_continuous_mutual_information(x_[:, i], y_[:, j], non_monotonic_extension=False)
+		p_corr = np.corrcoef(x_[:, i], y_[:, j])[0, 1]
+		s = 1. if p_corr >= 0.0 else -1.
+		res = s * np.sqrt(1.-np.exp(-2.*mi))
+
+		return ((i, j), res)
+
+	with ThreadPoolExecutor(max_workers=10) as p:
+		args = [(i, j) for i in range(c.shape[0]) for j in range(c.shape[1])]
+		for res in p.map(f, args):
+			c[res[0][0], res[0][1]] = res[1]
+			
 	return c
 

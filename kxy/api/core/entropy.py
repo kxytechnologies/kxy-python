@@ -161,14 +161,17 @@ def least_structured_continuous_entropy(x, space='dual'):
 	if len(x.shape) == 1 or x.shape[1] == 1:
 		return scalar_continuous_entropy(x, space=space)
 
-	x = x - x.mean(axis=0)
-	a, log_abs_det_a = pre_conditioner(x.T)
-	z = np.dot(a, x.T).T
 
+	x = x - x.mean(axis=0)
+	a, log_abs_det_a = pre_conditioner(x)
+	z = np.dot(a, x.T).T
 	ch = least_structured_copula_entropy(z, space=space)
 	ih = np.sum([scalar_continuous_entropy(z[:, i], space=space) for i in range(z.shape[1])])
 
 	return ih+ch-log_abs_det_a
+
+
+
 
 
 def least_structured_mixed_entropy(x_c, x_d, space='dual'):

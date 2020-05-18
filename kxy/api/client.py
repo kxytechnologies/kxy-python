@@ -10,7 +10,7 @@ import os
 import requests
 
 from .decorators import requires_api_key
-API_KEY = os.getenv('KXY_API_KEY') 
+
 
 class APIClient(object):
 	"""
@@ -91,7 +91,8 @@ class APIClient(object):
 				for more information.
 		"""
 		url = APIClient.url(path)
-		response = requests.get(url, params=params, headers={'x-api-key': API_KEY, \
+		api_key = os.getenv('KXY_API_KEY')
+		response = requests.get(url, params=params, headers={'x-api-key': api_key, \
 			'content-type': 'application/json'})
 
 		return response
@@ -137,7 +138,8 @@ class APIClient(object):
 				for more information.
 		"""
 		url = APIClient.url(path)
-		response = requests.post(url, json=params, headers={'x-api-key': API_KEY, \
+		api_key = os.getenv('KXY_API_KEY')
+		response = requests.post(url, json=params, headers={'x-api-key': api_key, \
 			'content-type': 'application/json'})
 
 		return response

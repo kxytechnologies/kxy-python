@@ -50,15 +50,12 @@ Loading Data
 
 .. code-block:: python
 
-	>>> import kxy
+	>>> import pandas as pd
+	>>> import kxy # This import is critical to enable our method in all pandas DataFrame instances
 	>>> # Bank note UCI dataset (binary classification)
 	>>> url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/00267/'\
 	... 	'data_banknote_authentication.txt'
-	>>> df = kxy.read_csv(url, names=['Variance', 'Skewness', 'Kurtosis', 'Entropy', 'Is Fake'])
-
-.. seealso::
-
-	:ref:`kxy.read_excel <read-excel>`, :ref:`kxy.read_html <read-html>`, :ref:`kxy.read_sql <read-sql>`, and :ref:`kxy.read_table <read-table>`.
+	>>> df = pd.read_csv(url, names=['Variance', 'Skewness', 'Kurtosis', 'Entropy', 'Is Fake'])
 
 
 Classification
@@ -71,7 +68,7 @@ inputs (irrespective of the classification model)?
 
 .. code-block:: python
 
-	>>> df.classification_feasibility('Is Fake')
+	>>> df.kxy.classification_feasibility('Is Fake')
 	3.58
 
 The higher the number is relative to the entropy of the responsee, the better. A value of 0
@@ -95,21 +92,20 @@ and reduces time wasted improving models fitted on irrelevant inputs.
 
 .. code-block:: python
 
-	>>> importance_df_1 = df.individual_input_importance('Is Fake')
+	>>> importance_df_1 = df.kxy.individual_input_importance('Is Fake')
 	>>> importance_df_1
-	      input individual_importance normalized_individual_importance
-	0  Variance                  1.89                             0.84
-	1  Skewness                  0.37                             0.16
-	2  Kurtosis                  0.00                             0.00
-	3   Entropy                  0.00                             0.00
-	>>> importance_df_2 = df.incremental_input_importance('Is Fake')
+	       input  individual_importance  normalized_individual_importance  cum_normalized_individual_importance
+	0  Variance                   1.89                              0.84                                  0.84
+	1  Skewness                   0.37                              0.16                                  1.00
+	2  Kurtosis                   0.00                              0.00                                  1.00
+	3   Entropy                   0.00                              0.00                                  1.00
+	>>> importance_df_2 = df.kxy.incremental_input_importance('Is Fake')
 	>>> importance_df_2
-	      input selection_order incremental_importance normalized_incremental_importance
-	0  Variance               1                   1.89                              0.85
-	1  Skewness               2                   0.24                              0.11
-	2  Kurtosis               3                   0.08                              0.04
-	3   Entropy               4                   0.00                              0.00
-
+	       input  selection_order  incremental_importance  normalized_incremental_importance  cum_normalized_incremental_importance
+	0  Variance                1                    1.89                               0.71                                   0.71
+	1  Skewness                2                    0.32                               0.12                                   0.83
+	2  Kurtosis                3                    0.44                               0.17                                   1.00
+	3   Entropy                4                    0.00                               0.00                                   1.00
 	>>> importance_df_1 = importance_df_1.set_index(['input'])
 	>>> importance_df_2 = importance_df_2.set_index(['input'])
 	>>> importance_df = pd.concat([importance_df_1, importance_df_2], axis=1)
@@ -171,10 +167,10 @@ Back to our bank note example, given how high an out-of-sample accuracy we got, 
 
 .. code-block:: python
 
-	>>> test_df.classification_suboptimality('prediction', 'Is Fake', \
+	>>> test_df.kxy.classification_suboptimality('prediction', 'Is Fake', \
 	... 	discrete_input_columns=(), continuous_input_columns=())
 	0.00
-	>>> train_df.classification_feasibility('Is Fake')
+	>>> train_df.kxy.classification_feasibility('Is Fake')
 	2.54
 
 As it turns out, a simple logistic regression allows us to extract nearly all of the intrinsic value there is in using the 3 inputs above to determmine whether a bank note is fake. Thus, using a nonlinear model might not yield the highest ROI. 
@@ -211,7 +207,7 @@ Regression
 
 .. code-block:: python
 
-	>>> df = kxy.read_csv('http://archive.ics.uci.edu/ml/machine-learning-databases/00243/yacht_hydrodynamics.data', \
+	>>> df = pd.read_csv('http://archive.ics.uci.edu/ml/machine-learning-databases/00243/yacht_hydrodynamics.data', \
 	...		sep='[ ]{1,2}', names=['Longitudinal Position', 'Prismatic Coeefficient', 'Length-Displacement', \
 	...		'Beam-Draught Ratio', 'Length-Beam Ratio', 'Froude Number', 'Residuary Resistance'])
 	>>> df.rename(columns={col: col.title() for col in df.columns}, inplace=True)
@@ -241,30 +237,30 @@ Pre-Learning
 	>>> label_column = 'Residuary Resistance'
 	>>> # Pre-Learning: How feasible or solvable is this problem? Are inputs any useful?
 	>>> print('Feasibility: %.4f, Entropy: %.4f' % (\
-	... 	df.regression_feasibility(label_column), kxy.scalar_continuous_entropy(df[label_column].values)))
-	Feasibility: 2.1038, Entropy: 3.3815
+	... 	df.kxy.regression_feasibility(label_column), kxy.scalar_continuous_entropy(df[label_column].values)))
+	Feasibility: 3.3846, Entropy: 3.3815
 
 	>>> # Pre-Learning: How useful is each input individually?
-	>>> importance_df = df.individual_input_importance(label_column, problem='regression')
+	>>> importance_df = df.kxy.individual_input_importance(label_column, problem='regression')
 	>>> importance_df
-	                    input individual_importance normalized_individual_importance
-	0           Froude Number                2.1038                           0.9983
-	1     Length-Displacement                0.0013                           0.0006
-	2   Longitudinal Position                0.0010                           0.0005
-	3  Prismatic Coeefficient                0.0007                           0.0003
-	4      Beam-Draught Ratio                0.0006                           0.0003
-	5       Length-Beam Ratio                0.0001                           0.0000
+	                     input  individual_importance  normalized_individual_importance  cum_normalized_individual_importance
+	0           Froude Number                 2.2129                            0.9983                                0.9983
+	1     Length-Displacement                 0.0013                            0.0006                                0.9989
+	2   Longitudinal Position                 0.0010                            0.0004                                0.9994
+	3  Prismatic Coeefficient                 0.0007                            0.0003                                0.9997
+	4      Beam-Draught Ratio                 0.0006                            0.0003                                1.0000
+	5       Length-Beam Ratio                 0.0001                            0.0000                                1.0000
 
 	>>> # Pre-Learning: How much value does each input add marginally?
-	>>> importance_df = df.incremental_input_importance(label_column, problem='regression')
+	>>> importance_df = df.kxy.incremental_input_importance(label_column, problem='regression')
 	>>> importance_df
-	                    input selection_order incremental_importance normalized_incremental_importance
-	0           Froude Number               1                 2.1038                                 1
-	1      Beam-Draught Ratio               2                      0                                 0
-	2  Prismatic Coeefficient               3                      0                                 0
-	3     Length-Displacement               4                      0                                 0
-	4   Longitudinal Position               5                      0                                 0
-	5       Length-Beam Ratio               6                      0                                 0
+	                     input  selection_order  incremental_importance  normalized_incremental_importance  cum_normalized_incremental_importance
+	0           Froude Number                1                  2.1038                             0.7763                                 0.7763
+	1      Beam-Draught Ratio                2                  0.1339                             0.0494                                 0.8257
+	2     Length-Displacement                3                  0.1246                             0.0460                                 0.8717
+	3   Longitudinal Position                4                  0.1215                             0.0448                                 0.9165
+	4  Prismatic Coeefficient                5                  0.1164                             0.0429                                 0.9595
+	5       Length-Beam Ratio                6                  0.1098                             0.0405                                 1.0000
 
 
 
@@ -298,11 +294,11 @@ Post-Learning
 	>>> # How suboptimal is this linear regression model?
 	>>> # Can we do better with a nonlinear model, without new inputs?
 	>>> print('Additive Suboptimality: %.4f' % \
-	...		test_df.regression_additive_suboptimality('Prediction', label_column))
-	Additive Suboptimality: 0.6424
+	...		test_df.kxy.regression_additive_suboptimality('Prediction', label_column))
+	Additive Suboptimality: 0.9299
 	>>> print('Suboptimality: %.4f' % \
-	...		test_df.regression_suboptimality('Prediction', label_column))
-	Suboptimality: 0.8506
+	...		test_df.kxy.regression_suboptimality('Prediction', label_column))
+	Suboptimality: 1.3197
 
 
 

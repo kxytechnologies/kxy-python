@@ -10,7 +10,6 @@ kxy.api.decorators
 from functools import wraps
 import os
 
-API_KEY = os.getenv('KXY_API_KEY')
 
 def requires_api_key(method):
 	"""
@@ -26,7 +25,8 @@ def requires_api_key(method):
 	"""
 	@wraps(method)
 	def wrapper(*args, **kw):
-		assert API_KEY is not None, 'An API key should be provided by setting the environment' \
+		api_key = os.getenv('KXY_API_KEY')			
+		assert api_key is not None, 'An API key should be provided by setting the environment' \
 			'variable KXY_API_KEY'
 		return method(*args, **kw)
 

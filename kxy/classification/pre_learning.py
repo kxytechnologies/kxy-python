@@ -35,7 +35,7 @@ def classification_difficulty(x_c, y, x_d=None, space='dual'):
 
 		:ref:`kxy.api.core.mutual_information.least_mixed_mutual_information <least-mixed-mutual-information>`.
 	"""
-	return 1./least_mixed_mutual_information(x_c, y, x_d=x_d, space=space)
+	return 1./least_mixed_mutual_information(x_c, y, x_d=x_d, space=space, non_monotonic_extension=False)
 
 
 
@@ -82,7 +82,7 @@ def classification_feasibility(x_c, y, x_d=None, space='dual'):
 	if x_c is None:
 		return discrete_mutual_information(x_d, y)
 
-	return least_mixed_mutual_information(x_c, y, x_d=x_d, space=space)
+	return least_mixed_mutual_information(x_c, y, x_d=x_d, space=space, non_monotonic_extension=True)
 
 
 
@@ -124,9 +124,11 @@ def classification_input_incremental_importance(x_c, y, z_c, x_d=None, z_d=None,
 	x_ = np.reshape(x_c, (len(x_c), 1)) if len(x_c.shape) == 1 else x_c.copy()
 	z_ = np.reshape(z_c, (len(z_c), 1)) if len(z_c.shape) == 1 else z_c.copy()
 
-	cmi = least_mixed_conditional_mutual_information(\
-		np.hstack((x_, np.abs(x_-x_.mean(axis=0)))), y, \
-		np.hstack((z_, np.abs(z_-z_.mean(axis=0)))), x_d=x_d, z_d=z_d, space=space)
+	# cmi = least_mixed_conditional_mutual_information(\
+	# 	np.hstack((x_, np.abs(x_-x_.mean(axis=0)))), y, \
+	# 	np.hstack((z_, np.abs(z_-z_.mean(axis=0)))), x_d=x_d, z_d=z_d, space=space)
+
+	cmi = least_mixed_conditional_mutual_information(x_, y, z_, x_d=x_d, z_d=z_d, space=space, non_monotonic_extension=True)
 
 	return cmi
 

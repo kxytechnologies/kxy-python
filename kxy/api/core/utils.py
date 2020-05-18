@@ -113,14 +113,14 @@ def pre_conditioner(x):
 
 	.. note::
 
-		The current implementation computes A as :math:`A = D^{-\\frac{1}{2}} U^T` where :math:`C = UDU^T` 
+		The current implementation computes A as :math:`A = U^T` where :math:`C = UDU^T` 
 		is the SVD decomposition of the covariance matrix of :math:`x`.
 
 		It is worth recalling that if :math:`x` is mean 0 and has covariance matrix :math:`C`, then 
-		:math:`z := D^{-\\frac{1}{2}} U^T x` is also mean 0 and has covariance matrix the identity matrix.
+		:math:`z := U^T x` is also mean 0 and has covariance matrix :math:`D`.
 
 		The Spearman rank correlation of :math:`z` might not be the identity matrix, but its off diagonal terms
-		will have the same magnitude (fairly small).
+		should have the same magnitude (fairly small).
 
 
 	Parameters
@@ -137,17 +137,9 @@ def pre_conditioner(x):
 	ld: float
 		:math:`\\log |\\text{det} A|`
 	"""
-	cov = np.cov(x)
+	cov = np.cov(x.T)
 	u, s, v = svd(cov)
-	eps = 0.0
-	oc = np.max(s)/np.min(s)
-	if oc > 1.0:
-		nc = np.min([oc, 1e3])
-		eps = np.min(s)*(oc-nc)/(nc-1.0)
-	
-	a = np.dot(np.diag(1.0/(np.sqrt(np.absolute(s) + eps))), u.T)
-	det_a = np.prod(1.0/(np.sqrt(np.absolute(s) + eps)))
 
-	return a, np.log(np.abs(det_a))
+	return v, 0.0
 
 

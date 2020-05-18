@@ -61,6 +61,7 @@ def classification_suboptimality(yp, y, x_c, x_d=None, space='dual'):
 
 		:ref:`kxy.api.core.mutual_information.least_mixed_mutual_information <least-mixed-mutual-information>`
 	"""
-	return least_mixed_mutual_information(x_c, y, x_d=x_d, space=space)-discrete_mutual_information(y, yp)
+	return least_mixed_mutual_information(x_c, y, x_d=x_d, space=space, non_monotonic_extension=True)-\
+		discrete_mutual_information(y, yp)
 
 

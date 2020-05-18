@@ -2,12 +2,19 @@
 # -*- coding: utf-8 -*-
 
 """
-Extension of pandas DataFrame class to allow data scientists to tap into 
+Extension of the pandas DataFrame class to allow data scientists to tap into 
 the power of the KXY API within the comfort of their favorite data structure.
+
+All methods defined in the :code:`KXYAccessor` class are accessible from any 
+DataFrame instance under :code:`df.kxy.*`, so long as the :code:`kxy` python 
+package is imported alongside :code:`pandas`.
+
+See https://pandas.pydata.org/pandas-docs/stable/development/extending.html 
 """
 
 from functools import lru_cache, wraps
 import logging
+import os
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 
@@ -23,82 +30,24 @@ from kxy.finance import information_adjusted_beta, information_adjusted_correlat
 from kxy.regression import regression_feasibility, regression_suboptimality, regression_additive_suboptimality, \
 	regression_input_incremental_importance
 
-from .decorators import decorate_methods, decorate_all_methods
 
 
-def cast_to_kxy_dataframe(method):
-	"""
-	Decorator casting the return of a method to kxy.DataFrame when it returns pd.DataFrame.
-	"""
-	@wraps(method)
-	def wrapper(*args, **kwargs):
-		res = method(*args, **kwargs)
-		if isinstance(res, pd.DataFrame):
-			return DataFrame(data=res.values, columns=res.columns, index=res.index)
-		return res
-
-	return wrapper
-
-
-def pre_solve(method):
-	"""
-	Decorator casting the return of a method to kxy.DataFrame when it returns pd.DataFrame.
-	"""
-	@wraps(method)
-	def wrapper(*args, **kwargs):
-		obj = args[0]
-		has_pre_solved = getattr(obj, 'has_pre_solved', False)
-		if not has_pre_solved:
-			setattr(obj, 'has_pre_solved', True)
-			obj.pre_solve_thread = Thread(target=obj._pre_solve)
-			obj.pre_solve_thread.start()
-
-		return method(*args, **kwargs)
-
-	return wrapper
-
-
-@decorate_all_methods(cast_to_kxy_dataframe)
-class _iLocIndexer(pd.core.indexing._iLocIndexer):
-	pass
-
-@decorate_all_methods(cast_to_kxy_dataframe)
-class _LocIndexer(pd.core.indexing._LocIndexer):
-	pass
-
-@decorate_all_methods(cast_to_kxy_dataframe)
-class _iAtIndexer(pd.core.indexing._iAtIndexer):
-	pass
-
-@decorate_all_methods(cast_to_kxy_dataframe)
-class _AtIndexer(pd.core.indexing._AtIndexer):
-	pass
-
-# @decorate_methods(pre_solve, include=['regression_feasibility', 'classification_feasibility', \
-# 	'classification_suboptimality', 'regression_suboptimality', 'regression_additive_suboptimality', \
-# 	'classification_input_incremental_importance', 'regression_input_incremental_importance', \
-# 	'individual_input_importance'])
-@decorate_methods(cast_to_kxy_dataframe, include=[\
-	'__add__', '__sub__', '__mul__', '__div__', '__floordiv__', '__truediv__', '__mod__', '__pow__', \
-	'__iadd__', '__isub__', '__imul__', '__idiv__', '__ifloordiv__', '__imod__', '__ipow__', \
-	'add', 'sub', 'mul', 'div', 'truediv', 'floordiv', 'mod', 'pow', 'sample', \
-	'radd', 'rsub', 'rmul', 'rdiv', 'rtruediv', 'rfloordiv', 'rmod', 'rpow', \
-	'__eq__', '__ne__', '__gt__', '__lt__', '__le__', '__ge__', '__neg__', '__pos__',  '__invert__', \
-	'eq', 'ne', 'gt', 'lt', 'le', 'ge', 'apply', 'applymap', 'abs', 'clip', 'count', \
-	'cov', 'cummin', 'cummax', 'cumprod', 'cumsum', 'round', 'sum', 'std', 'var', 'cov', \
-	'nunique', 'rename', 'rename_axis', 'reset_index', 'drop_level', 'pivot', 'T', 'rank', \
-	'transpose', 'fillna', 'dropna', 'pct_change', 'swapaxes', 'swaplevel', 'where', 'tail', \
-	'head', 'shift', 'asfreq', 'dot', 'transform', 'astype', 'copy'])
-class DataFrame(pd.DataFrame):
+@pd.api.extensions.register_dataframe_accessor("kxy")
+class KXYAccessor(object):
 	"""
 	Extension of the pandas.DataFrame class with various analytics for **pre-learning** and **post-learning**,
 	in supervised learning problems.
-
-	.. important::
-
-		A wide range of operators and methods inherited from pandas.DataFrame have been overriden to return a kxy.DataFrame
-		instead of a pandas.DataFrame.
 	"""
+	def __init__(self, pandas_obj):
+		self._validate(pandas_obj)
+		self._obj = pandas_obj
+
+	@staticmethod
+	def _validate(obj):
+		api_key = os.getenv('KXY_API_KEY')
+		assert api_key is not None, 'The KXY_API_KEY environment variable should be set with a valid API key'
+
+		
 	def regression_feasibility(self, label_column, input_columns=()):
 		"""
 		Quantifies how feasible a regression problem is by computing the amount of uncertainty
@@ -138,7 +87,7 @@ class DataFrame(pd.DataFrame):
 		AssertionError
 			If label_column is in input_columns.
 		"""
-		input_columns = list(set(self.columns)-set([label_column])) if input_columns == () \
+		input_columns = list(set(self._obj.columns)-set([label_column])) if input_columns == () \
 			else list(input_columns)
 		assert label_column not in input_columns, "The output cannot be a input"
 
@@ -146,7 +95,7 @@ class DataFrame(pd.DataFrame):
 			problem='regression')
 		input_sorted_by_importance = input_importance['input'].values
 
-		return regression_feasibility(self[input_sorted_by_importance].values, self[label_column].values)
+		return regression_feasibility(self._obj[input_sorted_by_importance].values, self._obj[label_column].values)
 
 
 
@@ -154,23 +103,23 @@ class DataFrame(pd.DataFrame):
 	def adjust_quantized_values(self):
 		"""
 		Add a negligible random gitter to columns that are continuous but quantized in an attempt 
-		to make observations unique and to avoid theoretical incongruities.
+		to make observations unique, and so as to avoid theoretical incongruities.
 		"""
-		previously_adjusted = getattr(self, 'previously_adjusted', False)
+		previously_adjusted = getattr(self._obj, 'previously_adjusted', False)
 		if not previously_adjusted:
 			random_state = np.random.RandomState(0)
-			for col in self.columns:
+			for col in self._obj.columns:
 				if self.is_discrete(col):
 					continue
 
-				x = self[col].values.copy()
+				x = self._obj[col].values
 				sx = np.unique(x)
-				dx = min(np.min(sx[1:]-sx[:-1])/100.0, 0.00001)
-				eps = random_state.rand(*x.shape)*dx
-				x += eps
-				self[col] = x
+				if len(sx) != self._obj.shape[0]:
+					dx = min(np.min(sx[1:]-sx[:-1])/10000.0, 0.00001)
+					eps = random_state.rand(*x.shape)*dx
+					x += eps
 
-		setattr(self, 'previously_adjusted', True)
+		setattr(self._obj, 'previously_adjusted', True)
 
 
 
@@ -208,13 +157,13 @@ class DataFrame(pd.DataFrame):
 		assert label_column not in discrete_input_columns, "The output cannot be a input"
 		assert label_column not in continuous_input_columns, "The output cannot be a input"
 
-		continuous_input_columns = [col for col in self.columns if col != label_column and not self.is_discrete(col)] \
+		continuous_input_columns = [col for col in self._obj.columns if col != label_column and not self.is_discrete(col)] \
 			if continuous_input_columns == () else list(continuous_input_columns)
 		assert len(continuous_input_columns) > 0, "Continuous inputs are required"
 
-		x_d = self[discrete_input_columns].values if len(discrete_input_columns) > 0 else None
-		x_c = self[continuous_input_columns].values
-		y = self[label_column].values
+		x_d = self._obj[discrete_input_columns].values if len(discrete_input_columns) > 0 else None
+		x_c = self._obj[continuous_input_columns].values
+		y = self._obj[label_column].values
 
 		return classification_feasibility(x_c, y, x_d=x_d)
 
@@ -280,14 +229,14 @@ class DataFrame(pd.DataFrame):
 		assert label_column not in discrete_input_columns, "The output cannot be a input"
 		assert label_column not in continuous_input_columns, "The output cannot be a input"
 		self.adjust_quantized_values()
-		continuous_input_columns = [col for col in self.columns if col not in (label_column, prediction_column) \
+		continuous_input_columns = [col for col in self._obj.columns if col not in (label_column, prediction_column) \
 			and not self.is_discrete(col)] if continuous_input_columns == () else list(continuous_input_columns)
 		assert len(continuous_input_columns) > 0, "Continuous inputs are required"
 
-		x_d = self[discrete_input_columns].values if len(discrete_input_columns) > 0 else None
-		x_c = self[continuous_input_columns].values
-		y = self[label_column].values
-		yp = self[prediction_column].values
+		x_d = self._obj[discrete_input_columns].values if len(discrete_input_columns) > 0 else None
+		x_c = self._obj[continuous_input_columns].values
+		y = self._obj[label_column].values
+		yp = self._obj[prediction_column].values
 
 		return classification_suboptimality(yp, y, x_c, x_d=x_d)
 
@@ -328,7 +277,7 @@ class DataFrame(pd.DataFrame):
 
 		Returns
 		-------
-		importance : DataFrame
+		importance : pd.DataFrame
 			A dataframe with an input column, an individual importance column, and a normalized individual importance column.
 
 		Raises
@@ -337,7 +286,7 @@ class DataFrame(pd.DataFrame):
 			If problem is neither :code:`None` nor :code:`'classification'` nor :code:`'regression'`, or if 
 			:code:`label_column` is in :code:`input_columns`.
 		"""
-		input_columns = list(set(self.columns)-set([label_column])) if input_columns == () \
+		input_columns = list(set(self._obj.columns)-set([label_column])) if input_columns == () \
 			else list(input_columns)
 		assert label_column not in input_columns, "The output cannot be a input"
 		assert problem is None or problem in ('classification', 'regression'), \
@@ -356,7 +305,7 @@ class DataFrame(pd.DataFrame):
 		total_importance = np.sum([importance[col] for col in importance.keys() if importance[col]])
 		scale = 1./total_importance if total_importance > 0. else 0.0
 
-		importance_df = DataFrame({
+		importance_df = pd.DataFrame({
 			'input': [k for k, v in sorted(importance.items(), key=lambda item: -item[1])], \
 			'individual_importance': [v for k, v in sorted(importance.items(), key=lambda item: -item[1])], \
 			'normalized_individual_importance': [v*scale for k, v in sorted(importance.items(), key=lambda item: -item[1])]})
@@ -371,13 +320,13 @@ class DataFrame(pd.DataFrame):
 		if problem == 'classification':
 			self.adjust_quantized_values()
 			return {col: classification_feasibility(\
-							None, self[label_column].values, x_d=self[col].values, space=space) if self.is_discrete(col) else \
-							   classification_feasibility(self[col].values, self[label_column].values, x_d=None, space=space)}
+							None, self._obj[label_column].values, x_d=self._obj[col].values, space=space) if self.is_discrete(col) else \
+							   classification_feasibility(self._obj[col].values, self._obj[label_column].values, x_d=None, space=space)}
 
 		else:
 			return {col: regression_feasibility(\
-				self[col].values, self[label_column].values, space=space) if not self.is_categorical(col) else \
-				classification_feasibility(self[label_column].values, self[col].values, x_d=None, space=space)}
+				self._obj[col].values, self._obj[label_column].values, space=space) if not self.is_categorical(col) else \
+				classification_feasibility(self._obj[label_column].values, self._obj[col].values, x_d=None, space=space)}
 
 
 
@@ -385,8 +334,8 @@ class DataFrame(pd.DataFrame):
 		"""
 		Determine whether the input column contains discrete observations.
 		"""
-		ret = (not np.can_cast(self[column].values, float))
-		ret = ret or len(list(set(self[column].values))) < 0.5*self.shape[0]
+		ret = (not np.can_cast(self._obj[column].values, float))
+		ret = ret or len(list(set(self._obj[column].values))) < 0.5*self._obj.shape[0]
 
 		return ret
 
@@ -395,7 +344,7 @@ class DataFrame(pd.DataFrame):
 		"""
 		Determine whether the input column is not numeric.
 		"""
-		return not np.can_cast(self[column].values, float)
+		return not np.can_cast(self._obj[column].values, float)
 
 
 	def corr(self, columns=(), method='information-adjusted', min_periods=1, p=0):
@@ -420,7 +369,7 @@ class DataFrame(pd.DataFrame):
 
 		Returns
 		-------
-		c : DataFrame
+		c : pd.DataFrame
 			The auto-correlation matrix.
 
 
@@ -428,13 +377,13 @@ class DataFrame(pd.DataFrame):
 
 			:ref:`kxy.finance.risk_analysis.information_adjusted_correlation <information-adjusted-correlation>`
 		"""
-		columns = self.columns if columns == () else list(columns)
+		columns = self._obj.columns if columns == () else list(columns)
 
 		if method == 'information-adjusted':
-			c = information_adjusted_correlation(self[columns].values, self[columns].values)
+			c = information_adjusted_correlation(self._obj[columns].values, self._obj[columns].values)
 			return pd.DataFrame(c, columns=columns, index=columns)
 		else:
-			return pd.DataFrame.corr(self[columns], method=method, min_periods=min_periods)
+			return pd.DataFrame.corr(self._obj[columns], method=method, min_periods=min_periods)
 
 
 	def beta(self, column_y, column_x, method='information-adjusted'):
@@ -479,10 +428,10 @@ class DataFrame(pd.DataFrame):
 		assert method in ('information-adjusted', 'pearson'), "Allowed methods are 'information-adjusted' and 'pearson'."
 
 		if method == 'information-adjusted':
-			return information_adjusted_beta(self[column_y].values, self[column_x].values)
+			return information_adjusted_beta(self._obj[column_y].values, self._obj[column_x].values)
 
-		c = np.corrcoef(self[column_y].values, self[column_x].values)[0, 1]
-		return c*np.sqrt(self[column_y].values.var()/self[column_x].values.var())
+		c = np.corrcoef(self._obj[column_y].values, self._obj[column_x].values)[0, 1]
+		return c*np.sqrt(self._obj[column_y].values.var()/self._obj[column_x].values.var())
 
 
 	def total_correlation(self, columns=()):
@@ -505,8 +454,8 @@ class DataFrame(pd.DataFrame):
 
 			:ref:`kxy.api.core.mutual_information.least_total_correlation <least-total-correlation>`
 		"""
-		columns = self.columns if columns == () else list(columns)
-		return least_total_correlation(self[columns].values)
+		columns = self._obj.columns if columns == () else list(columns)
+		return least_total_correlation(self._obj[columns].values)
 
 
 	def regression_suboptimality(self, prediction_column, label_column, input_columns=()):
@@ -586,18 +535,18 @@ class DataFrame(pd.DataFrame):
 		assert not self.is_categorical(prediction_column), "The prediction column should not be categorical"
 		assert not self.is_categorical(label_column), "The label column should not be categorical"
 
-		input_columns = [_ for _ in self.columns if _ not in (prediction_column, label_column) ] \
+		input_columns = [_ for _ in self._obj.columns if _ not in (prediction_column, label_column) ] \
 			if input_columns == () else list(input_columns)
 
 		# Direct estimation of SO
-		result_1 = regression_suboptimality(self[prediction_column].values, self[label_column].values, \
-			self[input_columns].values)
+		result_1 = regression_suboptimality(self._obj[prediction_column].values, self._obj[label_column].values, \
+			self._obj[input_columns].values)
 
 		# SO = ASO + h(y) - h(e)
 		result_2 = self.regression_additive_suboptimality(prediction_column, label_column, \
 			input_columns=input_columns)
-		e = (self[prediction_column]-self[label_column]).values
-		result_2 += scalar_continuous_entropy(self[label_column].values) - scalar_continuous_entropy(e)
+		e = (self._obj[prediction_column]-self._obj[label_column]).values
+		result_2 += scalar_continuous_entropy(self._obj[label_column].values) - scalar_continuous_entropy(e)
 
 		return max(result_1, result_2)
 
@@ -611,7 +560,9 @@ class DataFrame(pd.DataFrame):
 
 		.. note::
 
-			Additive regression models aim at breaking down a label :math:`y` as the sum of a component that solely depend on 
+			Additive regression models aim a
+
+			t breaking down a label :math:`y` as the sum of a component that solely depend on 
 			inputs :math:`f(x)` and a residual component that is statistically independent from inputs :math:`\\epsilon`
 
 			.. math::
@@ -657,56 +608,22 @@ class DataFrame(pd.DataFrame):
 		assert not self.is_categorical(prediction_column), "The prediction column should not be categorical"
 		assert not self.is_categorical(label_column), "The label column should not be categorical"
 
-		input_columns = [_ for _ in self.columns if _ not in (prediction_column, label_column) ] \
+		input_columns = [_ for _ in self._obj.columns if _ not in (prediction_column, label_column) ] \
 			if input_columns == () else list(input_columns)
 
-		e = (self[prediction_column]-self[label_column]).values
-		x = self[input_columns].values
+		e = (self._obj[prediction_column]-self._obj[label_column]).values
+		x = self._obj[input_columns].values
 
 		return regression_additive_suboptimality(e, x)
 
 
-	def __hash__(self):
-		return hash(self.to_string())
-
-
-	@property
-	def iloc(self):
-		"""
-		Ensures the inherited iloc operations return a DataFrame instead of a pandas.DataFrame.
-		"""
-		return _iLocIndexer("iloc", self)
-
-
-	@property
-	def loc(self):
-		"""
-		Ensures the inherited loc operations return a DataFrame instead of a pandas.DataFrame.
-		"""
-		return _LocIndexer("loc", self)
-
-
-	@property
-	def at(self):
-		"""
-		Ensures the inherited at operations return a DataFrame instead of a pandas.DataFrame.
-		"""
-		return _AtIndexer("at", self)
-
-
-	@property
-	def iat(self):
-		"""
-		Ensures the inherited iat operations return a DataFrame instead of a pandas.DataFrame.
-		"""
-		return _iAtIndexer("iat", self)
 
 
 	def _pre_solve(self):
 		"""
 		Pre-emptively solve the max-entropy problems remotely, and in the background.
 		"""
-		data = np.hstack((self.values, np.abs(self.values-self.values.mean(axis=0))))
+		data = np.hstack((self._obj.values, np.abs(self._obj.values-self._obj.values.mean(axis=0))))
 		corr = spearman_corr(data)
 		return solve_copula_async(corr)
 		
@@ -756,7 +673,7 @@ class DataFrame(pd.DataFrame):
 
 		Returns
 		-------
-		importance : DataFrame
+		importance : pd.DataFrame
 			A dataframe with an input column, an incremental importance column, a normalized incremental importance column, 
 			and a column with the order in which variables were selected.
 
@@ -765,14 +682,12 @@ class DataFrame(pd.DataFrame):
 		AssertionError
 			If :code:`label_column` is in :code:`input_columns`.
 		"""
-		# TODO: Turn this into a one-shot sync call.
-
-		input_columns = list(set(self.columns)-set([label_column])) if input_columns == () \
+		input_columns = list(set(self._obj.columns)-set([label_column])) if input_columns == () \
 			else list(input_columns)
 		continuous_inputs = [col for col in input_columns if not self.is_categorical(col)]
 
-		data = np.hstack((self[label_column].values[:, None], self[continuous_inputs].values, \
-			np.abs(self[continuous_inputs].values-np.nanmean(self[continuous_inputs].values, axis=0))))
+		data = np.hstack((self._obj[label_column].values[:, None], self._obj[continuous_inputs].values, \
+			np.abs(self._obj[continuous_inputs].values-np.nanmean(self._obj[continuous_inputs].values, axis=0))))
 		corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
 		mi_analysis = mutual_information_analysis(corr, 0, space=space, greedy=greedy)
 		columns = [label_column] + continuous_inputs + continuous_inputs
@@ -798,7 +713,7 @@ class DataFrame(pd.DataFrame):
 		total_importance = np.sum([res[col] for col in res.keys() if res[col]])
 		scale = 1./total_importance if total_importance > 0. else 0.0
 
-		importance_df = DataFrame({
+		importance_df = pd.DataFrame({
 			'input': [k for k, v in sorted(order.items(), key=lambda item: item[1])], \
 			'selection_order': [v for k, v in sorted(order.items(), key=lambda item: item[1])], \
 			'incremental_importance': [res[k] for k, v in sorted(order.items(), key=lambda item: item[1])], \
@@ -853,7 +768,7 @@ class DataFrame(pd.DataFrame):
 			If :code:`label_column` is in :code:`input_columns`.
 		"""
 		self.adjust_quantized_values()
-		input_columns = list(set(self.columns)-set([label_column])) if input_columns == () \
+		input_columns = list(set(self._obj.columns)-set([label_column])) if input_columns == () \
 			else list(input_columns)
 
 		res = {}
@@ -885,7 +800,7 @@ class DataFrame(pd.DataFrame):
 		total_importance = np.sum([res[col] for col in res.keys() if res[col]])
 		scale = 1./total_importance if total_importance > 0. else 0.0
 
-		importance_df = DataFrame({
+		importance_df = pd.DataFrame({
 			'input': [k for k, v in sorted(order.items(), key=lambda item: item[1])], \
 			'selection_order': [v for k, v in sorted(order.items(), key=lambda item: item[1])], \
 			'incremental_importance': [res[k] for k, v in sorted(order.items(), key=lambda item: item[1])], \
@@ -901,19 +816,19 @@ class DataFrame(pd.DataFrame):
 
 		if len(continuous_conditions) == 0 and len(categorical_conditions) == 0:
 			return {col: classification_feasibility(\
-						None, self[label_column].values, x_d=self[col].values, space=space) if self.is_discrete(col) else \
-						   classification_feasibility(self[col].values, self[label_column].values, x_d=None, space=space)}
+						None, self._obj[label_column].values, x_d=self._obj[col].values, space=space) if self.is_discrete(col) else \
+						   classification_feasibility(self._obj[col].values, self._obj[label_column].values, x_d=None, space=space)}
 
 		return {col: \
 				classification_input_incremental_importance(\
-					None, self[label_column].values, None if len(continuous_conditions) == 0 \
-					else self[continuous_conditions].values, x_d=self[col].values, \
-					z_d=None if len(categorical_conditions) == 0 else self[categorical_conditions].values, \
+					None, self._obj[label_column].values, None if len(continuous_conditions) == 0 \
+					else self._obj[continuous_conditions].values, x_d=self._obj[col].values, \
+					z_d=None if len(categorical_conditions) == 0 else self._obj[categorical_conditions].values, \
 					space=space) if self.is_discrete(col) else \
 				classification_input_incremental_importance(\
-					self[col].values, self[label_column].values, None if len(continuous_conditions) == 0 \
-					else self[continuous_conditions].values, x_d=None, \
-					z_d=None if len(categorical_conditions) == 0 else self[categorical_conditions].values, \
+					self._obj[col].values, self._obj[label_column].values, None if len(continuous_conditions) == 0 \
+					else self._obj[continuous_conditions].values, x_d=None, \
+					z_d=None if len(categorical_conditions) == 0 else self._obj[categorical_conditions].values, \
 					space=space)}
 
 
@@ -938,60 +853,7 @@ class DataFrame(pd.DataFrame):
 
 
 	def __hash__(self):
-		return hash(self.to_string())
+		return hash(self._obj.to_string())
 
-
-@cast_to_kxy_dataframe
-def read_csv(*args, **kwargs):
-	"""
-	.. _read-csv:
-	Same as pandas.read_csv, but returns a kxy.DataFrame object.
-	"""
-	return pd.read_csv(*args, **kwargs)
-
-
-@cast_to_kxy_dataframe
-def read_excel(*args, **kwargs):
-	"""
-	.. _read-excel:
-	Same as pandas.read_excel, but returns a kxy.DataFrame object.
-	"""
-	return pd.read_excel(*args, **kwargs)
-
-
-@cast_to_kxy_dataframe
-def read_html(*args, **kwargs):
-	"""
-	.. _read-html:
-	Same as pandas.read_html, but returns a kxy.DataFrame object.
-	"""
-	return pd.read_html(*args, **kwargs)
-
-
-@cast_to_kxy_dataframe
-def read_table(*args, **kwargs):
-	"""
-	.. _read-table:
-	Same as pandas.read_table, but returns a kxy.DataFrame object.
-	"""
-	return pd.read_table(*args, **kwargs)
-
-
-@cast_to_kxy_dataframe
-def read_sql(*args, **kwargs):
-	"""
-	.. _read-sql:
-	Same as pandas.read_sql, but returns a kxy.DataFrame object.
-	"""
-	return pd.read_sql(*args, **kwargs)
-
-
-@cast_to_kxy_dataframe
-def read_parquet(*args, **kwargs):
-	"""
-	.. _read-parquet:
-	Same as pandas.read_parquet, but returns a kxy.DataFrame object.
-	"""
-	return pd.read_parquet(*args, **kwargs)
 
 
