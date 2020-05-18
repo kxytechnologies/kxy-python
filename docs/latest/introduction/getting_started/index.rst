@@ -69,7 +69,7 @@ inputs (irrespective of the classification model)?
 .. code-block:: python
 
 	>>> df.kxy.classification_feasibility('Is Fake')
-	3.58
+	2.52
 
 The higher the number is relative to the entropy of the responsee, the better. A value of 0
 means no model can successfully solve this classification problem using provided inputs, no
@@ -95,17 +95,17 @@ and reduces time wasted improving models fitted on irrelevant inputs.
 	>>> importance_df_1 = df.kxy.individual_input_importance('Is Fake')
 	>>> importance_df_1
 	       input  individual_importance  normalized_individual_importance  cum_normalized_individual_importance
-	0  Variance                   1.89                              0.84                                  0.84
-	1  Skewness                   0.37                              0.16                                  1.00
-	2  Kurtosis                   0.00                              0.00                                  1.00
-	3   Entropy                   0.00                              0.00                                  1.00
+	0  Variance                   1.33                              0.67                                  0.67
+	1  Skewness                   0.49                              0.25                                  0.92
+	2  Kurtosis                   0.15                              0.08                                  1.00
+	3   Entropy                   0.01                              0.00                                  1.00
 	>>> importance_df_2 = df.kxy.incremental_input_importance('Is Fake')
 	>>> importance_df_2
 	       input  selection_order  incremental_importance  normalized_incremental_importance  cum_normalized_incremental_importance
-	0  Variance                1                    1.89                               0.71                                   0.71
-	1  Skewness                2                    0.32                               0.12                                   0.83
-	2  Kurtosis                3                    0.44                               0.17                                   1.00
-	3   Entropy                4                    0.00                               0.00                                   1.00
+	0  Variance                1                    1.33                               0.53                                   0.53
+	1  Skewness                2                    0.53                               0.21                                   0.74
+	2  Kurtosis                3                    0.45                               0.18                                   0.92
+	3   Entropy                4                    0.21                               0.08                                   1.00
 	>>> importance_df_1 = importance_df_1.set_index(['input'])
 	>>> importance_df_2 = importance_df_2.set_index(['input'])
 	>>> importance_df = pd.concat([importance_df_1, importance_df_2], axis=1)
@@ -171,7 +171,7 @@ Back to our bank note example, given how high an out-of-sample accuracy we got, 
 	... 	discrete_input_columns=(), continuous_input_columns=())
 	0.00
 	>>> train_df.kxy.classification_feasibility('Is Fake')
-	2.54
+	1.95
 
 As it turns out, a simple logistic regression allows us to extract nearly all of the intrinsic value there is in using the 3 inputs above to determmine whether a bank note is fake. Thus, using a nonlinear model might not yield the highest ROI. 
 

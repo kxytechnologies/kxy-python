@@ -8,7 +8,7 @@ Created on Thu Feb 27 10:54:00 2020
 import sys
 sys.path.append('.')
 from setuptools import setup, find_packages
-version = "0.0.14"
+version = "0.0.15"
 
 setup(name="kxy",
 	version=version,

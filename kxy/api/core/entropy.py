@@ -7,20 +7,38 @@ import requests
 
 import numpy as np
 import scipy.special as spe
+from scipy import stats
 
 from kxy.api import APIClient, solve_copula_sync
-from .utils import pre_conditioner, spearman_corr, pearson_corr
+from .utils import spearman_corr, pearson_corr
 
 
-def scalar_continuous_entropy(x, space='dual'):
+def scalar_continuous_entropy(x, space='dual', method='gaussian-kde'):
 	"""
 	.. _scalar-continuous-entropy:
-	Estimates the (differential) entropy of a continuous scalar random variable using the standard 1-spacing estimator (see [2]_ and [3]_):
+	Estimates the (differential) entropy of a continuous scalar random variable.
+
+	Multiple methods are supported:
+
+	* Gaussian moment matching
 
 	.. math::
-		h(x) \\approx - \gamma(1) + \\frac{1}{n-1} \\sum_{i=1}^{n-1} \log \\left[ n \\left(x_{(i+1)} - x_{(i)} \\right) \\right],
+		h(x) = \\frac{1}{2} \\log\\left(2 \\pi e \\sigma^2 \\right)
+
+	* The standard 1-spacing estimator (see [2]_ and [3]_):
+
+	.. math::
+		h(x) \\approx - \\gamma(1) + \\frac{1}{n-1} \\sum_{i=1}^{n-1} \\log \\left[ n \\left(x_{(i+1)} - x_{(i)} \\right) \\right],
 
 	where :math:`x_{(i)}` is the i-th smallest sample, and :math:`\\gamma` is `the digamma function. <https://en.wikipedia.org/wiki/Digamma_function>`_
+	
+	* Gaussian kernel density estimation.
+
+	.. math::
+		h(x) \\approx \\frac{1}{n} \\sum_{i=1}^n \\log\\left( \\hat{p}\\left(x_i\\right) \\right)
+
+	where :math:`\\hat{p}` is the Gaussian kernel density estimator of the true pdf using :code:`scipy.stats.gaussian_kde`.
+
 
 
 	
@@ -49,14 +67,21 @@ def scalar_continuous_entropy(x, space='dual'):
 		International Journal of Mathematical and Statistical Sciences. 6 (1): 17–40. (1997) ISSN 1055-7490. 
 	"""
 	assert len(x.shape) == 1 or x.shape[1] == 1, 'x should be a one dimensional numpy array'
-	if space == 'primal':
+	assert method in ('gaussian', '1-spacing', 'gaussian-kde')
+
+	if space == 'primal' or method == 'gaussian':
 		return 0.5*np.log(2.*np.pi*np.e*np.var(x))
 
-	sorted_x = np.unique(x)
-	n = sorted_x.shape[0]
-	ent = np.sum(np.log(n*(sorted_x[1:]-sorted_x[:-1])))/n - spe.digamma(1)
+	if method == '1-spacing':
+		sorted_x = np.unique(x)
+		n = sorted_x.shape[0]
+		ent = np.sum(np.log(n*(sorted_x[1:]-sorted_x[:-1])))/n - spe.digamma(1)
+		return ent
 
-	return ent
+	if method == 'gaussian-kde':
+	    kern = stats.gaussian_kde(x)
+	    return -kern.logpdf(x).mean()
+
 
 
 def discrete_entropy(x):
@@ -161,15 +186,10 @@ def least_structured_continuous_entropy(x, space='dual'):
 	if len(x.shape) == 1 or x.shape[1] == 1:
 		return scalar_continuous_entropy(x, space=space)
 
+	ch = least_structured_copula_entropy(x, space=space)
+	ih = np.sum([scalar_continuous_entropy(x[:, i], space=space) for i in range(x.shape[1])])
 
-	x = x - x.mean(axis=0)
-	a, log_abs_det_a = pre_conditioner(x)
-	z = np.dot(a, x.T).T
-	ch = least_structured_copula_entropy(z, space=space)
-	ih = np.sum([scalar_continuous_entropy(z[:, i], space=space) for i in range(z.shape[1])])
-
-	return ih+ch-log_abs_det_a
-
+	return ih+ch
 
 
 
