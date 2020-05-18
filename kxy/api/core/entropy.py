@@ -7,7 +7,7 @@ import requests
 
 import numpy as np
 import scipy.special as spe
-from scipy import stats
+import statsmodels.api as sm
 
 from kxy.api import APIClient, solve_copula_sync
 from .utils import spearman_corr, pearson_corr
@@ -79,8 +79,9 @@ def scalar_continuous_entropy(x, space='dual', method='gaussian-kde'):
 		return ent
 
 	if method == 'gaussian-kde':
-	    kern = stats.gaussian_kde(x)
-	    return -kern.logpdf(x).mean()
+		kde = sm.nonparametric.KDEUnivariate(x)
+		kde.fit(kernel='gau')
+		return kde.entropy
 
 
 

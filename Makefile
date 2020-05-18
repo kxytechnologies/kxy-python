@@ -2,11 +2,11 @@
 
 # Update the s3 bucket of the docs website
 deploy_docs:
-	aws s3 sync docs/_build/html s3://docs.kxysolutions.com/ --acl public-read --metadata-directive REPLACE --cache-control max-age=86400 --profile $(AWSCLIPROFILE)
+	aws s3 sync docs/_build/html s3://docs.kxysolutions.com/ --acl public-read --metadata-directive REPLACE --cache-control max-age=86400 --profile kxy
 
 # Invalidate certain cached files in the cloudfront distribution
 refresh_web:
-	aws cloudfront create-invalidation --distribution-id E1YRSKXSRFPX1L --paths $(PATHS) --profile $(AWSCLIPROFILE)
+	aws cloudfront create-invalidation --distribution-id E1YRSKXSRFPX1L --paths $(PATHS) --profile kxy
 
 # Cut a PyPi release
 pypi_release:
