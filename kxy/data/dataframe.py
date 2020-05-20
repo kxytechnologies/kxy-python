@@ -704,7 +704,10 @@ class KXYAccessor(object):
 			column_id = mi_analysis['selection_order'][str(i)]
 			column = columns[column_id]
 			if column in remaining_columns:
-				res[column] = mi_analysis['conditional_mutual_informations'][str(i)]
+				if idx == 1:
+					res[column] = regression_feasibility(self._obj[column].values, self._obj[label_column].values)
+				else:
+					res[column] = mi_analysis['conditional_mutual_informations'][str(i)]
 				order[column] = idx
 				idx += 1
 				remaining_columns.remove(column)

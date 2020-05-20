@@ -31,7 +31,9 @@ autodoc_inherit_docstrings = False
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', \
     'sphinx.ext.todo', 'sphinx.ext.githubpages', 'sphinxcontrib.bibtex', \
-    'sphinx.ext.mathjax', 'sphinx.ext.autosectionlabel']
+    'sphinx.ext.mathjax', 'sphinx.ext.autosectionlabel', 'nbsphinx', \
+    'sphinx_copybutton']
+
 # imgmath_image_format = 'svg'
 # imgmath_font_size = 13
 
@@ -68,3 +70,12 @@ html_theme_options = {'logo_only': True, 'style_nav_header_background': '#2c3d5e
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# Notebook
+nbsphinx_execute = 'never'
+nbsphinx_allow_errors = True
+nbsphinx_input_prompt = 'In [%s]:'
+nbsphinx_output_prompt = 'Out[%s]:'
+source_suffix = ['.rst', '.md', '.ipynb']
+
+

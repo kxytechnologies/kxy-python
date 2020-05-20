@@ -36,6 +36,11 @@ Table of Contents
 	latest/introduction/time_series/index
 
 
+.. toctree::
+	:caption: CASE STUDIES
+
+	latest/notebooks/classification/index
+
 
 .. toctree::
 	:caption: INDEX
