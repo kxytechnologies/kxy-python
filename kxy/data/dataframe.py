@@ -541,14 +541,17 @@ class KXYAccessor(object):
 		# Direct estimation of SO
 		result_1 = regression_suboptimality(self._obj[prediction_column].values, self._obj[label_column].values, \
 			self._obj[input_columns].values)
+		
+		return result_1
 
-		# SO = ASO + h(y) - h(e)
-		result_2 = self.regression_additive_suboptimality(prediction_column, label_column, \
-			input_columns=input_columns)
-		e = (self._obj[prediction_column]-self._obj[label_column]).values
-		result_2 += scalar_continuous_entropy(self._obj[label_column].values) - scalar_continuous_entropy(e)
 
-		return max(result_1, result_2)
+		# # SO = ASO + h(y) - h(e)
+		# result_2 = self.regression_additive_suboptimality(prediction_column, label_column, \
+		# 	input_columns=input_columns)
+		# e = (self._obj[prediction_column]-self._obj[label_column]).values
+		# result_2 += scalar_continuous_entropy(self._obj[label_column].values) - scalar_continuous_entropy(e)
+
+		# return max(result_1, result_2)
 
 
 
