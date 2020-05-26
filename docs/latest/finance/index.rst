@@ -1,6 +1,6 @@
 
-Nonlinear Finance
-=================
+Asset Management
+================
 
 .. toctree::
 

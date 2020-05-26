@@ -20,24 +20,21 @@ def scalar_continuous_entropy(x, space='dual', method='gaussian-kde'):
 
 	Multiple methods are supported:
 
-	* Gaussian moment matching
+	* :code:`'gaussian'` for Gaussian moment matching: :math:`h(x) = \\frac{1}{2} \\log\\left(2 \\pi e \\sigma^2 \\right)`
 
-	.. math::
-		h(x) = \\frac{1}{2} \\log\\left(2 \\pi e \\sigma^2 \\right)
-
-	* The standard 1-spacing estimator (see [2]_ and [3]_):
+	* :code:`'1-spacing'` for the standard 1-spacing estimator (see [2]_ and [3]_):
 
 	.. math::
 		h(x) \\approx - \\gamma(1) + \\frac{1}{n-1} \\sum_{i=1}^{n-1} \\log \\left[ n \\left(x_{(i+1)} - x_{(i)} \\right) \\right],
 
 	where :math:`x_{(i)}` is the i-th smallest sample, and :math:`\\gamma` is `the digamma function. <https://en.wikipedia.org/wiki/Digamma_function>`_
 	
-	* Gaussian kernel density estimation.
+	* :code:`'gaussian-kde'` (the default) for Gaussian kernel density estimation.
 
 	.. math::
 		h(x) \\approx \\frac{1}{n} \\sum_{i=1}^n \\log\\left( \\hat{p}\\left(x_i\\right) \\right)
 
-	where :math:`\\hat{p}` is the Gaussian kernel density estimator of the true pdf using :code:`scipy.stats.gaussian_kde`.
+	where :math:`\\hat{p}` is the Gaussian kernel density estimator of the true pdf using :code:`statsmodels.api.nonparametric.KDEUnivariate`.
 
 
 

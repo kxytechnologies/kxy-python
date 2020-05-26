@@ -15,7 +15,6 @@ See https://pandas.pydata.org/pandas-docs/stable/development/extending.html
 from functools import lru_cache, wraps
 import logging
 import os
-from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -26,7 +25,8 @@ from kxy.api.core import least_total_correlation, spearman_corr, scalar_continuo
 from kxy.api import solve_copula_async, mutual_information_analysis
 from kxy.classification import classification_feasibility, classification_suboptimality, \
 	classification_input_incremental_importance
-from kxy.finance import information_adjusted_beta, information_adjusted_correlation
+from kxy.finance import information_adjusted_beta, information_adjusted_correlation, \
+	robust_pearson_corr
 from kxy.regression import regression_feasibility, regression_suboptimality, regression_additive_suboptimality, \
 	regression_input_incremental_importance
 
@@ -242,7 +242,7 @@ class KXYAccessor(object):
 
 
 
-	def individual_input_importance(self, label_column, input_columns=(), problem=None, space='dual'):
+	def individual_input_importance(self, label_column, input_columns=(), problem=None, space='dual', score=False):
 		"""
 		.. _dataframe-input-importance:
 		Calculates the importance of each input in the input set at solving the supervised
@@ -274,6 +274,13 @@ class KXYAccessor(object):
 			The type of supervised learning problem. One of None (default), 'classification'
 			or 'regression'. When problem is None, the supervised learning problem is inferred
 			based on whether labels are numeric and the percentage of distinct labels.
+		score : bool
+			If True, then input importance scores are scaled using the transformation :math:`i \\to \\sqrt{1-e^{-2i}}` 
+			so as to give importance scores the same scale as correlations, and provide developers with a more intuitive
+			understanding of the magnitude of input importance scores. This transformation is inspired by the relation
+			between the mutual information between two variables that are jointly Gaussian and the absolute value of their
+			correlation.
+
 
 		Returns
 		-------
@@ -301,6 +308,9 @@ class KXYAccessor(object):
 			args = [(col, label_column, problem, space) for col in input_columns]
 			for imp in p.map(self.__individual_input_importance, args):
 				importance.update(imp)
+
+		if score:
+			importance = {col: np.sqrt(1.-min(np.exp(-2.*importance[col]), 1.)) for col in importance.keys()}
 
 		total_importance = np.sum([importance[col] for col in importance.keys() if importance[col]])
 		scale = 1./total_importance if total_importance > 0. else 0.0
@@ -360,9 +370,9 @@ class KXYAccessor(object):
 			Which method to use to calculate the auto-correlation matrix. Supported
 			values are 'information-adjusted' (the default) and all 'method' values of pandas.DataFrame.corr.
 		p : int, optional
-			The number of lags to use when generating Spearman rank auto-correlation to use 
-			as empirical evidence in the maximum-entropy problem. The default value is 0, which 
-			corresponds to assuming rows are i.i.d. This is also the only supported value for now.
+			The number of auto-correlation lags to use as empirical evidence in the maximum-entropy problem. 
+			The default value is 0, which corresponds to assuming rows are i.i.d. Values other than 0 are only
+			supported in the robust-pearson method. When p is None, it is inferred from the sample.
 		min_periods : int, optional
 			Only used when method is not 'information-adjusted'. 
 			See the documentation of pandas.DataFrame.corr.
@@ -376,62 +386,70 @@ class KXYAccessor(object):
 		.. seealso::
 
 			:ref:`kxy.finance.risk_analysis.information_adjusted_correlation <information-adjusted-correlation>`
+			:ref:`kxy.finance.risk_analysis.robust_pearson_corr <robust-pearson-corr>`
 		"""
 		columns = self._obj.columns if columns == () else list(columns)
 
 		if method == 'information-adjusted':
-			c = information_adjusted_correlation(self._obj[columns].values, self._obj[columns].values)
+			c = information_adjusted_correlation(self._obj[columns].values, y=None)
 			return pd.DataFrame(c, columns=columns, index=columns)
+
+		if method == 'robust-pearson':
+			c = robust_pearson_corr(self._obj[columns].values, y=None, p=p)
+			return pd.DataFrame(c, columns=columns, index=columns)
+
 		else:
 			return pd.DataFrame.corr(self._obj[columns], method=method, min_periods=min_periods)
 
 
-	def beta(self, column_y, column_x, method='information-adjusted'):
+	def beta(self, market_returns_column, asset_returns_columns=(), risk_free_column=None,\
+			method='information-adjusted', p=0):
 		"""
-		Calculates the information-adjusted beta of a portfolio or asset (whose returns are provided in 
-		column_y) with respect to the market (whose returns are provided in column_x).
-
-		.. note::
-
-			The information-adjusted beta coefficient generalizes the traditional (CAPM/OLS/Pearson) beta 
-			in that, unlike CAPM beta that only captures linear cross-sectional dependence, the 
-			information-adjusted beta captures cross-sectional and temporal dependence, linear and nonlinear.
-
-			The IA-beta is 0 if and only if the portfolio or asset exhibit no dependence with the market, linear
-			or nonlinear, cross-sectional or temporal.
+		Calculates the beta of a portfolio/asset (whose returns are provided in column_y) 
+		with respect to the market (whose returns are provided in market_returns_column) using a variety
+		of estimation methods including the standard OLS/Pearson methods and information theoretical 
+		alternatives aiming at accounting for nonlinearities and memory in asset returns.
 
 
 		Parameters
 		----------
-		colummn_y : str
-			The name of the column to use for portfolio/asset returns.
-		colummn_x : str
+		asset_returns_columns : str or list of str
+			The name(s) of the column(s) to use for portfolio/asset returns.
+		market_returns_column : str
 			The name of the column to use for market returns.
 		method : str, optional
-			Either 'information-adjusted' for information-adjusted beta or 'pearson' for the traditional OLS/pearson beta coefficient.
+			One of 'information-adjusted', 'robust-pearson', 'spearman',  or 'pearson'. This is the method to use
+			to estimate the correlation between portfolio/asset returns and market returns.
+		p : int, optional
+			The number of auto-correlation lags to use as empirical evidence in the maximum-entropy problem. 
+			The default value is 0, which corresponds to assuming rows are i.i.d. Values other than 0 are only
+			supported in the robust-pearson method. When p is None, it is inferred from the sample.
 
 		Returns
 		-------
-		c : float
-			The beta coefficient.
-
-		Raises
-		------
-		AssertionError
-			If the method is neither 'information-adjusted' nor 'pearson'.
+		c : pd.DataFrame
+			The beta coefficient(s).
 
 
 		.. seealso::
 
 			:ref:`kxy.finance.factor_analysis.information_adjusted_beta <information-adjusted-beta>`
 		"""
-		assert method in ('information-adjusted', 'pearson'), "Allowed methods are 'information-adjusted' and 'pearson'."
+		asset_returns_columns = [_ for _ in self._obj.columns if _ != market_returns_column] if asset_returns_columns == () \
+			else [asset_returns_columns] if type(asset_returns_columns) == str else list(asset_returns_columns)
+		columns = [market_returns_column] + asset_returns_columns
 
-		if method == 'information-adjusted':
-			return information_adjusted_beta(self._obj[column_y].values, self._obj[column_x].values)
+		c = self.corr(method=method, columns=columns, p=p).values[0, 1:]
+		betas = c * np.sqrt(self._obj[asset_returns_columns].values.var(axis=0)/\
+			self._obj[market_returns_column].values.var())
 
-		c = np.corrcoef(self._obj[column_y].values, self._obj[column_x].values)[0, 1]
-		return c*np.sqrt(self._obj[column_y].values.var()/self._obj[column_x].values.var())
+		if type(asset_returns_columns) == str:
+			res = pd.DataFrame({asset_returns_columns: betas}).T.rename(columns={0: 'beta'})
+		else:
+			res = pd.DataFrame({asset_returns_columns[i]: [betas[i]] \
+				for i in range(len(asset_returns_columns))}).T.rename(columns={0: 'beta'})
+
+		return res
 
 
 	def total_correlation(self, columns=()):
@@ -632,7 +650,7 @@ class KXYAccessor(object):
 		
 	
 
-	def regression_input_incremental_importance(self, label_column, input_columns=(), space='dual', greedy=True):
+	def regression_input_incremental_importance(self, label_column, input_columns=(), space='dual', greedy=True, score=False):
 		"""
 		Quantifies how important each input is at solving a regression problem,
 		taking into possible information redundancy between inputs.
@@ -673,6 +691,12 @@ class KXYAccessor(object):
 			The type of supervised learning problem. One of None (default), 'classification'
 			or 'regression'. When problem is None, the supervised learning problem is inferred
 			based on whether labels are numeric and the percentage of distinct labels.
+		score : bool
+			If True, then input importance scores are scaled using the transformation :math:`i \\to \\sqrt{1-e^{-2i}}` 
+			so as to give importance scores the same scale as correlations, and provide developers with a more intuitive
+			understanding of the magnitude of input importance scores. This transformation is inspired by the relation
+			between the mutual information between two variables that are jointly Gaussian and the absolute value of their
+			correlation.
 
 		Returns
 		-------
@@ -716,6 +740,9 @@ class KXYAccessor(object):
 				remaining_columns.remove(column)
 
 		# Normalize and format as a dataframe.
+		if score:
+			res = {col: np.sqrt(1.-min(np.exp(-2.*res[col]), 1.)) for col in res.keys()}
+
 		total_importance = np.sum([res[col] for col in res.keys() if res[col]])
 		scale = 1./total_importance if total_importance > 0. else 0.0
 
@@ -730,7 +757,7 @@ class KXYAccessor(object):
 
 
 
-	def classification_input_incremental_importance(self, label_column, input_columns=(), space='dual'):
+	def classification_input_incremental_importance(self, label_column, input_columns=(), space='dual', score=False):
 		"""
 		Quantifies how important each input is at solving a classification problem,
 		taking into possible information redundancy between inputs.
@@ -761,6 +788,12 @@ class KXYAccessor(object):
 		input_columns : set, optional
 			The set of columns to as inputs. When input_columns is the empty set,
 			all columns except for label_column are used as inputs.
+		score : bool
+			If True, then input importance scores are scaled using the transformation :math:`i \\to \\sqrt{1-e^{-2i}}` 
+			so as to give importance scores the same scale as correlations, and provide developers with a more intuitive
+			understanding of the magnitude of input importance scores. This transformation is inspired by the relation
+			between the mutual information between two variables that are jointly Gaussian and the absolute value of their
+			correlation.
 
 
 		Returns
@@ -803,6 +836,9 @@ class KXYAccessor(object):
 				break
 		
 		# Step 3: Normalize and format as a dataframe.
+		if score:
+			res = {col: np.sqrt(1.-min(np.exp(-2.*res[col]), 1.)) for col in res.keys()}
+
 		total_importance = np.sum([res[col] for col in res.keys() if res[col]])
 		scale = 1./total_importance if total_importance > 0. else 0.0
 
@@ -839,7 +875,7 @@ class KXYAccessor(object):
 
 
 
-	def incremental_input_importance(self, label_column, input_columns=(), space='dual', greedy=True):
+	def incremental_input_importance(self, label_column, input_columns=(), space='dual', greedy=True, score=False):
 		"""
 		Returns :code:`DataFrame.classification_input_incremental_importance` or 
 		:code:`DataFrame.regression_input_incremental_importance` depending on whether the label 
@@ -850,11 +886,11 @@ class KXYAccessor(object):
 		if problem == 'classification':
 			self.adjust_quantized_values()
 			return self.classification_input_incremental_importance(label_column, input_columns=input_columns, \
-				space=space)
+				space=space, score=score)
 
 		else:
 			return self.regression_input_incremental_importance(label_column, input_columns=input_columns, \
-				space=space, greedy=greedy)
+				space=space, greedy=greedy, score=score)
 
 
 

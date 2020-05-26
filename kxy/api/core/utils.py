@@ -134,7 +134,7 @@ def pre_conditioner(x):
 	-------
 	A : (d, d) np.array
 		The pre-conditioning matrix.
-	ld: float
+	ld : float
 		:math:`\\log |\\text{det} A|`
 	"""
 	cov = np.cov(x.T)
@@ -143,3 +143,22 @@ def pre_conditioner(x):
 	return v, 0.0
 
 
+def robust_log_det(c):
+	"""
+	Computes the logarithm of the determinant of a positive definite
+	matrix in a more robust fashion than np.linalg.det.
+
+	Parameters
+	----------
+	C: (d, d) np.array 
+		Square input matrix for computing log-determinant.
+
+	Returns
+	-------
+	d : float
+		Log-determinant of the input matrix.
+	"""
+	u, s, v = svd(c)
+	return np.sum(np.log(s))
+
+	

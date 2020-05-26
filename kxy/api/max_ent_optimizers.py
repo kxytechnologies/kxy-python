@@ -6,6 +6,8 @@ import logging
 import requests
 from time import sleep, time
 
+import numpy as np
+
 from .client import APIClient
 
 
@@ -88,7 +90,6 @@ def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True, spac
 		of :math:`(x, y)` is learned as the maximum-entropy copula under the constraint that the Spearman correlation matrix 
 		is the input :code:`corr`.
 
-
 	output_index : int
 		The index of the column that should be used as output variable when mode is :code:`'mutual_information_v_output'`.
 
@@ -144,16 +145,11 @@ def mutual_information_analysis(corr, output_index, space='dual', greedy=False):
 
 	When greedy is True:
 
-	* :math:`x_{(1)}` is the input with the largest maximum entropy mutual information with :math:`y` under Spearman
-	rank correlation constraints.
+	* :math:`x_{(1)}` is the input with the largest maximum entropy mutual information with :math:`y` under Spearman rank correlation constraints.
 
-	* :math:`x_{(i)}` for :math:`i>1` is the input with the largest maximum entropy conditional mutual information 
-	:math:`I\\left(y; * \\vert x_{(i-1)}, \\dots, x_{(1)}\\right)`. Note that by the time :math:`(i)` is selected, 
-	:math:`I\\left(y; x_{(i-1)}, \\dots, x_{(1)}\\right)` is already known, so that the maximum entropy conditional 
-	mutual information is simply derived from the maximum entropy copula distribution of :math:`I\\left(y; x_{(i)}, \\dots, x_{(1)}\\right)`.
+	* :math:`x_{(i)}` for :math:`i>1` is the input with the largest maximum entropy conditional mutual information :math:`I\\left(y; * \\vert x_{(i-1)}, \\dots, x_{(1)}\\right)`. Note that by the time :math:`(i)` is selected, :math:`I\\left(y; x_{(i-1)}, \\dots, x_{(1)}\\right)` is already known, so that the maximum entropy conditional mutual information is simply derived from the maximum entropy copula distribution of :math:`I\\left(y; x_{(i)}, \\dots, x_{(1)}\\right)`.
 
-	This function returns the learned permutation of inputs, the association conditional mutual informations (a.k.a, the incremental input 
-	importancee scores), as well as the mutual information :math:`I\\left(y; x_1, \\dots, x_d\\right)`.
+	This function returns the learned permutation of inputs, the association conditional mutual informations (a.k.a, the incremental input importance scores), as well as the mutual information :math:`I\\left(y; x_1, \\dots, x_d\\right)`.
 
 	When greedy is False, (i) is the input with the i-th largest mutual information with the output.
 
@@ -293,4 +289,97 @@ def copula_entropy_analysis(corr, space='dual'):
 		logging.warning(api_response.json())
 
 	return None
+
+
+
+
+def information_adjusted_correlation_from_spearman(corr, space='dual'):
+	'''
+	Determine the Pearson correlation matrix that should be used as plug-in replacement
+	for the standard Pearson correlation estimator, in situations where Gaussianity has
+	to be assumed for simplicity, but the data-generating distribution exhibits non-Gaussian
+	traits (e.g. heavier or lighter tails).
+
+	We proceed as follows, for every pairwise Spearman rank correlation, we estmate the smallest
+	mutual information that is consistent with the pairwise Spearman rank correlation. This is also 
+	the mutual information of the model which, among all models that have the same Spearman rank 
+	correlation, is the most uncertain about everything else. 
+
+	This mutual information captures the essence of the dependence between the two variables without
+	assuming Gaussianity. To go back to the Gaussian scale, we determine the Pearson correlation which, 
+	under the Gaussian assumption would yield the same mutual information as estimated.
+
+
+	Parameters
+	----------
+	corr : np.array
+		The Spearman correlation matrix.
+
+
+	Returns
+	-------
+	res : np.array
+		The array of equivalent Pearson correlation coefficients.
+	'''
+	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
+	opt_launched = False
+	max_retry = 60
+	first_try = True
+	retry_count = 0
+	request_id = ''
+	while (first_try or api_response.status_code == requests.codes.retry) and retry_count < max_retry:
+		first_try = False
+
+		if request_id == '':
+			query_start_time = time()
+			# First attempt
+			logging.debug('Querying information adjusted correlation with corr=%s' % (c))
+			api_response = APIClient.route(path='/rv/information-adjusted-correlation', method='POST', corr=c, \
+				request_id=request_id, timestamp=int(time()), space=space)
+			query_duration = time()-query_start_time
+
+		else:
+			query_start_time = time()
+			# Subsequent attempt: refer to the initial request
+			logging.debug('Querying information adjusted correlation for request_id=%s' % request_id)
+			api_response = APIClient.route(path='/rv/information-adjusted-correlation', method='POST', \
+				request_id=request_id, timestamp=int(time()), space=space)
+			query_duration = time()-query_start_time
+
+		retry_count += 1
+		if api_response.status_code == requests.codes.retry:
+			request_id = api_response.json()['request_id']
+			sleep(.1 if query_duration > 10. else 10.)
+
+
+	if api_response.status_code == requests.codes.ok:
+		return np.array(api_response.json()['ia_corr']).astype(float)
+
+	else:
+		logging.warning(api_response.json())
+
+	return None
+
+
+
+def robust_pearson_corr_from_spearman(corr):
+	'''
+	Return the Pearson correlation matrix that is equivalent to the input 
+	Spearman rank correlation matrix, assuming inputs are jointly Gaussian.
+
+
+	Parameters
+	----------
+	corr : np.array
+		The Spearman correlation matrix.
+
+
+	Returns
+	-------
+	res : np.array
+		The array of equivalent Pearson correlation coefficients.
+	'''
+	return information_adjusted_correlation_from_spearman(corr, space='primal')
+
+
 

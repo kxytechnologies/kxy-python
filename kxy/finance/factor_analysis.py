@@ -33,20 +33,18 @@ def information_adjusted_beta(r, r_m):
 		.. math::
 			\\text{IA}\\beta = \\text{IACorr}\\left(r, r_m\\right) \\sqrt{\\frac{\mathbb{V}\\text{ar}\\left(r\\right)}{\mathbb{V}\\text{ar}\left(r_m\\right)}}.
 
-		While Pearson's correlation (and therefore beta) only captures linear relationships between
-		portfolio returns and market returns, the information-adjusted correlation 
-		(see :ref:`kxy.finance.risk_analysis.information_adjusted_correlation <information-adjusted-correlation>`) fully captures nonlinear and temporal 
-		dependencies between portfolio returns and market returns.
+		While Pearson's correlation (and therefore beta) only captures linear relationships between portfolio returns and market returns, the information-adjusted correlation fully captures nonlinear and temporal dependencies between portfolio returns and market returns.
 
-		Checkout `this blog post <https://medium.com/kxytechnologies/https-medium-com-pit-ai-technologies-the-black-swans-in-your-market-neutral-portfolios-part-1-e17fc18a42a7>`_ 
-		for a discussion on the limits of Pearson correlation and beta, and `this other blog post <https://medium.com/kxytechnologies/https-medium-com-pit-ai-technologies-the-black-swans-in-your-market-neutral-portfolios-part-2-b5e8d691b214>`_
-		for the introduction of information-adjusted correlation and beta as remedies.
+
+	.. seealso::
+
+		:ref:`kxy.finance.risk_analysis.information_adjusted_correlation <information-adjusted-correlation>`
 
 
 	Parameters
 	----------
-	r : (n,) np.array
-		The array of asset or portfolio returns.
+	r : (n,) or (n,d) np.array
+		The array of asset(s) or portfolio(s) returns.
 	r_m : (n,) np.array
 		The array of market returns.
 
@@ -62,7 +60,6 @@ def information_adjusted_beta(r, r_m):
 		If any returns array is not one-dimensional.
 	"""
 	assert len(r_m.shape)==1 or r_m.shape[1]==1, 'r_m should be one-dimensional'
-	assert len(r.shape)==1 or r.shape[1]==1, 'r should be one-dimensional'
 
-	return information_adjusted_correlation(r, r_m) * np.sqrt(r.var()/r_m.var())
+	return information_adjusted_correlation(r_m, r).flatten() * np.sqrt(r.var(axis=0)/r_m.var())
 

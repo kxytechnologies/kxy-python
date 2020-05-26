@@ -4,10 +4,17 @@
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 
-from kxy.api.core import least_continuous_mutual_information
+import warnings
+warnings.filterwarnings('ignore', module='statsmodels.tsa')
+from statsmodels.tsa.api import VAR
+
+from kxy.api.core import least_continuous_mutual_information, spearman_corr, \
+	estimate_pearson_autocovariance, robust_log_det
+from kxy.api import information_adjusted_correlation_from_spearman, \
+	robust_pearson_corr_from_spearman
 
 
-def information_adjusted_correlation(x, y, p=0):
+def information_adjusted_correlation(x, y=None, p=0):
 	"""
 	.. _information-adjusted-correlation:
 	Calculates the information-adjusted correlation matrix between two arrays.
@@ -25,8 +32,9 @@ def information_adjusted_correlation(x, y, p=0):
 		.. math::
 			I\\left(\\left\{x_t\\right\}, \\left\{y_t\\right\}\\right) = h\\left( \\left\{x_t\\right\} \\right) +  h\\left( \\left\{y_t\\right\} \\right) - h\\left(\\left\{x_t, y_t\\right\}  \\right)
 
-		where :math:`h\\left( \\left\{ x_t \\right\} \\right)` is the entropy rate of the process :math:`\\left\{ x_t \\right\}`. Specifically,
-		the mutual information rate is 0 if and only if the two processes are statistically independent, and in particular exhibit no
+		where :math:`h\\left( \\left\{ x_t \\right\} \\right)` is the entropy rate of the process :math:`\\left\{ x_t \\right\}`. 
+
+		Specifically, the mutual information rate is 0 if and only if the two processes are statistically independent, and in particular exhibit no
 		cross-sectional or temporal dependence, linear or nonlinear.
 
 
@@ -52,15 +60,12 @@ def information_adjusted_correlation(x, y, p=0):
 		if and only if the two time series are statistically independent, and in particular exhibit no cross-sectional or temporal dependencee.
 
 
-		Checkout `this blog post <https://medium.com/kxytechnologies/https-medium-com-pit-ai-technologies-the-black-swans-in-your-market-neutral-portfolios-part-1-e17fc18a42a7>`_ 
-		for a discussion on the limits of Pearson correlation and beta, and `this other blog post <https://medium.com/kxytechnologies/https-medium-com-pit-ai-technologies-the-black-swans-in-your-market-neutral-portfolios-part-2-b5e8d691b214>`_
-		for the introduction of information-adjusted correlation and beta as remedies.
 
 	Parameters
 	----------
-	x : (n,) or (n, p) np.array
+	x : (n,) or (n, d) np.array
 		n i.i.d. draws from a scalar or vector random variable.
-	y : (n,) or (n, p) np.array
+	y : (n,) or (n, q) np.array
 		n i.i.d. draws from a scalar or vector random variable jointly sampled with x.
 	p : int
 		The number of lags to use when generating Spearman rank auto-correlation to use 
@@ -78,28 +83,128 @@ def information_adjusted_correlation(x, y, p=0):
 		If p is different from 0. Higher values will be supported later.
 	"""
 	assert p==0, 'Only p=0 is supported for now'
+
 	x_ = x[:, None] if len(x.shape) == 1 else x
-	y_ = y[:, None] if len(x.shape) == 1 else y
-	squared = (x_.shape == y_.shape) and np.allclose(x_, y_)
+	y_ = x_ if y is None else y[:, None] if len(y.shape) == 1 else y
 
-	c = np.empty((x_.shape[1], y_.shape[1]))
+	if p == 0:
+		if (x_.shape == y_.shape) and np.allclose(x_, y_):
+			corr = spearman_corr(x_)
+			ia_corr = information_adjusted_correlation_from_spearman(corr)
 
-	def f(args):
-		i, j = args
-		if (i == j) and np.allclose(x_[:, i], y_[:, j]):
-			return ((i, j), 1.0)
+		else:
+			z = np.hstack([x_, y_])
+			corr = spearman_corr(z)
+			nx = x_.shape[1]
+			ia_corr = information_adjusted_correlation_from_spearman(corr[:nx, nx:])
+				
+		return ia_corr
 
-		mi = least_continuous_mutual_information(x_[:, i], y_[:, j], non_monotonic_extension=False)
-		p_corr = np.corrcoef(x_[:, i], y_[:, j])[0, 1]
-		s = 1. if p_corr >= 0.0 else -1.
-		res = s * np.sqrt(1.-np.exp(-2.*mi))
 
-		return ((i, j), res)
 
-	with ThreadPoolExecutor(max_workers=10) as p:
-		args = [(i, j) for i in range(c.shape[0]) for j in range(c.shape[1])]
-		for res in p.map(f, args):
-			c[res[0][0], res[0][1]] = res[1]
-			
-	return c
+
+def robust_pearson_corr(x, y=None, p=0):
+	"""
+	.. _robust-pearson-corr:
+	Computes a robust estimator of the Pearson correlation matrix 
+	between :math:`x` and :math:`y` (or :math:`x` is :math:`y` is None) as the Pearson correlation matrix
+	that is equivalent to the sample Spearman correlation matrix, assuming :math:`(x, y)` is jointly
+	Gaussian.
+
+
+	Parameters
+	----------
+	x : (n,) or (n, d) np.array
+		n i.i.d. draws from a scalar or vector random variable.
+	y : (n,) or (n, q) np.array
+		n i.i.d. draws from a scalar or vector random variable jointly sampled with x.
+	p : int
+		The number of lags to use when generating Spearman rank auto-correlation. 
+		The default value is 0, which corresponds to assuming rows are i.i.d. 
+
+
+	Returns
+	-------
+	c : np.array
+		The robust Pearson correlation matrix between the two random variables. 
+	"""
+	x_ = x[:, None] if len(x.shape) == 1 else x
+	y_ = x_ if y is None else y[:, None] if len(y.shape) == 1 else y
+	is_auto_corr = (x_.shape == y_.shape) and np.allclose(x_, y_)
+	z_ = x_ if is_auto_corr else np.hstack([x_, y_])
+
+	if p == 0:
+		if is_auto_corr:
+			corr = spearman_corr(x_)
+			rb_corr = robust_pearson_corr_from_spearman(corr)
+
+		else:
+			corr = spearman_corr(z_)
+			nx = x_.shape[1]
+			rb_corr = robust_pearson_corr_from_spearman(corr[:nx, nx:])
+
+		return rb_corr
+
+
+
+	else:
+		if (x_.shape == y_.shape) and np.allclose(x_, y_):
+			corr = spearman_corr(x_)
+
+		else:
+			nx = x_.shape[1]
+			corr = spearman_corr(z_)[:nx, nx:]
+
+		rb_corr = np.zeros_like(corr)
+		if p is None:
+			m = VAR(z_)
+			try:
+				p = m.fit(ic='hqic').k_ar
+			except:
+				p = 1
+
+		gamma_p = estimate_pearson_autocovariance(z_, p+1, robust=True)
+		d = x_.shape[1]
+		q = y_.shape[1]
+		n = d if is_auto_corr else d+q
+
+		def thread_mi_f(args):
+			'''
+			'''
+			i, j = args
+			if np.allclose(x_[:, i], y_[:, j]):
+				return np.inf
+
+			x_idx = list(i + np.arange(0, p+1).astype(int)*n)
+			s = 0 if is_auto_corr else d
+			y_idx = list(s + j + np.arange(0, p+1).astype(int)*n)
+			xy_idx = sorted(x_idx + y_idx)
+
+			gij_p = gamma_p[xy_idx].T[xy_idx].T
+			huij = 0.5 * (robust_log_det(2. * np.pi * np.e * gij_p[:, :]) -\
+						robust_log_det(2. * np.pi * np.e * gij_p[:-2, :-2]))
+
+			gi_p = gamma_p[x_idx].T[x_idx].T
+			hui = 0.5 * (robust_log_det(2. * np.pi * np.e * gi_p[:, :]) -\
+						robust_log_det(2. * np.pi * np.e * gi_p[:-1, :-1]))
+
+			gj_p = gamma_p[y_idx].T[y_idx].T
+			huj = 0.5 * (robust_log_det(2. * np.pi * np.e * gj_p[:, :]) -\
+						robust_log_det(2. * np.pi * np.e * gj_p[:-1, :-1]))
+
+			return max(hui+huj-huij, 0.0)
+
+
+		with ThreadPoolExecutor(max_workers=min(d*q, 100)) as pool:
+			all_args = [(i, j) for j in range(q) for i in range(d)]
+			results = [_ for _ in pool.map(thread_mi_f, all_args)]
+
+		mis = np.zeros_like(corr)
+		for k in range(len(all_args)):
+			i, j = all_args[k]
+			mis[i, j] = results[k]
+
+		rb_corr = np.sqrt(1.-np.exp(-2.*mis))*np.sign(corr)
+
+		return rb_corr
 
