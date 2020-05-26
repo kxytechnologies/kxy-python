@@ -1,5 +1,5 @@
 <div align="center">
-  <img style="background-color:#2c3d5e;" src="https://docs.kxysolutions.com/_static/logo.png"><br>
+  <img src="https://docs.kxysolutions.com/_static/logo.svg"><br>
 </div>
 
 
