@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Model-Free & Serverless ML'
+project = 'KXY (Model-Free & Serverless AutoML)'
 copyright = '2020, KXY Technologies, Inc.'
 author = 'Dr. Yves-Laurent Kom Samo'
 version = 'latest'
@@ -32,7 +32,7 @@ autodoc_inherit_docstrings = False
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', \
     'sphinx.ext.todo', 'sphinx.ext.githubpages', 'sphinxcontrib.bibtex', \
     'sphinx.ext.mathjax', 'sphinx.ext.autosectionlabel', 'nbsphinx', \
-    'sphinx_copybutton']
+    'sphinx_copybutton', 'sphinxcontrib.googleanalytics']
 
 # imgmath_image_format = 'svg'
 # imgmath_font_size = 13
@@ -78,4 +78,7 @@ nbsphinx_input_prompt = 'In [%s]:'
 nbsphinx_output_prompt = 'Out[%s]:'
 source_suffix = ['.rst', '.md', '.ipynb']
 
+# Google Analytics
+googleanalytics_id = 'UA-167632834-1'
+googleanalytics_enabled = True
 

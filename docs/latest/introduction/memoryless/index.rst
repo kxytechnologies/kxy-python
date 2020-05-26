@@ -1,3 +1,6 @@
+.. meta::
+   :description: The theoretical foundation of the KXY solution to pre-learning and post-learning problems
+   :keywords:  Pre-Learning, Post-Learning, Maximum-Entropy Principle, Input Importance, Feature Importance, KXY API, KXY Technologies, Model Explanation, Dataset Valuation, Input Importance, Feature Importance, Model Suboptimality, Model Optimality
 
 ***********************
 Memoryless Observations

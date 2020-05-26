@@ -242,7 +242,7 @@ class KXYAccessor(object):
 
 
 
-	def individual_input_importance(self, label_column, input_columns=(), problem=None, space='dual', score=False):
+	def individual_input_importance(self, label_column, input_columns=(), problem=None, space='dual', correlation_scale=False):
 		"""
 		.. _dataframe-input-importance:
 		Calculates the importance of each input in the input set at solving the supervised
@@ -274,7 +274,7 @@ class KXYAccessor(object):
 			The type of supervised learning problem. One of None (default), 'classification'
 			or 'regression'. When problem is None, the supervised learning problem is inferred
 			based on whether labels are numeric and the percentage of distinct labels.
-		score : bool
+		correlation_scale : bool
 			If True, then input importance scores are scaled using the transformation :math:`i \\to \\sqrt{1-e^{-2i}}` 
 			so as to give importance scores the same scale as correlations, and provide developers with a more intuitive
 			understanding of the magnitude of input importance scores. This transformation is inspired by the relation
@@ -309,7 +309,7 @@ class KXYAccessor(object):
 			for imp in p.map(self.__individual_input_importance, args):
 				importance.update(imp)
 
-		if score:
+		if correlation_scale:
 			importance = {col: np.sqrt(1.-min(np.exp(-2.*importance[col]), 1.)) for col in importance.keys()}
 
 		total_importance = np.sum([importance[col] for col in importance.keys() if importance[col]])
@@ -650,7 +650,7 @@ class KXYAccessor(object):
 		
 	
 
-	def regression_input_incremental_importance(self, label_column, input_columns=(), space='dual', greedy=True, score=False):
+	def regression_input_incremental_importance(self, label_column, input_columns=(), space='dual', greedy=True, correlation_scale=False):
 		"""
 		Quantifies how important each input is at solving a regression problem,
 		taking into possible information redundancy between inputs.
@@ -691,7 +691,7 @@ class KXYAccessor(object):
 			The type of supervised learning problem. One of None (default), 'classification'
 			or 'regression'. When problem is None, the supervised learning problem is inferred
 			based on whether labels are numeric and the percentage of distinct labels.
-		score : bool
+		correlation_scale : bool
 			If True, then input importance scores are scaled using the transformation :math:`i \\to \\sqrt{1-e^{-2i}}` 
 			so as to give importance scores the same scale as correlations, and provide developers with a more intuitive
 			understanding of the magnitude of input importance scores. This transformation is inspired by the relation
@@ -740,7 +740,7 @@ class KXYAccessor(object):
 				remaining_columns.remove(column)
 
 		# Normalize and format as a dataframe.
-		if score:
+		if correlation_scale:
 			res = {col: np.sqrt(1.-min(np.exp(-2.*res[col]), 1.)) for col in res.keys()}
 
 		total_importance = np.sum([res[col] for col in res.keys() if res[col]])
@@ -757,7 +757,7 @@ class KXYAccessor(object):
 
 
 
-	def classification_input_incremental_importance(self, label_column, input_columns=(), space='dual', score=False):
+	def classification_input_incremental_importance(self, label_column, input_columns=(), space='dual', correlation_scale=False):
 		"""
 		Quantifies how important each input is at solving a classification problem,
 		taking into possible information redundancy between inputs.
@@ -788,7 +788,7 @@ class KXYAccessor(object):
 		input_columns : set, optional
 			The set of columns to as inputs. When input_columns is the empty set,
 			all columns except for label_column are used as inputs.
-		score : bool
+		correlation_scale : bool
 			If True, then input importance scores are scaled using the transformation :math:`i \\to \\sqrt{1-e^{-2i}}` 
 			so as to give importance scores the same scale as correlations, and provide developers with a more intuitive
 			understanding of the magnitude of input importance scores. This transformation is inspired by the relation
@@ -836,7 +836,7 @@ class KXYAccessor(object):
 				break
 		
 		# Step 3: Normalize and format as a dataframe.
-		if score:
+		if correlation_scale:
 			res = {col: np.sqrt(1.-min(np.exp(-2.*res[col]), 1.)) for col in res.keys()}
 
 		total_importance = np.sum([res[col] for col in res.keys() if res[col]])
@@ -875,7 +875,7 @@ class KXYAccessor(object):
 
 
 
-	def incremental_input_importance(self, label_column, input_columns=(), space='dual', greedy=True, score=False):
+	def incremental_input_importance(self, label_column, input_columns=(), space='dual', greedy=True, correlation_scale=False):
 		"""
 		Returns :code:`DataFrame.classification_input_incremental_importance` or 
 		:code:`DataFrame.regression_input_incremental_importance` depending on whether the label 
@@ -886,11 +886,11 @@ class KXYAccessor(object):
 		if problem == 'classification':
 			self.adjust_quantized_values()
 			return self.classification_input_incremental_importance(label_column, input_columns=input_columns, \
-				space=space, score=score)
+				space=space, correlation_scale=correlation_scale)
 
 		else:
 			return self.regression_input_incremental_importance(label_column, input_columns=input_columns, \
-				space=space, greedy=greedy, score=score)
+				space=space, greedy=greedy, correlation_scale=correlation_scale)
 
 
 

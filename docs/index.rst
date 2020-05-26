@@ -1,3 +1,6 @@
+.. meta::
+   :description: The Python API to KXY, the first and only AutoML platform for pre-learning and post-learning
+   :keywords: AutoML, Pre-Learning, Post-Learning, KXY API, KXY Technologies
 
 
 Table of Contents
