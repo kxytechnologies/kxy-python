@@ -19,10 +19,16 @@ From GitHub:
 ```Bash
 git clone https://github.com/kxytechnologies/kxy-python.git & cd ./kxy-python & pip install .
 ```
+## Authentication
+All heavy-duty computations are run on our serverless infrastructure and require an API key. To configure the package with your API key, run 
+```Bash
+kxy configure
+```
+and follow the instructions. To request a demo and get a trial API key, email demo@kxy.ai.
 
 ## Applications
 
-**Performance Bound:** The :code:`kxy` package is the first and only toolkit that provides data scientists with an information-theoretical estimate of the best performance (e.g. R² or classification error) that can be achieved on a regression or classification problem using a specific set of inputs. This allows data scientists to stop wasting time trying to improve a model that cannot be improved, or trying to train models that cannot perform to an acceptable standard.
+**Performance Bound:** The `kxy` package is the first and only toolkit that provides data scientists with an information-theoretical estimate of the best performance (e.g. R² or classification error) that can be achieved on a regression or classification problem using a specific set of inputs. This allows data scientists to stop wasting time trying to improve a model that cannot be improved, or trying to train models that cannot perform to an acceptable standard.
 
 **Model-Free Variable Selection:** Moreover, the `kxy` package uses information theory to empower data scientists to automatically discern informative inputs from inputs that are useless for solving the regression or classification problem at hand. By computing the marginal utility of each input, our input importance analyses discerns redundant inputs from complementary inputs. Our model-free approach to variable selection allows data scientists to train smaller models, faster, cheaper, and that achieve higher performance than throwing all inputs in a big model. *We support both continuous and categorical inputs for regression and classification problems*.
 
