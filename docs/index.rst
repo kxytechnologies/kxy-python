@@ -55,7 +55,7 @@ From **non-Gaussian** and **memory-robust** risk analysis, to **alternative data
 	:hidden:
 	:caption: QUICKSTART
 
-	latest/introduction/getting_started/getting_started
+	latest/quickstart/getting_started
 
 
 .. toctree::
@@ -69,9 +69,9 @@ From **non-Gaussian** and **memory-robust** risk analysis, to **alternative data
 	:hidden:
 	:caption: THEORETICAL FOUNDATION
 
-	latest/introduction/memoryless/index
+	latest/theoretical_foundation/memoryless/index
 
-	latest/introduction/time_series/index
+	latest/theoretical_foundation/time_series/index
 
 
 .. toctree::

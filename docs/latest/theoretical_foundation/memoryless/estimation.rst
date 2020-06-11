@@ -43,7 +43,7 @@ This estimator applies to both univariate and multivariate discrete distribution
 
 b) Univariate Differential Entropy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-We implement three methods for estimating the differential entropy of a scalar random variable. They are all similar in that they resort to first approximating pdf of the distribution, and then estimating the resulting entropy, but they are different in the approximation used.
+We implement three methods for estimating the differential entropy of a scalar random variable. They are all similar in that they resort to first approximating the pdf of the distribution, and then estimating the resulting entropy, but they are different in the approximation used.
 
 
 M-Spacing Estimator
