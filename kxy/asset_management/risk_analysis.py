@@ -72,6 +72,8 @@ def information_adjusted_correlation(x, y=None, p=0):
 		as empirical evidence in the maximum-entropy problem. The default value is 0, which 
 		corresponds to assuming rows are i.i.d. This is also the only supported value for now.
 
+		
+
 	Returns
 	-------
 	c : np.array
@@ -103,13 +105,10 @@ def information_adjusted_correlation(x, y=None, p=0):
 
 
 
-def robust_pearson_corr(x, y=None, p=0):
+def robust_pearson_corr(x, y=None, p=0, p_ic='hqic'):
 	"""
 	.. _robust-pearson-corr:
-	Computes a robust estimator of the Pearson correlation matrix 
-	between :math:`x` and :math:`y` (or :math:`x` is :math:`y` is None) as the Pearson correlation matrix
-	that is equivalent to the sample Spearman correlation matrix, assuming :math:`(x, y)` is jointly
-	Gaussian.
+	Computes a robust estimator of the Pearson correlation matrix between :math:`x` and :math:`y` (or :math:`x` if :math:`y` is None) as the Pearson correlation matrix that is equivalent to the sample Spearman correlation matrix, assuming :math:`(x, y)` is jointly Gaussian.
 
 
 	Parameters
@@ -120,7 +119,12 @@ def robust_pearson_corr(x, y=None, p=0):
 		n i.i.d. draws from a scalar or vector random variable jointly sampled with x.
 	p : int
 		The number of lags to use when generating Spearman rank auto-correlation. 
-		The default value is 0, which corresponds to assuming rows are i.i.d. 
+		The default value is 0, which corresponds to assuming rows are i.i.d.
+	p_ic : str
+		The criterion used to learn the optimal value of :code:`p` (by fitting a VAR(p) model) when :code:`p=None`. 
+		Should be one of 'hqic' (Hannan-Quinn Information Criterion), 'aic' (Akaike Information Criterion), 'bic' (Bayes Information Criterion) and 't-stat' (based on last lag). 
+		Same as the 'ic' parameter of :code:`statsmodels.tsa.api.VAR`.
+
 
 
 	Returns
@@ -148,7 +152,7 @@ def robust_pearson_corr(x, y=None, p=0):
 
 
 	else:
-		if (x_.shape == y_.shape) and np.allclose(x_, y_):
+		if is_auto_corr:
 			corr = spearman_corr(x_)
 
 		else:
@@ -159,7 +163,7 @@ def robust_pearson_corr(x, y=None, p=0):
 		if p is None:
 			m = VAR(z_)
 			try:
-				p = m.fit(ic='hqic').k_ar
+				p = m.fit(ic=p_ic).k_ar
 			except:
 				p = 1
 

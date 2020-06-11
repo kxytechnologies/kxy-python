@@ -12,6 +12,7 @@ def information_adjusted_beta(r, r_m):
 	Calculates the informmation-adjusted beta.
 
 
+
 	.. note::
 
 		The standard beta coefficient of an asset or a portfolio is defined by the CAPM model
@@ -31,7 +32,7 @@ def information_adjusted_beta(r, r_m):
 		The information-adjusted correlation generalizes the foregoing equations and reads 
 
 		.. math::
-			\\text{IA}\\beta = \\text{IACorr}\\left(r, r_m\\right) \\sqrt{\\frac{\mathbb{V}\\text{ar}\\left(r\\right)}{\mathbb{V}\\text{ar}\left(r_m\\right)}}.
+			\\text{IA}\\beta = \\text{IACorr}\\left(\\{r\\}, \\{r_m\\}\\right) \\sqrt{\\frac{\mathbb{V}\\text{ar}\\left(r\\right)}{\mathbb{V}\\text{ar}\left(r_m\\right)}}.
 
 		While Pearson's correlation (and therefore beta) only captures linear relationships between portfolio returns and market returns, the information-adjusted correlation fully captures nonlinear and temporal dependencies between portfolio returns and market returns.
 
@@ -61,5 +62,5 @@ def information_adjusted_beta(r, r_m):
 	"""
 	assert len(r_m.shape)==1 or r_m.shape[1]==1, 'r_m should be one-dimensional'
 
-	return information_adjusted_correlation(r_m, r).flatten() * np.sqrt(r.var(axis=0)/r_m.var())
+	return information_adjusted_correlation(r_m, r).flatten() * np.nansqrt(np.nanvar(r, axis=0)/np.nanvar(r_m))
 

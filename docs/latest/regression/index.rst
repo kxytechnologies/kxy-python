@@ -1,6 +1,6 @@
 
-Regression
-==========
+Regression Functions
+====================
 
 .. toctree::
 

@@ -6,5 +6,5 @@
 Factor Analysis
 ===============
 
-.. automodule:: kxy.finance.factor_analysis
+.. automodule:: kxy.asset_management.factor_analysis
     :members:

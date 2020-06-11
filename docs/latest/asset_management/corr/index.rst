@@ -6,5 +6,5 @@
 Risk Analysis
 =============
 
-.. automodule:: kxy.finance.risk_analysis
+.. automodule:: kxy.asset_management.risk_analysis
     :members:

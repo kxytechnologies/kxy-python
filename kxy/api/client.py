@@ -9,18 +9,12 @@ from functools import lru_cache
 import os
 import requests
 
-from .decorators import requires_api_key
+from .decorators import requires_api_key, get_api_key
 
 
 class APIClient(object):
 	"""
-	Python client for the RESTful KXY API. All API methods require an API key. The API key must be set in the environment 
-	variable KXY_API_KEY.
-
-	Example
-	-------
-	>>> import os
-	>>> os.environ['KXY_API_KEY'] = 'YOUR API KEY GOES HERE'
+	Python client for the RESTful KXY API. All API methods require an API key. The API key must be set by running :code:`kxy configure` from the terminal.
 	"""
 	@staticmethod
 	def stage():
@@ -91,7 +85,7 @@ class APIClient(object):
 				for more information.
 		"""
 		url = APIClient.url(path)
-		api_key = os.getenv('KXY_API_KEY')
+		api_key = get_api_key()
 		response = requests.get(url, params=params, headers={'x-api-key': api_key, \
 			'content-type': 'application/json'})
 
@@ -138,7 +132,7 @@ class APIClient(object):
 				for more information.
 		"""
 		url = APIClient.url(path)
-		api_key = os.getenv('KXY_API_KEY')
+		api_key = get_api_key()
 		response = requests.post(url, json=params, headers={'x-api-key': api_key, \
 			'content-type': 'application/json'})
 

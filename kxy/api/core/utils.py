@@ -6,11 +6,7 @@ from numpy.dual import svd
 
 def spearman_corr(x):
 	"""
-	Calculate the Spearman rank correlation matrix.
-
-	.. math::
-
-		\\text{corr}[i, j] = \\frac{12}{n^2-1} \\left[ \\left( \\frac{1}{n} \\sum_{k=1}^n R_{ki} R_{kj} \\right) - \\frac{(n+1)^2}{4}\\right]
+	Calculate the Spearman rank correlation matrix, ignoring nans.
 
 	Parameters
 	----------
@@ -25,10 +21,20 @@ def spearman_corr(x):
 	corr : np.array
 		The Spearman rank correlation matrix.
 	"""
-	# R[i,j] is the rank of x[i, j] among x[1, j] ... x[n, j]
 	n, m = x.shape
-	R = 1+x.argsort(axis=0).argsort(axis=0)
-	corr = np.cov(R.T, bias=True)/((n*n-1.)/12.)
+	mask = np.isnan(x).copy()
+	valid_mask = np.logical_not(mask).astype(int)
+
+	# R[i,j] is the rank of x[i, j] among x[1, j] ... x[n, j]
+	R = (1+x.argsort(axis=0).argsort(axis=0)).astype(float)
+	np.copyto(R, np.nan, where=mask)
+	o = np.ones((m, m))
+	non_nan_ns = np.einsum('ij, ik->jk', valid_mask, valid_mask) # Number of non-nan pairs
+	mean_R = np.nanmean(R, axis=0)
+	demeaned_R = R - mean_R
+	standard_R = demeaned_R/np.nanstd(demeaned_R, axis=0)
+	np.copyto(standard_R, 0.0, where=mask)
+	corr = np.divide(np.einsum('ij, ik->jk', standard_R, standard_R), non_nan_ns)
 	corr = np.round(corr, 3)
 
 	return corr
@@ -37,7 +43,7 @@ def spearman_corr(x):
 
 def pearson_corr(x):
 	"""
-	Calculate the Pearson correlation matrix, ignoring nan.
+	Calculate the Pearson correlation matrix, ignoring nans.
 
 	Parameters
 	----------
@@ -52,105 +58,35 @@ def pearson_corr(x):
 	corr : np.array
 		The Pearson correlation matrix.
 	"""
-	mask = np.all(~np.isnan(x), axis=1)
-	nx = x[mask]
+	n, m = x.shape
+	mask = np.isnan(x).copy()
+	valid_mask = np.logical_not(mask).astype(int)
 
-	nx = nx - np.mean(nx, axis=0)
-	nx /= np.std(nx, axis=0)
+	np.copyto(x, np.nan, where=mask)
+	o = np.ones((m, m))
+	non_nan_ns = np.einsum('ij, ik->jk', valid_mask, valid_mask) # Number of non-nan pairs
+	mean_x = np.nanmean(x, axis=0)
+	demeaned_x = x - mean_x
+	standard_x = demeaned_x/np.nanstd(demeaned_x, axis=0)
+	np.copyto(standard_x, 0.0, where=mask)
+	corr = np.divide(np.einsum('ij, ik->jk', standard_x, standard_x), non_nan_ns)
+	corr = np.round(corr, 3)
 
-	n = nx.shape[0]
-	c = np.dot(nx.T, nx)/(n-1)
-
-	return c
-
-
-
-
-def avg_pairwise_spearman_corr(x):
-	"""
-	Calculates the sample average pairwise Spearman rank correlation 
-	between columns of the 2-dimensional input array `x` of shape (n, d) as
-
-	.. math::
-
-		\\frac{12}{n^2-1} \\left[ \\frac{2}{d(d-1)} \\sum_{j<j^\\prime} \\left[ \\left( \\frac{1}{n} \\sum_{i=1}^n R_{ij} R_{ij^\\prime} \\right) - \\frac{(n+1)^2}{4}\\right] \\right]
-
-	where :math:`R_{ij}` is the rank of :math:`x_{ij}` among :math:`x_{1j} \\dots x_{nj}`. 
-
-	See Eq. (3.3.3) in [1]_.
+	return corr
 
 
-	Parameters
-	----------
-	x : (n, d) np.array
-		Input data representing n i.i.d. draws from the d-dimensional 
-		random variable, whose average pairwise Spearman rank correlation
-		this function calculates.
-
-
-	Returns
-	-------
-	rho : float
-		The average pairwise Spearman rank correlation.
-
-
-
-	.. rubric:: References
-
-	.. [1] Joe, H. Journal of multivariate analysis 35 (1), 12-30, 1990.
-	"""
-	corr = spearman_corr(x)
-	rho = (np.sum(corr)-m)/(m*(m-1.))
-
-	return rho
-
-
-
-def pre_conditioner(x):
-	"""
-	Given n i.i.d. samples from a random variable x, compute a square matrix A such that 
-	coordinates of :math:`z = Ax` have similar pairwise Spearman rank correlation.
-
-	.. note::
-
-		The current implementation computes A as :math:`A = U^T` where :math:`C = UDU^T` 
-		is the SVD decomposition of the covariance matrix of :math:`x`.
-
-		It is worth recalling that if :math:`x` is mean 0 and has covariance matrix :math:`C`, then 
-		:math:`z := U^T x` is also mean 0 and has covariance matrix :math:`D`.
-
-		The Spearman rank correlation of :math:`z` might not be the identity matrix, but its off diagonal terms
-		should have the same magnitude (fairly small).
-
-
-	Parameters
-	----------
-	x : (n, d) np.array
-		Input data representing n i.i.d. draws from the d-dimensional 
-		random variable.
-
-
-	Returns
-	-------
-	A : (d, d) np.array
-		The pre-conditioning matrix.
-	ld : float
-		:math:`\\log |\\text{det} A|`
-	"""
-	cov = np.cov(x.T)
-	u, s, v = svd(cov)
-
-	return v, 0.0
 
 
 def robust_log_det(c):
 	"""
-	Computes the logarithm of the determinant of a positive definite
-	matrix in a more robust fashion than np.linalg.det.
+	Computes the logarithm of the determinant of a positive definite matrix in a fashion that is more robust to ill-conditioning than taking the logarithm of np.linalg.det.
+
+	.. note::
+		Specifically, we compute the SVD of c, and return the sum of the log of eigenvalues. np.linalg.det on the other hand computes the Cholesky decomposition of c, which is more likely to fail than its SVD, and takes the product of its diagonal elements, which could be subject to underflow error when diagonal elements are small.
 
 	Parameters
 	----------
-	C: (d, d) np.array 
+	c: (d, d) np.array 
 		Square input matrix for computing log-determinant.
 
 	Returns
@@ -159,6 +95,25 @@ def robust_log_det(c):
 		Log-determinant of the input matrix.
 	"""
 	u, s, v = svd(c)
+	
 	return np.sum(np.log(s))
 
-	
+
+def hqi(h, q):
+	"""
+	Computes :math:`\\bar{h}_q^{-1}(x)` where
+
+	.. math::
+
+		\\bar{h}_q(a) = -a \\log a -(1-a) \\log \\left(\\frac{1-a}{q-1}\\right), ~~~~ a \\geq \\frac{1}{q}.
+	"""
+	if h==0:
+		return 1.0
+
+	a = np.round(np.arange(1./q, 1.0, 0.001), 3)
+	h_ = -a*np.log(a)-(1.-a)*np.log((1.-a)/(q-1.))
+	idx = np.abs(h_-h).argmin()
+
+	return a[idx]
+
+

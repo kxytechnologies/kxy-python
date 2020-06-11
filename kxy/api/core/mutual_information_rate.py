@@ -6,18 +6,9 @@ import numpy as np
 from .entropy_rate import gaussian_var_copula_entropy_rate
 
 
-def least_continuous_mutual_information_rate(x, y, space='primal', robust=False, p=None):
+def least_continuous_mutual_information_rate(x, y, space='primal', robust=False, p=None, p_ic='hqic'):
 	"""
 	Estimate the maximum entropy mutual information rate between two scalar or vector valued time series.
-
-	When space='primal' the maximum entropy problem is formulated in the original space, using as constraints the 
-	Pearson autocovariance function. The solution is that (x, y) is a Gaussian Vector-Autoregressive process.
-
-	When space='dual' the maximum entropy problem is formulated in the copula-uniform dual space, using as constraints
-	the Spearman rank autocorrelation function.
-
-	.. warning::
-		Maximum entropy optimization in the copula-uniform dual space is not yet supported for time series. 
 
 
 	Parameters
@@ -34,8 +25,19 @@ def least_continuous_mutual_information_rate(x, y, space='primal', robust=False,
 	p : int or None
 		The number of autocorrelation lags to use for the maximum entropy problem. If set to :code:`None` (the default) and if :code:`space` is
 		:code:`primal`, then it is inferred by fitting a VAR model on the joint time series using the Hannan-Quinn information criterion.
+	p_ic : str
+		The criterion used to learn the optimal value of :code:`p` (by fitting a VAR(p) model) when :code:`p=None`. 
+		Should be one of 'hqic' (Hannan-Quinn Information Criterion), 'aic' (Akaike Information Criterion), 'bic' (Bayes Information Criterion) and 't-stat' (based on last lag). 
+		Same as the 'ic' parameter of :code:`statsmodels.tsa.api.VAR`.
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson autocovariance constraints, leading to the Gaussian VAR.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank autocorrelation constraints.
 
 
+	.. warning::
+		Maximum entropy optimization in the copula-uniform dual space is not yet supported for time series. 
+		
 
 	Returns
 	-------
@@ -53,9 +55,9 @@ def least_continuous_mutual_information_rate(x, y, space='primal', robust=False,
 	y_ = y if len(y.shape) > 1 else y[:, None]
 	z_ = np.hstack((x_, y_))
 
-	huxy, q = gaussian_var_copula_entropy_rate(z_, p=p, robust=robust)
-	hux, _ = gaussian_var_copula_entropy_rate(x_, p=q, robust=robust)
-	huy, _ = gaussian_var_copula_entropy_rate(y_, p=q, robust=robust)
+	huxy, q = gaussian_var_copula_entropy_rate(z_, p=p, robust=robust, p_ic=p_ic)
+	hux, _ = gaussian_var_copula_entropy_rate(x_, p=q, robust=robust, p_ic=p_ic)
+	huy, _ = gaussian_var_copula_entropy_rate(y_, p=q, robust=robust, p_ic=p_ic)
 
 	return max(hux+huy-huxy, 0.0)
 

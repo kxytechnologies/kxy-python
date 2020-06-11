@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+import sys
+import os
+if os.environ.get('LC_CTYPE', '') == 'UTF-8':
+	os.environ['LC_CTYPE'] = 'en_US.UTF-8'
+
+import json
+
+def main(api_key=None):
+	home = os.path.expanduser("~")
+	path = os.path.join(home, '.kxy')
+	os.makedirs(path, exist_ok=True)
+	file_name = os.path.join(path, 'config')
+
+	if not os.path.exists(file_name):
+		with open(file_name, 'w') as f:
+			json.dump({}, f)
+
+	with open(file_name, 'r') as f:
+		config = json.load(f)
+		existing_key = config.get('KXY_API_KEY', '')
+
+	if existing_key != '':
+		existing_key = '(' + existing_key[:4] + '*' * (len(existing_key)-4) + ') '
+
+	if api_key is None:
+		api_key = input('KXY API Key: %s' % existing_key)
+		if api_key is None or api_key == '':
+			api_key = config.get('KXY_API_KEY', '')
+	
+	config['KXY_API_KEY'] = api_key
+
+	with open(file_name, 'w') as f:
+		json.dump(config, f)
+
+	return
+
+
+if __name__ == '__main__':
+	if len(sys.argv) > 1 and sys.argv[1] == 'configure':
+		api_key = sys.argv[2] if len(sys.argv) > 2 else None
+		sys.exit(main(api_key=api_key))

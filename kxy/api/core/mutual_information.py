@@ -28,6 +28,10 @@ def least_total_correlation(x, space='dual'):
 	----------
 	x : (n, d) np.array
 		n i.i.d. draws from the data generating distribution.
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
 
 	Returns
 	-------
@@ -47,7 +51,7 @@ def least_total_correlation(x, space='dual'):
 def least_continuous_mutual_information(x, y, space='dual', non_monotonic_extension=True):
 	"""
 	.. _least-continuous-mutual-information:
-	Estimates the mutual information between a d-dimensional random vector :math:`x` of inputs
+	Estimates the mutual information between a :math:`d`-dimensional random vector :math:`x` of inputs
 	and a continuous scalar random variable :math:`y` (or label), assuming the least amount of 
 	structure in :math:`x` and :math:`(x, y)`, other than what is necessary to be consistent with some 
 	observed properties.
@@ -72,11 +76,15 @@ def least_continuous_mutual_information(x, y, space='dual', non_monotonic_extens
 	y : (n,) np.array
 		n i.i.d. draws from the (continuous) labels generating distribution, sampled
 		jointly with x.
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
 
 	Returns
 	-------
 	i : float
-		The mutual information between x and y, in nats.
+		The mutual information between x and y, **in nats**.
 
 	Raises
 	------
@@ -101,7 +109,7 @@ def least_continuous_mutual_information(x, y, space='dual', non_monotonic_extens
 def least_continuous_conditional_mutual_information(x, y, z, space='dual', non_monotonic_extension=True):
 	"""
 	.. _least-continuous-conditional-mutual-information:
-	Estimates the conditional mutual information between a d-dimensional random vector :math:`x` of inputs
+	Estimates the conditional mutual information between a :math:`d`-dimensional random vector :math:`x` of inputs
 	and a continuous scalar random variable :math:`y` (or label), conditional on a third continuous random 
 	variable :math:`z`, assuming the least amount of structure in :math:`(x, y, z)`, other than what is 
 	necessary to be consistent with some observed properties.
@@ -120,7 +128,7 @@ def least_continuous_conditional_mutual_information(x, y, z, space='dual', non_m
 		(resp. :math:`(x, y)`, :math:`z`).
 
 		We use as model for :math:`u_{x, y, z}` the least structured copula that is consistent with 
-		the Spearman rank correlation matrix of the joint vector :math:`(x, y, z)`. 
+		maximum entropy constraints in the chosen space. 
 
 	Parameters
 	----------
@@ -132,11 +140,15 @@ def least_continuous_conditional_mutual_information(x, y, z, space='dual', non_m
 	z : (n,) np.array
 		n i.i.d. draws from the (continuous) labels generating distribution, sampled
 		jointly with z.
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
 
 	Returns
 	-------
 	i : float
-		The mutual information between x and y, in nats.
+		The mutual information between x and y, **in nats**.
 
 	Raises
 	------
@@ -180,13 +192,13 @@ def least_mixed_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic
 							:&= h(x_c, x_d) - \sum_{j=1}^q \mathbb{P}(y=j)  h\\left(x_c, x_d \\vert y=j \\right)
 
 		
-		When there are discrete features, :math:`h(x_c, x_d)` is estimated using :ref:`kxy.api.core.entropy.least_structured_mixed_entropy <least-structured-mixed-entropy>`,
-		:math:`\mathbb{P}(y=j)` is estimated using frequencies, :math:`h\\left(x_c, x_d | y=j\\right)` is estimated 
-		using :ref:`kxy.api.core.entropy.least_structured_mixed_entropy <least-structured-mixed-entropy>`.
+		When there are discrete features:
 
-		When there are no discrete features, :math:`x_d` can simply be removed from the equations above, and 
-		:ref:`kxy.api.core.entropy.least_structured_continuous_entropy <least-structured-continuous-entropy>` is used for estimation instead of 
-		:ref:`kxy.api.core.entropy.least_structured_mixed_entropy <least-structured-mixed-entropy>`.
+		* :math:`h(x_c, x_d)` is estimated using :ref:`kxy.api.core.entropy.least_structured_mixed_entropy <least-structured-mixed-entropy>`,
+		* :math:`\mathbb{P}(y=j)` is estimated using frequencies, 
+		* :math:`h\\left(x_c, x_d | y=j\\right)` is estimated using :ref:`kxy.api.core.entropy.least_structured_mixed_entropy <least-structured-mixed-entropy>`.
+
+		When there are no discrete features, :math:`x_d` can simply be removed from the equations above, and :ref:`kxy.api.core.entropy.least_structured_continuous_entropy <least-structured-continuous-entropy>` is used for estimation instead of :ref:`kxy.api.core.entropy.least_structured_mixed_entropy <least-structured-mixed-entropy>`.
 
 	Parameters
 	----------
@@ -197,11 +209,15 @@ def least_mixed_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic
 		if there are no discrete features.
 	y : (n,) np.array
 		n i.i.d. draws from the (discrete) labels generating distribution, sampled jointly with x.
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
 
 	Returns
 	-------
 	i : float
-		The mutual information between features and discrete labels, in nats.
+		The mutual information between features and discrete labels, **in nats**.
 
 	Raises
 	------
@@ -239,7 +255,6 @@ def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, 
 		I(y; x_c, x_d | z_c, z_d) = I(y; x_c, x_d, z_c, z_d) - I(y; z_c, z_d)
 
 		
-
 	Parameters
 	----------
 	x_c : (n, d) np.array
@@ -253,35 +268,77 @@ def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, 
 	y : (n,) np.array
 		n i.i.d. draws from the (categorical) labels generating distribution, sampled
 		jointly with x.
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
 
 
 	Returns
 	-------
 	i : float
-		The mutual information between (x_c, x_d) and y, conditional on (z_c, z_d).
+		The mutual information between (x_c, x_d) and y, conditional on (z_c, z_d), **in nats**.
 
 	Raises
 	------
 	AssertionError
 		If y is not a one dimensional array or x and z are not all numeric.
 	"""
-	assert np.can_cast(x_c, float) and np.can_cast(z_c, float), \
-		'x_c, and z_c should represent draws from continuous random variables.'
-	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
+	assert x_c is not None or z_c is not None, 'Both x_c and z_c cannot be None'
+	assert x_c is not None or x_d is not None, 'Both x_c and x_d cannot be None'
+	assert z_c is not None or z_d is not None, 'Both z_c and z_d cannot be None'
+	if z_c is None and z_d is not None and x_c is not None:
+		assert np.can_cast(x_c, float), 'x_c should be continuous'
+		# I(y; x_c | z_d, x_d) = \sum_i p_i I(y; x_c | x_d, z_d = i)
+		ds = z_d if x_d is None else np.hstack((x_d, z_d))
+		ds = np.array(['*_*'.join(list(_)) for _ in ds])
+		ds_cats, ds_counts = np.unique(ds)
+		ds_probas = ds_counts/ds.shape[0]
+		cmi = np.sum([ds_probas[i]*least_mixed_mutual_information(\
+						x_c[ds==ds_cats[i]], y[ds==ds_cats[i]].flatten(), \
+						x_d=None, space=space, non_monotonic_extension=non_monotonic_extension) \
+						for i in range(ds_cats.shape[0])])
 
-	x_ = np.reshape(x_c, (len(x_c), 1)) if len(x_c.shape) == 1 else x_c.copy()
-	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
-	z_ = np.reshape(z_c, (len(z_c), 1)) if len(z_c.shape) == 1 else z_c.copy()
+		return max(cmi, 0.0)
 
-	# I(y; x|z) = h(y, z) + h(x, z) - h(z) - h(x, y, z)
-	#			= I(y; x, z) - I(y; z)
-	xz_d = None if (x_d is None and z_d is None) else z_d if x_d is None else x_d if z_d is None else np.hstack([x_d, z_d])
-	mi_y_xz = least_mixed_mutual_information(np.hstack([x_, z_]), y_.flatten(), x_d=xz_d, space=space, \
-		non_monotonic_extension=non_monotonic_extension)
-	mi_y_z = least_mixed_mutual_information(z_, y_.flatten(), x_d=x_d, space=space, \
-		non_monotonic_extension=non_monotonic_extension)
 
-	return max(mi_y_xz-mi_y_z, 0.0)
+	if x_c is None and x_d is not None and z_c is not None:
+		assert np.can_cast(z_c, float), 'z_c should be continuous'
+		# I(y; x_d | z_c, z_d) = I(y; x_d, z_c, z_d) - I(y; z_c, z_d)
+		ds = x_d if z_d is None else np.hstack((x_d, z_d))
+		ds = np.array(['*_*'.join(list(_)) for _ in ds])
+		cmi = least_mixed_mutual_information(\
+						z_c, y.flatten(), \
+						x_d=ds, space=space, \
+						non_monotonic_extension=non_monotonic_extension)
+
+		cmi -= least_mixed_mutual_information(\
+						z_c, y.flatten(), \
+						x_d=np.array(['*_*'.join(list(_)) for _ in x_d]), space=space, \
+						non_monotonic_extension=non_monotonic_extension)
+
+		return max(cmi, 0.0)
+
+	# I(y; x_c, x_d | z_c, z_d) = I(y; x_c, x_d, z_c, z_d) - I(y; z_c, z_d)
+	assert np.can_cast(x_c, float) and np.can_cast(z_c, float), 'z_c should be continuous'
+	ds = None if x_d is None and z_d is None else x_d if z_d is None else z_d if x_d is None else np.hstack((x_d, z_d))
+	ds = None if ds is None else np.array(['*_*'.join(list(_)) for _ in ds])
+
+	x_c_ = x_c[:, None] if len(x_c.shape) == 1 else x_c
+	z_c_ = z_c[:, None] if len(z_c.shape) == 1 else z_c
+	cs = np.hstack((x_c_, z_c_))
+
+	cmi = least_mixed_mutual_information(\
+					cs, y.flatten(), \
+					x_d=ds, space=space, \
+					non_monotonic_extension=non_monotonic_extension)
+
+	cmi -= least_mixed_mutual_information(\
+					z_c, y.flatten(), \
+					x_d=z_d, space=space, \
+					non_monotonic_extension=non_monotonic_extension)
+
+	return max(cmi, 0.0)
 
 
 
@@ -290,7 +347,7 @@ def discrete_mutual_information(x, y):
 	"""
 	.. _discrete-mutual-information:
 	Estimates the (Shannon) mutual information between two discrete random variables from
-	i.i.d. samples.
+	i.i.d. samples, using the plug-in estimator of Shannon entropy.
 
 	Parameters
 	----------
@@ -302,7 +359,7 @@ def discrete_mutual_information(x, y):
 	Returns
 	-------
 	i : float
-		The mutual information between x and y, in nats.
+		The mutual information between x and y, **in nats**.
 
 	Raises
 	------

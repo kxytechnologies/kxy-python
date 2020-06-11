@@ -1,5 +1,23 @@
 
 
+
+.rst-content .admonition-summary .admonition-title {
+	background: #2c3d5e;
+}
+
+.rst-content .admonition-summary .admonition-title:before {
+	content: "\f0c6";
+}
+
+.rst-content .admonition-theoretical-foundation .admonition-title {
+	background: #2c3d5e;
+}
+
+.rst-content .admonition-theoretical-foundation .admonition-title:before {
+	content: "\f140";
+}
+
+
 .rst-content .note .admonition-title {
 	background: #2c3d5e;
 }

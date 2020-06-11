@@ -1,6 +1,6 @@
 
-Classification
-==============
+Classification Functions
+========================
 
 .. toctree::
 

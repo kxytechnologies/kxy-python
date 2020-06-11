@@ -1,132 +1,139 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import numpy as np
+import pandas as pd
 
-from kxy.api.core import least_continuous_mutual_information
+from kxy.api.core import least_continuous_mutual_information, least_mixed_mutual_information
+
+from .pre_learning import regression_variable_selection_analysis, \
+	regression_achievable_performance_analysis
 
 
-def regression_suboptimality(yp, y, x, space='dual'):
+
+def regression_model_improvability_analysis(x_c, y_p, y, x_d=None, space='dual'):
 	"""
-	.. _regression-suboptimality:
-	Quantifies the extent to which a regression model can be improved without requiring adding features.
-
-	.. note::
-
-		The aim of a regression model is to find the function :math:`x \\to f(x) \in \\mathbb{R}` 
-		to be used as our predictor for :math:`y` given :math:`x` so that :math:`f(x)` fully captures all
-		the information about :math:`y` that is contained in :math:`x`.  For instance, this will be 
-		the case when the true generative model takes the form
-
-		.. math::
-
-			y = f(x) + \\epsilon
-
-		with :math:`\\epsilon` statistically independent from :math:`y`, in which case :math:`h \\left( y \\vert x \\right) = h(\\epsilon)`.
-
-		More generally, the conditional entropy :math:`h \\left( y \\vert x \\right)` represents 
-		the amount of information about :math:`y` that cannot be explained by :math:`x`, while 
-		:math:`h \\left( y \\vert f(x) \\right)` represents the amount of information 
-		about :math:`y` that cannot be explained by the regression model 
-
-		.. math::
-
-			y = f(x) + \\epsilon.
-
-		A natural metric for how suboptimal a particular regression model is can therefore be defined as
-		the difference between the amount of information about :math:`y` that cannot be explained by 
-		:math:`f(x)` and the amount of information about :math:`y` that cannot be explained by :math:`x`
-
-
-		.. math::
-
-			SO(f; x) &= h \\left( y \\vert f(x) \\right) - h \\left( y \\vert x \\right) \\
-
-			:&= I\\left(y, x \\right) - I\\left(y, f(x) \\right) \\
-
-			 & \\geq 0.
-
-		This regression suboptimality metric is 0 if and only if :math:`f(x)` fully captures any information about :math:`y`
-		that is contained in :math:`x`. When 
-
-		.. math::
-
-			SO(f; x) > 0 
-
-		on the other hand, there exists a regression model using :math:`x` as features that can better predict :math:`y`. The larger 
-		:math:`SO(f; x)`, the more the regression model is suboptimal and can be improved.
-
+	.. _regression-model-improvability-analysis:
+	Runs the model improvability analysis on a trained regression model.
 
 	Parameters
 	----------
-	x : (n, d) np.array
-		n i.i.d. draws from the features generating distribution.
+	x_c : (n,d) np.array
+		Continuous inputs.
+	y_p : (n,) np.array
+		Labels predicted by the model and corresponding to inputs x_c and x_d.
 	y : (n,) np.array
-		n i.i.d. draws from the (continuous) labels generating distribution, sampled
-		jointly with x.
-	yp : (n,) np.array
-		Predictions of y.
+		True labels.
+	x_d : (n, d) np.array or None (default), optional
+		Discrete inputs.
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
+
 
 	Returns
 	-------
-	d : float
-		The regression's suboptimality measure.
+	a : pandas.DataFrame
+
+		Dataframe with columns:
+
+		* :code:`'Leftover R^2'`: The amount by which the trained model's :math:`R^2` can still be improved without resorting to additional inputs, simply through better modeling.
+		* :code:`'Leftover Log-Likelihood Per Sample'`: The amount by which the trained model's true log-likelihood per sample can still be increased without resorting to additional inputs, simply through better modeling.
 
 
-	.. seealso:: 
+	.. admonition:: Theoretical Foundation
 
-		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`
+		Section :ref:`3 - Model Improvability`.
 	"""
-	return max(least_continuous_mutual_information(x, y, space=space)-least_continuous_mutual_information(yp, y, space=space), 0.0)
+	achievable_perf = regression_achievable_performance_analysis(x_c, y, x_d=x_d, space=space)
+	achieved_perf   = regression_achievable_performance_analysis(y_p, y, x_d=None, space=space)
+	
+	improvable_perf = achievable_perf-achieved_perf
+	improvable_perf.rename(columns={col: col.replace('Achievable', 'Lost') for col in improvable_perf.columns}, inplace=True)
+	improvable_perf = np.maximum(improvable_perf, 0.0)
+
+	residual_perf = regression_achievable_performance_analysis(x_c, y-y_p, x_d=x_d, space=space)
+	residual_perf.rename(columns={col: col.replace('Achievable', 'Residual') for col in residual_perf.columns}, inplace=True)
+	residual_perf = np.maximum(residual_perf, 0.0)
+
+	return pd.concat([improvable_perf, residual_perf], axis=1)
 
 
 
-
-def regression_additive_suboptimality(e, x, space='dual'):
+def regression_model_explanation_analysis(x_c, f_x, x_d=None, space='dual'):
 	"""
-	.. _regression-additive-suboptimality:
-	Quantifies the extent to which a regression model can be improved without requiring additional features, by evaluating 
-	how informative its residuals still are about the features.
+	.. _regression-model-explanation-analysis:
+	Runs the model explanation analysis on a trained regression model.
 
-	.. note::
+	Parameters
+	----------
+	x_c : (n,d) np.array
+		Continuous inputs.
+	f_x : (n,) np.array
+		Labels predicted by the model and corresponding to inputs x_c and x_d.
+	x_d : (n, d) np.array or None (default), optional
+		Discrete inputs.
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
 
-		Additive regression models aim at breaking down a label :math:`y` as the sum of a component that solely depend on 
-		features :math:`f(x)` and a residual component that is statistically independent from features :math:`\\epsilon`
 
-		.. math::
+	Returns
+	-------
+	a : pandas.DataFrame
 
-			y = f(x) + \\epsilon.
+		Dataframe with columns:
 
-		In an ideal scenario, the regreession residual :math:`\\epsilon` would indeed be stastically independent from the features
-		:math:`x`. In pratice however, this might not be the case, for instance when the space of candidate functions used by
-		the regression model isn't flexible enough (e.g. linear regression or basis functions regression), or the optimization
-		has not converged to the global optimum. 
+		* :code:`'Variable'`: The variable index starting from 0 at the leftmost column of :code:`x_c` and ending at the rightmost column of :code:`x_d`.
+		* :code:`'Selection Order'`: The order in which the associated variable was selected, starting at 1 for the most important variable.
+		* :code:`'Univariate Explained R^2'`: The :math:`R^2` between predicted labels and this variable.
+		* :code:`'Running Explained R^2'`: The :math:`R^2` between predicted labels and all variables selected so far, including this one.
+		* :code:`'Marginal Explained R^2'`: The increase in :math:`R^2` between predicted labels and all variables selected so far that is due to adding this variable in the selection scheme.
 
-		Any departure from statistical independence between residuals :math:`\\epsilon` and features :math:`x` is an indication that what
-		:math:`x` can reveal about :math:`y` is not fully captured by :math:`f(x)`, which implies that the regression model can be improved.
+	.. admonition:: Theoretical Foundation
 
-		Thus, we define the additive suboptimality of a regression model as the mutual information between its residuals and its features
+		Section :ref:`a) Model Explanation`.
+	"""
+	res = regression_variable_selection_analysis(x_c, f_x, x_d=x_d, space=space)
+	res = res[['Variable', 'Selection Order', 'Univariate Achievable R^2', 'Maximum Marginal R^2 Increase', \
+		'Running Achievable R^2']]
+	res.rename(columns={'Univariate Achievable R^2': 'Univariate Explained R^2', \
+		'Maximum Marginal R^2 Increase': 'Marginal Explained R^2', \
+		'Running Achievable R^2': 'Running Explained R^2'}, inplace=True)
 
-		.. math::
+	return res
 
-			ASO(f; x) := I\\left( y-f(x), x \\right)
+
+
+def regression_bias(f_x, z, linear_scale=True, space='dual'):
+	"""
+	.. _regression-bias:
+	Quantifies the bias in a regression model as the mutual information between a category variable and model predictions.
 
 
 	Parameters
 	----------
-	e : (n,) np.array
-		Regression residuals.
-	x : (n,) np.array
-		Regression inputs.
+	f_x : (n,) np.array
+		The model decisions.
+	z : (n,) np.array
+		The associated variable through which the bias could arise.
+
 
 
 	Returns
 	-------
-	d : float
-		The regression's additive suboptimality measure.
+	b : float
+		The mutual information :math:`m` or :math:`1-e^{-2m}` if :code:`linear_scale=True`.
 
 
-	.. seealso:: 
+	.. admonition:: Theoretical Foundation
 
-		:ref:`kxy.api.core.mutual_information.least_continuous_mutual_information <least-continuous-mutual-information>`
+		Section :ref:`b) Quantifying Bias in Models`.
 	"""
-	return least_continuous_mutual_information(x, e, space=space)
+	mi = least_mixed_mutual_information(f_x, z, space=space, non_monotonic_extension=True)
+	if linear_scale:
+		mi = 1.-np.exp(-2.*mi)
+
+	return mi
 

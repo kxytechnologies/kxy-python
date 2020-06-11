@@ -1,6 +1,6 @@
 
-Core Estimation
-===============
+Core Estimation Functions
+=========================
 
 .. toctree::
 

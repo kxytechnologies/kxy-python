@@ -19,8 +19,7 @@ def solve_copula_async(corr):
 
 	.. note:: 
 
-		The solution to the optimization problem is not returned. This function should be used to pre-compute the solution 
-		to the optimization problem for later use.
+		The solution to the optimization problem is not returned. This function should be used to pre-compute the solution to the optimization problem for later use.
 
 
 	.. seealso::
@@ -127,31 +126,31 @@ def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True, spac
 
 
 
-def mutual_information_analysis(corr, output_index, space='dual', greedy=False):
+def mutual_information_analysis(corr, output_index, space='dual', greedy=True):
 	'''
 	Analyzes the dependency between :math:`d`-dimensional continuous random vector :math:`x=\\left(x_1, \\dots, x_d \\right)` and
 	a continuous random scalar :math:`y` whose joint correlation matrix is :code:`corr`, the column :code:`output_index` of which 
 	represents the variable :math:`y` and the others the variable :math:`x`.
 
 
-	Recall that, for any permutation :math:`(1), \\dots, (d)` of :math:`1, \\dots, d`, by the tower law,
+	Recall that, for any permutation :math:`\\pi_1, \\dots, \\pi_d` of :math:`1, \\dots, d`, by the tower law,
 
 	.. math::
 
-		I\\left(y; x_1, \\dots, x_d\\right) = I\\left(y; x_{(1)}\\right) + \\sum_{i=2}^d I\\left(y; x_{(i)} \\vert x_{(i-1)}, \\dots, x_{(1)} \\right).
+		I\\left(y; x_1, \\dots, x_d\\right) = I\\left(y; x_{\\pi_1}\\right) + \\sum_{i=2}^d I\\left(y; x_{\\pi_i} \\vert x_{\\pi_{i-1}}, \\dots, x_{\\pi_1} \\right).
 
 
 	This function estimates the mutual information :math:`I(y; x)` by learning the following permutation. 
 
 	When greedy is True:
 
-	* :math:`x_{(1)}` is the input with the largest maximum entropy mutual information with :math:`y` under Spearman rank correlation constraints.
+	* :math:`x_{\\pi_1}` is the input with the largest maximum entropy mutual information with :math:`y` under Spearman rank correlation constraints.
 
-	* :math:`x_{(i)}` for :math:`i>1` is the input with the largest maximum entropy conditional mutual information :math:`I\\left(y; * \\vert x_{(i-1)}, \\dots, x_{(1)}\\right)`. Note that by the time :math:`(i)` is selected, :math:`I\\left(y; x_{(i-1)}, \\dots, x_{(1)}\\right)` is already known, so that the maximum entropy conditional mutual information is simply derived from the maximum entropy copula distribution of :math:`I\\left(y; x_{(i)}, \\dots, x_{(1)}\\right)`.
+	* :math:`x_{\\pi_i}` for :math:`i>1` is the input with the largest maximum entropy conditional mutual information :math:`I\\left(y; * \\vert x_{\\pi_{i-1}}, \\dots, x_{\\pi_1}\\right)`. Note that by the time :math:`\\pi_i` is selected, :math:`I\\left(y; x_{\\pi_{i-1}}, \\dots, x_{\\pi_1}\\right)` is already known, so that the maximum entropy conditional mutual information is simply derived from the maximum entropy copula distribution of :math:`I\\left(y; x_{\\pi_i}, \\dots, x_{\\pi_1}\\right)`.
 
-	This function returns the learned permutation of inputs, the association conditional mutual informations (a.k.a, the incremental input importance scores), as well as the mutual information :math:`I\\left(y; x_1, \\dots, x_d\\right)`.
+	This function returns the learned permutation of inputs, the associated conditional mutual informations (a.k.a, the incremental input importance scores), as well as the mutual information :math:`I\\left(y; x_1, \\dots, x_d\\right)`.
 
-	When greedy is False, (i) is the input with the i-th largest mutual information with the output.
+	When greedy is False, :math:`\\pi_i` is the input with the i-th largest mutual information with the output.
 
 
 	Parameters
@@ -212,8 +211,7 @@ def mutual_information_analysis(corr, output_index, space='dual', greedy=False):
 
 def copula_entropy_analysis(corr, space='dual'):
 	'''
-	Analyzes the entropy of the copula of a :math:`d`-dimensional continuous random vector :math:`x=\\left(x_1, \\dots, x_d \\right)`, 
-	with copula-uniform representation :math:`u=\\left(u_1, \\dots, u_d \\right)`
+	Analyzes the entropy of the copula of a :math:`d`-dimensional continuous random vector :math:`x=\\left(x_1, \\dots, x_d \\right)`, with copula-uniform representation :math:`u=\\left(u_1, \\dots, u_d \\right)`.
 
 	Recall that, for any permutation :math:`(1), \\dots, (d)` of :math:`1, \\dots, d`, by the tower law,
 
@@ -224,17 +222,11 @@ def copula_entropy_analysis(corr, space='dual'):
 
 	This function estimates the copula entropy  :math:`h(u)` by learning the following permutation:
 
-	* :math:`x_{(1)}` and :math:`x_{(2)}` are chosen to be the two random variables with smallest copula entropy 
-	(or equivalently, the highest mutual information).
+	* :math:`x_{(1)}` and :math:`x_{(2)}` are chosen to be the two random variables with smallest copula entropy (or equivalently, the highest mutual information).
 
-	* :math:`x_{(i)}` for :math:`i>1` is the input with the smallest conditional copula entropy 
-	:math:`h\\left(* \\vert u_{(i-1)}, \\dots, u_{(1)} \\right)` (or equivalently, the highest mutual information
-	:math:`I\\left(*; x_{(1)}, \\dots, x_{(i-1)}\\right)`). Note that by the time :math:`(i)` is selected, 
-	:math:`h\\left(u_{(i-1)}, \\dots, u_{(1)}\\right)` is already known, so that the maximum entropy conditional 
-	entropy is simply derived from the maximum entropy copula distribution of :math:`\\left(x_{(i)}, \\dots, x_{(1)}\\right)`.
+	* :math:`x_{(i)}` for :math:`i>1` is the input with the smallest conditional copula entropy :math:`h\\left(* \\vert u_{(i-1)}, \\dots, u_{(1)} \\right)` (or equivalently, the highest mutual information :math:`I\\left(*; x_{(1)}, \\dots, x_{(i-1)}\\right)`). Note that by the time :math:`(i)` is selected, :math:`h\\left(u_{(i-1)}, \\dots, u_{(1)}\\right)` is already known, so that the maximum entropy conditional entropy is simply derived from the maximum entropy copula distribution of :math:`\\left(x_{(i)}, \\dots, x_{(1)}\\right)`.
 
-	This function returns the learned permutation of inputs, the association conditional entropies, as well as 
-	the copula entropy :math:`h(u)`.
+	This function returns the learned permutation of inputs, the association conditional entropies, as well as the copula entropy :math:`h(u)`.
 
 
 	Parameters
