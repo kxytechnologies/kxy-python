@@ -185,7 +185,7 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 	importance_df['Running Mutual Information (nats)'] = importance_df['Conditional Mutual Information (nats)'].cumsum()
 	max_mi = importance_df['Running Mutual Information (nats)'].max()
 	importance_df['Running Mutual Information (%)'] = 100.*importance_df['Running Mutual Information (nats)']/max_mi
-	
+
 	# The largest value by which the lof likelihood can be increased by using the variables selected so far.
 	importance_df['Running Maximum Log-Likelihood Increase Per Sample'] = importance_df['Maximum Marginal True Log-Likelihood Increase Per Sample'].cumsum()
 

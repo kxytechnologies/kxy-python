@@ -229,6 +229,7 @@ class KXYAccessor(object):
 
 		res = regression_achievable_performance_analysis(x_c, y, x_d=x_d, space=space) if problem == 'regression' \
 			else classification_achievable_performance_analysis(x_c, y, x_d=x_d, space=space)
+		res = res.style.hide_index()
 
 		return res
 
@@ -362,6 +363,7 @@ class KXYAccessor(object):
 
 		res = regression_model_improvability_analysis(x_c, y_p, y, x_d=x_d, space=space) if problem == 'regression' \
 			else classification_model_improvability_analysis(x_c, y_p, y, x_d=x_d, space=space)
+		res = res.style.hide_index()
 
 		return res
 
@@ -589,8 +591,6 @@ class KXYAccessor(object):
 		imp_perf = imp_perf.style.background_gradient(cmap=cm)
 
 		return imp_perf
-
-
 
 
 
