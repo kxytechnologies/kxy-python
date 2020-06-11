@@ -107,8 +107,8 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 		* :code:`'Univariate Achievable R^2'`: The highest :math:`R^2` that can be achieved by a regression model solely using this variable.
 		* :code:`'Maximum Marginal R^2 Increase'`: The highest amount by which the :math:`R^2` can be increased as a result of adding this variable in the variable selection scheme.
 		* :code:`'Running Achievable R^2'`: The highest :math:`R^2` that can be achieved by a regression model using all variables selected so far, including this one.
-		* :code:`'Conditional Mutual Information'`: The mutual information between this variable and the label, conditional on all variables previously selected.
-		* :code:`'Running Mutual Information'`: The mutual information between all variables selected so far, including this one, and the label.
+		* :code:`'Conditional Mutual Information (nats)'`: The mutual information between this variable and the label, conditional on all variables previously selected.
+		* :code:`'Running Mutual Information (nats)'`: The mutual information between all variables selected so far, including this one, and the label.
 		* :code:`'Maximum Marginal True Log-Likelihood Increase Per Sample'`: The highest amount by which the true log-likelihood per sample can increase as a result of adding this variable.
 		* :code:`'Running Maximum Log-Likelihood Increase Per Sample'`: The highest amount by which the true log-likelihood per sample can increase (over the log-likelihood of the naive strategy consisting of predicting the mode of :math:`y`) as a result of using all variables selected so far, including this one.
 

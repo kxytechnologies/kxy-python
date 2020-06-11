@@ -95,8 +95,8 @@ def classification_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 		* :code:`'Univariate Achievable Accuracy'`: The highest classification accuracy that can be achieved by a classification model solely using this variable.
 		* :code:`'Maximum Marginal Accuracy Increase'`: The highest amount by which the classification accuracy can be increased as a result of adding this variable in the variable selection scheme.
 		* :code:`'Running Achievable Accuracy'`: The highest classification accuracy that can be achieved by a classification model using all variables selected so far, including this one.
-		* :code:`'Conditional Mutual Information'`: The mutual information between this variable and the label, conditional on all variables previously selected.
-		* :code:`'Running Mutual Information'`: The mutual information between all variables selected so far, including this one, and the label.
+		* :code:`'Conditional Mutual Information (nats)'`: The mutual information between this variable and the label, conditional on all variables previously selected.
+		* :code:`'Running Mutual Information (nats)'`: The mutual information between all variables selected so far, including this one, and the label.
 		* :code:`'Univariate Achievable True Log-Likelihood Per Sample'`: The highest true log-likelihood per sample that can be achieved by a classification model solely using this variable.
 		* :code:`'Maximum Marginal True Log-Likelihood Per Sample Increase'`: The highest amount by which the true log-likelihood per sample can be increased as a result of adding this variable in the variable selection scheme.
 		* :code:`'Running Achievable True Log-Likelihood Per Sample'`: The highest true log-likelihood per sample that can be achieved by a classification model using all variables selected so far, including this one.
