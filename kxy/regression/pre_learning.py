@@ -139,7 +139,7 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 		column_id = mi_analysis['selection_order'][str(i)]
 		column = columns[column_id]
 		if column in remaining_columns:
-			mis[column] = least_continuous_mutual_information(x_c[:, [column]], y, space=space)
+			mis[column] = mi_analysis['individual_mutual_informations'][str(i)]
 			if idx == 1:
 				cmis[column] = mis[column]
 			else:
@@ -162,8 +162,8 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 		else:
 			rsq_inc[o] = run_rsqs[o]-run_rsqs[o-1]
 
-
 	n = y.shape[0]
+	max_r_2 = np.max([_ for _ in run_rsqs.values()])
 	importance_df = pd.DataFrame({
 		'Variable': [v for v, o in sorted(order.items(), key=lambda item: item[1])], \
 		'Selection Order': [o for v, o in sorted(order.items(), key=lambda item: item[1])], \
@@ -172,16 +172,20 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 		'Univariate Achievable R^2': [rsqs[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
 		'Maximum Marginal R^2 Increase': [rsq_inc[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
 		'Running Achievable R^2': [run_rsqs[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Running Achievable R^2 (%)': [100.*run_rsqs[o]/max_r_2 for v, o in sorted(order.items(), key=lambda item: item[1])], \
 
 		# Conditional mutual information analysis
-		'Univariate Mutual Information': [mis[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
-		'Conditional Mutual Information': [cmis[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Univariate Mutual Information (nats)': [mis[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Conditional Mutual Information (nats)': [cmis[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
 
 		# The largest likelihood by which the likelihood can be increased as a result of adding this variable
 		'Univariate Maximum True Log-Likelihood Increase Per Sample': [mis[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
 		'Maximum Marginal True Log-Likelihood Increase Per Sample': [cmis[v] for v, o in sorted(order.items(), key=lambda item: item[1])]})
 
-	importance_df['Running Mutual Information'] = importance_df['Conditional Mutual Information'].cumsum()
+	importance_df['Running Mutual Information (nats)'] = importance_df['Conditional Mutual Information (nats)'].cumsum()
+	max_mi = importance_df['Running Mutual Information (nats)'].max()
+	importance_df['Running Mutual Information (%)'] = 100.*importance_df['Running Mutual Information (nats)']/max_mi
+	
 	# The largest value by which the lof likelihood can be increased by using the variables selected so far.
 	importance_df['Running Maximum Log-Likelihood Increase Per Sample'] = importance_df['Maximum Marginal True Log-Likelihood Increase Per Sample'].cumsum()
 

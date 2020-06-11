@@ -4,8 +4,8 @@
 
 
 
-A Powerful Serverless Pre-Learning & Post-Learning Analysis Toolkit
-===================================================================
+A Powerful Serverless Analysis Toolkit That Takes *Trial And Error* Out of Machine Learning Projects
+====================================================================================================
 .. image:: https://img.shields.io/badge/license-AGPLv3%2B-blue
    :alt: License
    :target: https://www.gnu.org/licenses/agpl-3.0.en.html
@@ -17,23 +17,36 @@ A Powerful Serverless Pre-Learning & Post-Learning Analysis Toolkit
    :target: https://github.com/kxytechnologies/kxy-python/
 
 
-
-**Performance Bound:** The :code:`kxy` package is the first and only toolkit that provides data scientists with an information-theoretical estimate of the best performance (e.g. :math:`R^2` or classification error) that can be achieved on a regression or classification problem using a specific set of inputs. This allows data scientists to stop wasting time trying to improve a model that cannot be improved, or trying to train models that cannot perform to an acceptable standard.
-
-**Model-Free Variable Selection:** Moreover, the :code:`kxy` package uses information theory to empower data scientists to automatically discern informative inputs from inputs that are useless for solving the regression or classification problem at hand. By computing the marginal utility of each input, our input importance analyses discerns redundant inputs from complementary inputs. Our model-free approach to variable selection allows data scientists to train smaller models, faster, cheaper, and that achieve higher performance than throwing all inputs in a big model. *We support both continuous and categorical inputs for regression and classification problems*.
-
-**Model Audit:** From understanding the marginal contribution of each variable towards the decision made by your trained regression or classification model, to detecting bias in your trained classification and regression model, the :code:`kxy` toolkit allows data scientists and decision markers to fully audit complex machine learning models.
-
-**Model Improvement v Dataset Acquisition Prioritization:** Finally, the :code:`kxy` toolkit can be used to guide data scientists and decision makers strike the right balance between improving production models using existing datasets and acquiring complementary datasets. Our analysis will tell you if there is still juice that your production model hasn't extracted from your datasets yet. When you are considering acquiring a new dataset, the toolkit will estimate its expected marginal impact on performance.
-
-**Infinite Scalability:** Computations are mostly run on our infrastructure using summary statistics of your data. Scalability is near infinite thanks to AWS serverless computing, with analysis of hundreds of inputs taking minutes, if not seconds.
-
-
-
 ==============
 Request A Demo
 ==============
-To request a demo and get a trial API key, email demo@kxy.ai.
+To request a demo or get a trial API key, email demo@kxy.ai.
+
+
+====================================
+Higher ROI Machine Learning Projects
+====================================
+The :code:`kxy` package utilizes information theory to takes *trial and error* out of machine learning projects. 
+
+From the get-go, the **achievable performance analysis** of the :code:`kxy` package tells data scientists whether their datasets are sufficiently informative to achieve a performance (e.g. :math:`R^2`, maximum log-likelihood, and classification error) to their liking in a classification or regression problem, and if so what is the best performance that can be achieved using said datasets. *No need to train tens of models to know what performance can be achieved*.
+
+The **model-free variable selection analysis** provided by the :code:`kxy` package allows data scientists to train smaller models, faster, cheaper, and to achieve a higher performance than throwing all inputs in a big model or proceeding by trial-and-error.
+
+Once a model has been trained, the :code:`kxy` **improvability analysis** quantifies the extent to which the trained model can be improved without resorting to additional features. This allows data scientists to focus their modeling efforts on high ROI initiatives. *No need to implement tens of fancy models on specialized hardware to see whether a trained model can be improved*.
+
+When a classification or regression model has successfully extracted all the value in using the features to predict the label, the :code:`kxy` **dataset valuation analysis** allows data scientists to quickly quantify the performance increase (e.g. :math:`R^2`, maximum log-likelihood, and classification error) that a new dataset may bring about. *No need to train or retrain tens of models with the new datasets to see whether the production model can be improved*.
+
+
+
+===========
+Model Audit
+===========
+From **understanding** the marginal contribution of each variable towards the decision made by **a black-box regression or classification model**, to **detecting bias** in your trained classification and regression model, the :code:`kxy` toolkit allows data scientists and decision markers to fully **audit complex machine learning models**.
+
+=================================
+Modern Financial Machine Learning
+=================================
+From **non-Gaussian** and **memory-robust** risk analysis, to **alternative datasets valuation** the :code:`kxy` toolkit propels quants from the age of Gaussian distributions/linear regression/LASSO/Ridge/Random Forest into the age of modern machine learning, rigorously and cost-effectively.
 
 
 

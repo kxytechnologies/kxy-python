@@ -97,7 +97,7 @@ def classification_model_explanation_analysis(x_c, f_x, x_d=None, space='dual'):
 	res.rename(columns={'Univariate Achievable R^2': 'Univariate Explained R^2', \
 		'Maximum Marginal R^2 Increase': 'Marginal Explained R^2', \
 		'Running Achievable R^2': 'Running Explained R^2'}, inplace=True)
-	
+
 	return res
 
 

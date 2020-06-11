@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 from kxy.asset_management import information_adjusted_beta, information_adjusted_correlation, \
 	robust_pearson_corr
@@ -198,8 +199,8 @@ class KXYAccessor(object):
 
 		Returns
 		-------
-		 : pandas.DataFrame
-			Dataframe with columns (where applicable):
+		res : pandas.Styler
+			res.data is a pandas.Dataframe with columns (where applicable):
 
 			* :code:`'Achievable R^2'`: The highest :math:`R^2` that can be achieved by a model using provided inputs to predict the label.
 			* :code:`'Achievable Log-Likelihood Per Sample'`: The highest true log-likelihood per sample that can be achieved by a model using provided inputs to predict the label.
@@ -229,7 +230,6 @@ class KXYAccessor(object):
 		res = regression_achievable_performance_analysis(x_c, y, x_d=x_d, space=space) if problem == 'regression' \
 			else classification_achievable_performance_analysis(x_c, y, x_d=x_d, space=space)
 
-
 		return res
 
 
@@ -254,8 +254,8 @@ class KXYAccessor(object):
 
 		Returns
 		-------
-		 : pandas.DataFrame
-			Dataframe with columns (where applicable):
+		res : pandas.Styler
+			res.data is a pandas.Dataframe with columns (where applicable):
 
 				* :code:`'Variable'`: The column name corresponding to the input variable.
 				* :code:`'Selection Order'`: The order in which the associated variable was selected, starting at 1 for the most important variable.
@@ -299,6 +299,10 @@ class KXYAccessor(object):
 
 		variable_columns = continuous_columns + discrete_columns
 		res['Variable'] = res['Variable'].map({i: variable_columns[i] for i in range(len(variable_columns))})
+		res.set_index(['Variable'], inplace=True)
+
+		cm = sns.light_palette("green", as_cmap=True)
+		res = res.style.background_gradient(cmap=cm)
 
 		return res
 
@@ -328,8 +332,8 @@ class KXYAccessor(object):
 
 		Returns
 		-------
-		 : pandas.DataFrame
-			Dataframe with columns (where applicable):
+		res : pandas.Styler
+			res.data is a pandas.Dataframe with columns (where applicable):
 
 				* :code:`'Leftover R^2'`: The amount by which the trained model's :math:`R^2` can still be increased without resorting to additional inputs, simply through better modeling.
 				* :code:`'Leftover Log-Likelihood Per Sample'`: The amount by which the trained model's true log-likelihood per sample can still be increased without resorting to additional inputs, simply through better modeling.
@@ -383,8 +387,8 @@ class KXYAccessor(object):
 
 		Returns
 		-------
-		 : pandas.DataFrame
-			Dataframe with columns:
+		res : pandas.Styler
+			res.data is a pandas.Dataframe with columns:
 
 				* :code:`'Variable'`: The column name corresponding to the input variable.
 				* :code:`'Selection Order'`: The order in which the associated variable was selected, starting at 1 for the most important variable.
@@ -418,6 +422,10 @@ class KXYAccessor(object):
 
 		variable_columns = continuous_columns + discrete_columns
 		res['Variable'] = res['Variable'].map({i: variable_columns[i] for i in range(len(variable_columns))})
+		res.set_index(['Variable'], inplace=True)
+
+		cm = sns.light_palette("green", as_cmap=True)
+		res = res.style.background_gradient(cmap=cm)
 
 		return res
 
@@ -494,11 +502,11 @@ class KXYAccessor(object):
 		Returns
 		-------
 		 : float
-		 	The measure of auto-predictability in nats/period.
+			The measure of auto-predictability in nats/period.
 
 
 		.. note::
-		 	The time series is assumed to have a fixed period, and the index is assumed to be sorted.
+			The time series is assumed to have a fixed period, and the index is assumed to be sorted.
 
 
 		.. seealso::
@@ -537,8 +545,8 @@ class KXYAccessor(object):
 
 		Returns
 		-------
-		 : pandas.DataFrame
-			Dataframe with columns (where applicable):
+		res : pandas.Styler
+			res.data is a Dataframe with columns (where applicable):
 
 			* :code:`'Increased Achievable R^2'`: The highest :math:`R^2` increase that can result from adding the new dataset.
 			* :code:`'Increased Achievable Log-Likelihood Per Sample'`: The highest increase in the true log-likelihood per sample that can result from adding the new dataset.
@@ -576,6 +584,9 @@ class KXYAccessor(object):
 		old_perf = self.achievable_performance_analysis(label_column, input_columns=existing_input_columns, space=space)
 		imp_perf = new_perf-old_perf
 		imp_perf.rename(columns={col: col.replace('Achievable', 'Increased Achievable') for col in imp_perf.columns}, inplace=True)
+
+		cm = sns.light_palette("green", as_cmap=True)
+		imp_perf = imp_perf.style.background_gradient(cmap=cm)
 
 		return imp_perf
 

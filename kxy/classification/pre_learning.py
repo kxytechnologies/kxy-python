@@ -145,56 +145,12 @@ def classification_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 			# (discrete, continuous) | None, or (discrete, discrete) | None
 			cmi_ = mi_
 
-		# elif len(cont_cs) == 0 and is_cat:
-		# 	# (discrete, discrete | discrete)
-		# 	flat_c = np.array(['*_*'.join(list(_)) for _ in z_d])
-		# 	flat_all = np.array([flat_c[i] + '*_*' + _x_d[i] for i in range(flat_c.shape[0])])
-		# 	cmi_ = discrete_mutual_information(y, flat_all)-discrete_mutual_information(y, flat_c)
-
-		# elif len(cont_cs) == 0 and not is_cat:
-		# 	# (discrete, continuous | discrete)
-		# 	cmi_ = least_mixed_conditional_mutual_information(_x_c, y, None, z_d=z_d, \
-		# 		space=space, non_monotonic_extension=True)
-
-
-		# elif len(cat_cs) == 0 and is_cat:
-		# 	# (discrete, discrete | continuous)
-		# 	# I(y; d|c) = I(y; d,c)-I(y; c) 
-		# 	#           = I(y;c|d) + I(y; d)-I(y; c)
-		# 	cmi_ = least_mixed_conditional_mutual_information(_x_c, y, None, z_d=z_d, \
-		# 		space=space, non_monotonic_extension=True)
-		# 	cmi_ += discrete_mutual_information(_x_d, y)
-		# 	cmi_ -= least_mixed_mutual_information(_x_c, y, space=space, \
-		# 		non_monotonic_extension=True)
-		# 	cmi_ = max(cmi_, 0.0)
-
-
-		# elif len(cat_cs) == 0 and not is_cat:
-		# 	# (discrete, continuous | continuous)
-		# 	cmi_ = least_mixed_conditional_mutual_information(_x_c, y, z_c, \
-		# 		space=space, non_monotonic_extension=True)
-
-		# elif is_cat:
-		# 	# (discrete, discrete | discrete & continuous)
-		# 	# I(y; d|z_c, z_d) = I(y; d, z_c, z_d)-I(y; z_c, z_d) 
-		# 	#                  = I(y; z_c| d, z_d) + I(y; d, z_d) - I(y; z_c | z_d) - I(y; z_d)
-		# 	flat_c = np.array(['*_*'.join(list(_)) for _ in z_d])
-		# 	flat_all = np.array([flat_c[i] + '*_*' + _x_d[i] for i in range(flat_c.shape[0])])
-		# 	cmi_ = least_mixed_conditional_mutual_information(z_c, y, None, z_d=flat_all, \
-		# 		space=space, non_monotonic_extension=True)
-		# 	cmi_ += discrete_mutual_information(y, flat_all)
-		# 	cmi_ -= least_mixed_conditional_mutual_information(z_c, y, None, z_d=flat_c, \
-		# 		space=space, non_monotonic_extension=True)
-		# 	cmi_ -= discrete_mutual_information(y, flat_c)
-		# 	cmi_ = max(cmi_, 0.0)
-
 		else:
 			# (discrete, continuous | discrete & continuous)
 			cmi_ = least_mixed_conditional_mutual_information(_x_c, y, z_c, x_d=_x_d, z_d=z_d, \
 				space=space, non_monotonic_extension=True)
 			cmi_ = min(cmi_, hy)
 			
-
 		return {i_: [cmi_, mi_]}
 
 
@@ -249,6 +205,7 @@ def classification_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 
 
 	sorted_order = sorted(order.items(), key=lambda item: item[1])
+	max_r_2 = np.max([_ for _ in final_run_rsqs.values()])
 	importance_df = pd.DataFrame({
 		'Variable': [v for v, o in sorted_order], \
 		'Selection Order': [o for v, o in sorted_order], \
@@ -257,6 +214,7 @@ def classification_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 		'Univariate Achievable R^2': [final_univariate_rsq[v] for v, o in sorted_order], \
 		'Maximum Marginal R^2 Increase': [final_rsq_inc[o] for v, o in sorted_order], \
 		'Running Achievable R^2': [final_run_rsqs[o] for v, o in sorted_order], \
+		'Running Achievable R^2 (%)': [100.*final_run_rsqs[o]/max_r_2 for v, o in sorted_order], \
 
 		# Achievable accuracy analysis
 		'Univariate Achievable Accuracy': [final_univariate_acc[v] for v, o in sorted_order], \
@@ -269,10 +227,11 @@ def classification_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 		'Running Achievable True Log-Likelihood Per Sample': [final_run_llik[o] for v, o in sorted_order], \
 
 		# Conditional mutual information analysis
-		'Univariate Mutual Information': [final_mis[v] for v, o in sorted_order], \
-		'Conditional Mutual Information': [final_cmis[v] for v, o in sorted_order]})
-	importance_df['Running Mutual Information'] = importance_df['Conditional Mutual Information'].cumsum()
-
+		'Univariate Mutual Information (nats)': [final_mis[v] for v, o in sorted_order], \
+		'Conditional Mutual Information (nats)': [final_cmis[v] for v, o in sorted_order]})
+	importance_df['Running Mutual Information (nats)'] = importance_df['Conditional Mutual Information (nats)'].cumsum()
+	max_mi = importance_df['Running Mutual Information (nats)'].max()
+	importance_df['Running Mutual Information (%)'] = 100.*importance_df['Running Mutual Information (nats)']/max_mi
 
 	return importance_df
 
