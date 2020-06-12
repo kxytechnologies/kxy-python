@@ -57,7 +57,7 @@ def solve_copula_async(corr):
 
 
 
-def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True, space='dual'):
+def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True, space='dual', batch_indices=[]):
 	"""
 	.. _solve-copula-sync:
 	Solve the maximum-entropy copula problem under Spearman rank correlation matrix constraints synchronously.
@@ -109,7 +109,7 @@ def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True, spac
 		solve_copula_async(corr)
 
 	if mode == 'mutual_information_v_output':
-		res = mutual_information_analysis(corr, output_index, space=space)
+		res = mutual_information_analysis(corr, output_index, space=space, batch_indices=batch_indices)
 		if res is None:
 			return None
 
@@ -126,7 +126,7 @@ def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True, spac
 
 
 
-def mutual_information_analysis(corr, output_index, space='dual'):
+def mutual_information_analysis(corr, output_index, space='dual', batch_indices=[]):
 	'''
 	Analyzes the dependency between :math:`d`-dimensional continuous random vector :math:`x=\\left(x_1, \\dots, x_d \\right)` and
 	a continuous random scalar :math:`y` whose joint correlation matrix is :code:`corr`, the column :code:`output_index` of which 
@@ -151,7 +151,7 @@ def mutual_information_analysis(corr, output_index, space='dual'):
 
 	Parameters
 	----------
-	corrr : np.array
+	corr : np.array
 		The Spearman correlation matrix.
 
 	output_index: int
@@ -164,6 +164,7 @@ def mutual_information_analysis(corr, output_index, space='dual'):
 		Dictionary with keys :code:`mutual_information`, :code:`selection_order`, and :code:`conditional_mutual_informations`.
 	'''
 	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
+	bi = json.dumps(batch_indices)
 	opt_launched = False
 	max_retry = 60
 	first_try = True
@@ -178,7 +179,7 @@ def mutual_information_analysis(corr, output_index, space='dual'):
 			logging.debug('Querying mutual information analysis with corr=%s and output_index=%d' % (c, output_index))
 			api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
 				corr=c, output_index=output_index, request_id=request_id, timestamp=int(time()), \
-				space=space)
+				space=space, batch_indices=bi)
 			query_duration = time()-query_start_time
 
 		else:

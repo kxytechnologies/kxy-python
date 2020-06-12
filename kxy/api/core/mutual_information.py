@@ -99,8 +99,11 @@ def least_continuous_mutual_information(x, y, space='dual', non_monotonic_extens
 
 	corr = pearson_corr(np.hstack([y_, x_])) if space == 'primal' or not non_monotonic_extension else \
 		spearman_corr(np.hstack([y_, x_, np.abs(x_-x_.mean(axis=0))]))
+
+	d = x_.shape[1]
+	batch_indices = [[i, i+d] for i in range(1, d+1)] if non_monotonic_extension else [[i] for i in range(1, d+1)]
 	mi = solve_copula_sync(corr, mode='mutual_information_v_output', output_index=0, solve_async=False, \
-		space=space)
+		space=space, batch_indices=batch_indices)
 
 	return mi
 
@@ -229,14 +232,19 @@ def least_mixed_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic
 
 	x_c_ = np.reshape(x_c, (len(x_c), 1)) if len(x_c.shape) == 1 else x_c.copy()
 	x_c_r = np.hstack((x_c_, np.abs(x_c_-x_c_.mean(axis=0)))) if non_monotonic_extension else x_c_
+	d = x_c_.shape[1]
+	batch_indices = [[i, i+d] for i in range(d)] if non_monotonic_extension else [[i] for i in range(d)]
 
 	categories = list(set(list(y)))
 	n = y.shape[0]
 	probas = np.array([1.*len(y[y==cat])/n for cat in categories])
 
-	h = least_structured_continuous_entropy(x_c_r, space=space) if x_d is None else least_structured_mixed_entropy(x_c_r, x_d, space=space)
-	wh = np.sum([probas[i] * least_structured_continuous_entropy(x_c_r[y==categories[i]], space=space) for i in range(len(categories))]) if x_d is None \
-		else np.sum([probas[i] * least_structured_mixed_entropy(x_c_r[y==categories[i]], x_d[y==categories[i]], space=space) for i in range(len(categories))])
+	h = least_structured_continuous_entropy(x_c_r, space=space, batch_indices=batch_indices) if x_d is None \
+		else least_structured_mixed_entropy(x_c_r, x_d, space=space, batch_indices=batch_indices)
+	wh = np.sum([probas[i] * least_structured_continuous_entropy(x_c_r[y==categories[i]], space=space, batch_indices=batch_indices) \
+		for i in range(len(categories))]) if x_d is None \
+		else np.sum([probas[i] * least_structured_mixed_entropy(x_c_r[y==categories[i]], x_d[y==categories[i]], space=space, \
+			batch_indices=batch_indices) for i in range(len(categories))])
 
 	return max(h-wh, 0.0)
 

@@ -147,7 +147,7 @@ def discrete_entropy(x):
 	return -np.dot(np.log(probas), probas)
 
 
-def least_structured_copula_entropy(x, space='dual'):
+def least_structured_copula_entropy(x, space='dual', batch_indices=[]):
 	"""
 	.. _least-structured-copula-entropy:
 	Estimates the entropy of the maximum-entropy copula in the chosen space.
@@ -176,12 +176,12 @@ def least_structured_copula_entropy(x, space='dual'):
 		return 0.0
 
 	corr = pearson_corr(x) if space == 'primal' else spearman_corr(x)
-	h = solve_copula_sync(corr, mode='copula_entropy', solve_async=False, space=space)
+	h = solve_copula_sync(corr, mode='copula_entropy', solve_async=False, space=space, batch_indices=batch_indices)
 
 	return h
 
 
-def least_structured_continuous_entropy(x, space='dual'):
+def least_structured_continuous_entropy(x, space='dual', batch_indices=[]):
 	""" 
 	.. _least-structured-continuous-entropy:
 	Estimates the entropy of a continuous :math:`d`-dimensional random variable under the least structured assumption for its copula. 
@@ -218,7 +218,7 @@ def least_structured_continuous_entropy(x, space='dual'):
 	if len(x.shape) == 1 or x.shape[1] == 1:
 		return scalar_continuous_entropy(x, space=space)
 
-	ch = least_structured_copula_entropy(x, space=space)
+	ch = least_structured_copula_entropy(x, space=space, batch_indices=batch_indices)
 	ih = np.sum([scalar_continuous_entropy(x[:, i], space=space) for i in range(x.shape[1])])
 
 	return ih+ch
@@ -226,7 +226,7 @@ def least_structured_continuous_entropy(x, space='dual'):
 
 
 
-def least_structured_mixed_entropy(x_c, x_d, space='dual'):
+def least_structured_mixed_entropy(x_c, x_d, space='dual', batch_indices=[]):
 	"""
 	.. _least-structured-mixed-entropy:
 	Estimates the joint entropy :math:`h(x_c, x_d)`, where :math:`x_c` is continuous random vector and :math:`x_d` is a discrete random vector.
@@ -278,7 +278,8 @@ def least_structured_mixed_entropy(x_c, x_d, space='dual'):
 	n = labels.shape[0]
 	probas = np.array([1.*len(labels[labels==cat])/n for cat in categories])
 	h = -np.dot(probas, np.log(probas))
-	h += np.sum([probas[i] * least_structured_continuous_entropy(x_c[labels==categories[i]], space=space) for i in range(len(categories))])
+	h += np.sum([probas[i] * least_structured_continuous_entropy(x_c[labels==categories[i]], space=space, \
+		batch_indices=batch_indices) for i in range(len(categories))])
 
 	return h
 

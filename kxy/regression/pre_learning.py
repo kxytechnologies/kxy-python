@@ -57,7 +57,9 @@ def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual'):
 		else:
 			data = np.hstack((y[:, None], x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))	
 		corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
-		mi_analysis = mutual_information_analysis(corr, 0, space=space)
+
+		batch_indices = [[i+d] for i in range(1, d+1)]
+		mi_analysis = mutual_information_analysis(corr, 0, space=space, batch_indices=batch_indices)
 		mi = mi_analysis['mutual_information']
 
 	else:
@@ -129,22 +131,22 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 	d = x_c.shape[1] if len(x_c.shape) > 1 else 1
 	data = np.hstack((y[:, None] , x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))
 	corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
-	mi_analysis = mutual_information_analysis(corr, 0, space=space)
-	columns = [0] + [_ for _ in range(d)] + [_ for _ in range(d)]
+	batch_indices = [[i+d] for i in range(1, d+1)]
+	mi_analysis = mutual_information_analysis(corr, 0, space=space, batch_indices=batch_indices)
+	batches = [_ for _ in range(d)]
+	remaining_columns = [_ for _ in range(d)]
 
 	if mi_analysis is None:
 		return None
-
-	remaining_columns = [_ for _ in range(d)]
 
 	cmis = {}
 	rsqs = {}
 	mis = {}
 	order = {}
 	idx = 1
-	for i in range(1, 1+2*d):
+	for i in range(1, d+1):
 		column_id = mi_analysis['selection_order'][str(i)]
-		column = columns[column_id]
+		column = batches[column_id]
 		if column in remaining_columns:
 			mis[column] = mi_analysis['individual_mutual_informations'][str(i)]
 			if idx == 1:
