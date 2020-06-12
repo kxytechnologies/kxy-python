@@ -51,7 +51,11 @@ def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual'):
 	assert len(y.shape) == 1 or y.shape[1] == 1, 'y should be a one dimensional numpy array'
 
 	if x_d is None:
-		mi = least_continuous_mutual_information(x_c, y, space=space)
+		d = x_c.shape[1]
+		data = np.hstack((y[:, None] , x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))
+		corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
+		mi_analysis = mutual_information_analysis(corr, 0, space=space, greedy=True)
+		mi = mi_analysis['mutual_information']
 
 	else:
 		y_ = y[:, None] if len(y.shape) == 1 else y
