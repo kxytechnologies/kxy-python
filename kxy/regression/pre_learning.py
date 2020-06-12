@@ -57,7 +57,7 @@ def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual'):
 		else:
 			data = np.hstack((y[:, None], x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))	
 		corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
-		mi_analysis = mutual_information_analysis(corr, 0, space=space, greedy=True)
+		mi_analysis = mutual_information_analysis(corr, 0, space=space)
 		mi = mi_analysis['mutual_information']
 
 	else:
@@ -129,7 +129,7 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 	d = x_c.shape[1] if len(x_c.shape) > 1 else 1
 	data = np.hstack((y[:, None] , x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))
 	corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
-	mi_analysis = mutual_information_analysis(corr, 0, space=space, greedy=True)
+	mi_analysis = mutual_information_analysis(corr, 0, space=space)
 	columns = [0] + [_ for _ in range(d)] + [_ for _ in range(d)]
 
 	if mi_analysis is None:

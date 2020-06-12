@@ -126,7 +126,7 @@ def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True, spac
 
 
 
-def mutual_information_analysis(corr, output_index, space='dual', greedy=True):
+def mutual_information_analysis(corr, output_index, space='dual'):
 	'''
 	Analyzes the dependency between :math:`d`-dimensional continuous random vector :math:`x=\\left(x_1, \\dots, x_d \\right)` and
 	a continuous random scalar :math:`y` whose joint correlation matrix is :code:`corr`, the column :code:`output_index` of which 
@@ -142,15 +142,11 @@ def mutual_information_analysis(corr, output_index, space='dual', greedy=True):
 
 	This function estimates the mutual information :math:`I(y; x)` by learning the following permutation. 
 
-	When greedy is True:
-
 	* :math:`x_{\\pi_1}` is the input with the largest maximum entropy mutual information with :math:`y` under Spearman rank correlation constraints.
 
 	* :math:`x_{\\pi_i}` for :math:`i>1` is the input with the largest maximum entropy conditional mutual information :math:`I\\left(y; * \\vert x_{\\pi_{i-1}}, \\dots, x_{\\pi_1}\\right)`. Note that by the time :math:`\\pi_i` is selected, :math:`I\\left(y; x_{\\pi_{i-1}}, \\dots, x_{\\pi_1}\\right)` is already known, so that the maximum entropy conditional mutual information is simply derived from the maximum entropy copula distribution of :math:`I\\left(y; x_{\\pi_i}, \\dots, x_{\\pi_1}\\right)`.
 
 	This function returns the learned permutation of inputs, the associated conditional mutual informations (a.k.a, the incremental input importance scores), as well as the mutual information :math:`I\\left(y; x_1, \\dots, x_d\\right)`.
-
-	When greedy is False, :math:`\\pi_i` is the input with the i-th largest mutual information with the output.
 
 
 	Parameters
@@ -182,7 +178,7 @@ def mutual_information_analysis(corr, output_index, space='dual', greedy=True):
 			logging.debug('Querying mutual information analysis with corr=%s and output_index=%d' % (c, output_index))
 			api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
 				corr=c, output_index=output_index, request_id=request_id, timestamp=int(time()), \
-				space=space, greedy=int(greedy))
+				space=space)
 			query_duration = time()-query_start_time
 
 		else:
