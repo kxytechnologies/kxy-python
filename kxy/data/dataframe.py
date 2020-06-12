@@ -22,6 +22,7 @@ import seaborn as sns
 from kxy.asset_management import information_adjusted_beta, information_adjusted_correlation, \
 	robust_pearson_corr
 
+from kxy.api import mutual_information_analysis
 from kxy.api.core import spearman_corr, pearson_corr, auto_predictability
 
 from kxy.classification import classification_achievable_performance_analysis, \
@@ -592,6 +593,19 @@ class KXYAccessor(object):
 
 		return imp_perf
 
+	def _mutual_information_analysis(self, label_column, input_columns=(), space='dual'):
+		"""
+		"""
+		columns =  [col for col in self._obj.columns if not self.is_categorical(col)]
+		x_c = self._obj[columns].values
+		y = self._obj[label_column].values
+		d = x_c.shape[1] if len(x_c.shape) > 1 else 1
+		data = np.hstack((y[:, None] , x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))
+		corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
+		batch_indices = [[i, i+d] for i in range(1, d+1)]
+		mi_analysis = mutual_information_analysis(corr, 0, space=space, batch_indices=batch_indices)
+
+		return mi_analysis
 
 
 	def __hash__(self):

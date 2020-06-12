@@ -58,7 +58,7 @@ def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual'):
 			data = np.hstack((y[:, None], x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))	
 		corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
 
-		batch_indices = [[i+d] for i in range(1, d+1)]
+		batch_indices = [[i, i+d] for i in range(1, d+1)]
 		mi_analysis = mutual_information_analysis(corr, 0, space=space, batch_indices=batch_indices)
 		mi = mi_analysis['mutual_information']
 
@@ -131,7 +131,7 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 	d = x_c.shape[1] if len(x_c.shape) > 1 else 1
 	data = np.hstack((y[:, None] , x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))
 	corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
-	batch_indices = [[i+d] for i in range(1, d+1)]
+	batch_indices = [[i, i+d] for i in range(1, d+1)]
 	mi_analysis = mutual_information_analysis(corr, 0, space=space, batch_indices=batch_indices)
 	batches = [_ for _ in range(d)]
 	remaining_columns = [_ for _ in range(d)]
