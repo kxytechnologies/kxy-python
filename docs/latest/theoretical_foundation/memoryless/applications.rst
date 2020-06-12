@@ -402,7 +402,7 @@ is a natural measure of how suboptimal :math:`\mathcal{M}` is. Note that, using 
 .. note::
 	In regression problems, it is worth noting that, because :math:`SO(\mathcal{M})=0` (or equivalently because :math:`x` and :math:`y` are statistically independent conditional on :math:`f(x)`) doesn't necessarily mean that :math:`\mathcal{M}` is the most accurate regression model using :math:`x` to predict :math:`y` there can be. 
 
-	It means that the most accurate model that there can be, can be derived from :math:`f(x)`. In other words, the regression model didn't loose any of the information in :math:`x` pertaining to :math:`y`, and we are a univariate regression away from the most accurate model.
+	It means that the most accurate model there is can be derived from :math:`f(x)`. In other words, the regression model didn't lose any of the information in :math:`x` pertaining to :math:`y`, and we are a univariate regression away from the most accurate model.
 
 
 Additive Suboptimality
@@ -456,7 +456,7 @@ Hence,
 
 .. note::
 
-	Additive suboptimality enforces two requirements. Through :math:`SO(\mathcal{M})`, it requires the model to capture in :math:`f(x)` as much of the information about :math:`y` that is in :math:`x`. Through :math:`I(y-f(x); f(x))` it requires predictions to be as independent as possible from predictions or, said differently, it requires the model to be accurate or at least hard to make more accurate in and additive fashion.
+	Additive suboptimality enforces two requirements. Through :math:`SO(\mathcal{M})`, it requires the model to capture in :math:`f(x)` as much of the information about :math:`y` that is in :math:`x` as possible. Through :math:`I(y-f(x); f(x))` it requires residuals to be as independent as possible from predictions or, said differently, it requires the model to be accurate or at least hard to improve in an additive fashion.
 
 	Reducing :math:`ASO` to zero ensures that, not only can we no longer improve our regression model additively, but we have exploited all the insights in :math:`x` about :math:`y`.
 
