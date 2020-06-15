@@ -32,7 +32,7 @@ autodoc_inherit_docstrings = False
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', \
     'sphinx.ext.todo', 'sphinx.ext.githubpages', 'sphinxcontrib.bibtex', \
     'sphinx.ext.mathjax', 'sphinx.ext.autosectionlabel', 'nbsphinx', \
-    'sphinx_copybutton', 'sphinxcontrib.googleanalytics']
+    'sphinx_copybutton', 'sphinxcontrib.googleanalytics', 'sphinx_sitemap']
 
 # imgmath_image_format = 'svg'
 # imgmath_font_size = 13
@@ -81,4 +81,9 @@ source_suffix = ['.rst', '.md', '.ipynb']
 # Google Analytics
 googleanalytics_id = 'UA-167632834-1'
 googleanalytics_enabled = True
+
+
+# Sitemap
+html_baseurl = 'https://docs.kxysolutions.com/'
+html_extra_path = ['robots.txt']
 

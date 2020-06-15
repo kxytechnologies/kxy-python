@@ -12,12 +12,10 @@ I - Classification Pre-Learning
 * :ref:`Calculating the Best Performance Achievable in a Classification Problem`
 
 
+II - Classification Post-Learning
+*********************************
 
-.. * Model Explanation
-
-.. * Can a Trained Model Be Improved without Additional Variables?
-
-.. * How Much Value Would A New Dataset Add?
+* :ref:`Can a Trained Classification Model Be Improved Without Additional Variables?`
 
 
 
@@ -56,8 +54,6 @@ Coming Up Soon
 --------------
 
 * :ref:`Alternative Dataset Valuation` 
-
-* :ref:`Can a Trained Classification Model Be Improved Without Additional Variables?`
 
 * :ref:`How to Make Sense of a Complex Classification/Regression Model?`
 

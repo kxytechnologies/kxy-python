@@ -45,7 +45,7 @@ def classification_model_improvability_analysis(x_c, y_p, y, x_d=None, space='du
 		Section :ref:`3 - Model Improvability`.
 	"""
 	achievable_perf = classification_achievable_performance_analysis(x_c, y, x_d=x_d, space=space)
-	achieved_perf = classification_achievable_performance_analysis(x_c, y_p, x_d=x_d, space=space)
+	achieved_perf = classification_achievable_performance_analysis(None, y, x_d=y_p, space=space)
 
 	improvable_perf = achievable_perf-achieved_perf
 	improvable_perf.rename(columns={col: col.replace('Achievable', 'Lost') for col in improvable_perf.columns}, inplace=True)

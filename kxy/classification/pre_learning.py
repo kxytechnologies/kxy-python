@@ -45,15 +45,17 @@ def classification_achievable_performance_analysis(x_c, y, x_d=None, space='dual
 	"""
 	assert x_d is not None or x_c is not None, "x_c and x_d cannot be both None."
 
+
 	if x_c is None:
 		mi = discrete_mutual_information(x_d, y)
 
 	else:
 		mi = least_mixed_mutual_information(x_c, y, x_d=x_d, space=space, non_monotonic_extension=True)
 
-	hy = discrete_entropy(y)
+
 	q = len(list(set(y)))
 	n = y.shape[0]
+	hy = discrete_entropy(y)
 
 	return pd.DataFrame({\
 		'Achievable R^2': [1.-np.exp(-2.*mi)], \
