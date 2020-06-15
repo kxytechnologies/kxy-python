@@ -147,7 +147,8 @@ def classification_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 
 		else:
 			# (discrete, continuous | discrete & continuous)
-			cmi_ = least_mixed_conditional_mutual_information(_x_c, y, z_c, x_d=_x_d, z_d=z_d, \
+			cmi_ = least_mixed_conditional_mutual_information(_x_c, y, z_c, \
+				x_d=_x_d[:, None] if _x_d is not None else None, z_d=z_d, \
 				space=space, non_monotonic_extension=True)
 			cmi_ = min(cmi_, hy)
 			

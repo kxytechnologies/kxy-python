@@ -13,7 +13,6 @@ package is imported alongside :code:`pandas`.
 from functools import lru_cache, wraps
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pandas as pd

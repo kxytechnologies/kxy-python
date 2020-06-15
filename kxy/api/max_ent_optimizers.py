@@ -275,6 +275,7 @@ def copula_entropy_analysis(corr, space='dual'):
 		return api_response.json()
 
 	else:
+		logging.warning(api_response)
 		logging.warning(api_response.json())
 
 	return None

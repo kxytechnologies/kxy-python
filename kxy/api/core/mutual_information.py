@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 import numpy as np
 import requests
@@ -241,10 +242,28 @@ def least_mixed_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic
 
 	h = least_structured_continuous_entropy(x_c_r, space=space, batch_indices=batch_indices) if x_d is None \
 		else least_structured_mixed_entropy(x_c_r, x_d, space=space, batch_indices=batch_indices)
-	wh = np.sum([probas[i] * least_structured_continuous_entropy(x_c_r[y==categories[i]], space=space, batch_indices=batch_indices) \
-		for i in range(len(categories))]) if x_d is None \
-		else np.sum([probas[i] * least_structured_mixed_entropy(x_c_r[y==categories[i]], x_d[y==categories[i]], space=space, \
-			batch_indices=batch_indices) for i in range(len(categories))])
+
+	if x_d is None:
+		wh = 0.0
+		def f_thread(args):
+			x_c_, p_ = args
+			return p_*least_structured_continuous_entropy(x_c_, space=space, batch_indices=batch_indices)
+
+		with ThreadPoolExecutor(max_workers=10) as p:
+			args_list = [(x_c_r[y==categories[i]], probas[i]) for i in range(len(categories))]
+			for _ in p.map(f_thread, args_list):
+				wh += _
+
+	else:
+		wh = 0.0
+		def f_thread(args):
+			x_c_, x_d_, p_ = args
+			return p_*least_structured_mixed_entropy(x_c_, x_d_, space=space, batch_indices=batch_indices)
+
+		with ThreadPoolExecutor(max_workers=10) as p:
+			args_list = [(x_c_r[y==categories[i]], x_d[y==categories[i]], probas[i]) for i in range(len(categories))]
+			for _ in p.map(f_thread, args_list):
+				wh += _
 
 	return max(h-wh, 0.0)
 
@@ -302,10 +321,18 @@ def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, 
 		ds = np.array(['*_*'.join(list(_)) for _ in ds])
 		ds_cats, ds_counts = np.unique(ds)
 		ds_probas = ds_counts/ds.shape[0]
-		cmi = np.sum([ds_probas[i]*least_mixed_mutual_information(\
-						x_c[ds==ds_cats[i]], y[ds==ds_cats[i]].flatten(), \
-						x_d=None, space=space, non_monotonic_extension=non_monotonic_extension) \
-						for i in range(ds_cats.shape[0])])
+
+		def f_thread(args):
+			x_c_, y_, p_ = args
+			return p_*least_mixed_mutual_information(x_c_, y_, x_d=None, space=space, \
+				non_monotonic_extension=non_monotonic_extension)
+
+		cmi = 0.0
+		with ThreadPoolExecutor(max_workers=10) as p:
+			args_list = [(x_c[ds==ds_cats[i]], y[ds==ds_cats[i]].flatten(), ds_probas[i]) \
+				for i in range(ds_cats.shape[0])]
+			for _ in p.map(f_thread, args_list):
+				cmi += _
 
 		return max(cmi, 0.0)
 
