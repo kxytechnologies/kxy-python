@@ -19,7 +19,6 @@ To apply the results of section :ref:`III - Applications` we need to be able to 
 
 To estimate a conditional entropy (resp. mutual information) where conditioning is based on a categorical variable (not a specific value thereof), we recall that it is equal to the average value of the entropy (resp. mutual information) of the conditional distribution(s), weighted by the probability of each outcome.
 
-.. We make it a point never to estimate the entropy of continuous random vector directly. As previously discussed, in matters pertaining to quantifying associations, the copula of a random vector plays a more central role than its marginals. While the copula of a random vector fully (and only) captures associations between its coordinates, its marginals are heavily influenced by how the sample was gathered and invertible feature transformations it might have undergone (e.g. logarithm transformation, standardization, etc.). Intuitively, no invertible transformation applied to coordinates should affect our understanding of associations between them. Such transformations, when increasing, would indeed leave the copula invariant, but would affect the marginals.
 
 
 1 - Univariate Entropies
@@ -98,7 +97,7 @@ measures association between coordinates of :math:`a` and/or coordinates of :mat
 
 Additionally, we assume that we can form an efficient estimator of :math:`E\left(\phi(a, b)\right)`.
 
-To estimate :math:`I(a, b)`, we estimate :math:`E\left(\phi(a, b)\right)` from data, say :math:`E\left(\phi(a, b)\right) \approx \hat{\alpha}` and we ask ourselves the question: among all generative model for :math:`(a, b)` that satisfy the constraint
+To estimate :math:`I(a, b)`, we estimate :math:`E\left(\phi(a, b)\right)` from data, say :math:`E\left(\phi(a, b)\right) \approx \hat{\alpha}` and we ask ourselves the question: among all generative models for :math:`(a, b)` that satisfy the constraint
 
 .. math::
 
@@ -114,7 +113,7 @@ This modeling paradigm, known as `the principle of maximum entropy <https://en.w
 Note that, because we are always estimating our mutual information as the mutual information of a distribution, instead of estimating the three differential entropies separately as in the case of :math:`m`-spacing, our estimated mutual information can never be negative. This approach is also very efficient given that it depends on data solely through :math:`\hat{\alpha}` and, as such, is amenable to caching. The foregoing feature also makes this approach great for privacy.
 
 
-Applying the above to the estimation the mutual information :math:`I(y; x)` between continuous inputs and a continuous label, as discussed on the previous page, this mutual information is also equal to the mutual information between the respective copula-uniform dual representations :math:`I(u_y, u_x)`. Thus, we can apply the maximum entropy principle in the primal space (i.e.  :math:`(a, b) = (y, x)`) or in the dual space (i.e. :math:`(a, b) = (u_y, u_x)`). Both approaches are implemented in the :code:`kxy` package. We discuss maximum entropy inference in each space below, and then draw the link between the two.
+Applying the above to the estimation of the mutual information :math:`I(y; x)` between continuous inputs and a continuous label, as discussed on the previous page, this mutual information is also equal to the mutual information between the respective copula-uniform dual representations :math:`I(u_y, u_x)`. Thus, we can apply the maximum entropy principle in the primal space (i.e.  :math:`(a, b) = (y, x)`) or in the dual space (i.e. :math:`(a, b) = (u_y, u_x)`). Both approaches are implemented in the :code:`kxy` package. We discuss maximum entropy inference in each space below, and then draw the link between the two.
 
 
 3 - Primal Estimation of Multivariate Copula Entropy
@@ -129,7 +128,7 @@ To form a more robust estimator, we note that Gaussian distributions being fully
 
 .. important::
 
-	Strickly speaking, using Pearson's covariance as expected constraint in the primal space cannot reveal nonlinear associations in data. To do so in the primal space, one needs to use another constraint functions (e.g. include skewness and kurtosis terms). However, closed form solutions would not be available, and numerical estimations would be tedious, if at all possible. This is one of the reason why we advise against estimating mutual information in the primal space. For a broader discussion, see section :ref:`5 - Primal v Dual Spaces`.
+	Strickly speaking, using Pearson's covariance as expected constraint in the primal space cannot reveal nonlinear associations in data. To do so in the primal space, one needs to use another constraint function (e.g. include skewness and kurtosis terms). However, closed form solutions would not be available, and numerical estimations would be tedious, if at all possible. This is one of the reason why we advise against estimating mutual information in the primal space. For a broader discussion, see section :ref:`5 - Primal v Dual Spaces`.
 
 
 4 - Dual Estimation of Multivariate Copula Entropy
@@ -237,14 +236,9 @@ and that can be estimated in the primal space as
 	\hat{\gamma} = \frac{2}{n} \left[\sum_{i=1}^n \left\vert \frac{\text{rg}(x_i)}{n} + \frac{\text{rg}(y_i)}{n} - 1 \right\vert - \left\vert \frac{\text{rg}(x_i)}{n} - \frac{\text{rg}(y_i)}{n} \right\vert \right].
 
 
-iv) Implemented Constraints
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-At the current time, the API only implements constraints based on Spearman's rank correlation matrices. Note that, although we only discussed bivariate constraint functions above, the extension to the multivariate case is trivial, and would consist of choosing a vector-valued :math:`\phi` with coordinates all pairwise constraints.
 
-
-
-v) Beyond Concordance
-^^^^^^^^^^^^^^^^^^^^^
+iv) Beyond Concordance
+^^^^^^^^^^^^^^^^^^^^^^
 A blindspot of concordance measures is that they only capture monotonic associations in data. To illustrate this, let us consider a toy example. We consider a scalar random variable :math:`x` drawn from a distribution whose pdf is symmetric about :math:`0` (for instance a centered Gaussian, or the uniform distribution on :math:`[-1, 1]`), and the random variable :math:`y=x^2`. 
 
 By symmetry, :math:`(x, y)` and :math:`(-x, y)` have the same joint distributions, and therefore the same Spearman rank correlation (or any concordance measure for that matter). Additionally, the Spearman rank correlation (resp. any concordance measure) between :math:`-x` and :math:`y` should be the opposite of the Spearman rank correlation (resp. the concordance measure) between :math:`x` and :math:`y`. Hence the Spearman rank correlation (and any other concordance measure) between :math:`x` and :math:`y` should be :math:`0`. 
@@ -267,7 +261,7 @@ Going back to our toy example, the Spearman rank correlation between :math:`y` a
 
 .. note::
 
-	The current version of the :code:`kxy` package does not yet fully capture all non-monotonic associations; a notable exception is periodic associations. Support for periodic associations will be added in the near future.
+	The current version of the :code:`kxy` package does not yet fully capture all non-monotonic associations; a notable exception is periodic associations. Support for periodic associations will be added in the near future. Note that, although we only discussed bivariate constraint functions above, the extension to the multivariate case is trivial, and would consist of choosing a vector-valued :math:`\phi` with coordinates all pairwise constraints.
 
 
 
@@ -287,7 +281,7 @@ Another way to look at the term :math:`h(x) + h(y)` is as a regularizer that shr
 
 In practice however, we usually have absolutely no clue what makes sense as base distribution, if any, towards which we should be shrinking marginals. Marginals depend on how the data were gathered in the first place, and there is no clear '*uninformative*' distribution for marginal distributions that are not bounded. For instance, whether you work with prices or log-prices, volume or log-volumes, sigmoid-normalized data or not, will have a drastic and unexpected effect on marginals and the '*uninformative*' distributions, if any, towards which they should be shrunk. 
 
-Another way to look at this is that to properly work in the primal space, the constraint function should be *so* informative about marginals that they will not be shrunk towards the wrong distribution. Once more, this is counter-intuitive as mutual information between continuous random variables has nothing to do with marginals, and would create unecessary analytical, numerical and computational hurdles.s
+Another way to look at this is that to properly work in the primal space, the constraint function should be *so* informative about marginals that they will not be shrunk towards the wrong distribution. Once more, this is counter-intuitive as mutual information between continuous random variables has nothing to do with marginals, and would create unecessary analytical, numerical and computational hurdles.
 
 
 

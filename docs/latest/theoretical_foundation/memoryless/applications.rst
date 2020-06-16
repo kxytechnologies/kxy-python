@@ -74,7 +74,7 @@ It follows from the data processing inequaliy that the maximum :math:`R^2` a sup
 
 	As expected, when inputs are not informative about the label, no model, no matter how fancy, can predict the label. The reverse is also true. There exists a regression model using :math:`x` to predict :math:`y` whose :math:`R^2` is :math:`\bar{R}^2`. [*]_
 
-	All we need to estimate the achievable-:math:`R^2` is an estimator for the mutual information :math:`I\left(y; x\right)`, which we will provide in the following page.
+	All we need to estimate the achievable-:math:`R^2` is an estimator for the mutual information :math:`I\left(y; x\right)`, which we will provide on the following page.
 
 
 
@@ -129,7 +129,7 @@ c) Achievable Classification Accuracy
 Entropy And Classification Accuracy
 ***********************************
 
-First, we want to calculate the best accuracy that can be achieved by predicting an outcome of a discrete distribution taking :math:`q` distinct values, and that has the same entropy :math:`h(\mathbb{P})`.
+First, we want to calculate the best accuracy that can be achieved by predicting an outcome of a discrete distribution taking :math:`q` distinct values, and that has entropy :math:`h(\mathbb{P})`.
 
 We denote :math:`\pi_1, \dots, \pi_q` the probability masses sorted in decreasing order. Faced with predicting an outcome of :math:`\mathbb{P}`, the best strategy is to always predict the most likely outcome. This strategy has accuracy (a.k.a. probability of being correct) :math:`\mathcal{A}(\mathbb{P}) := \underset{i \in [1..q]}{\max} \pi_i = \pi_1`. 
 
@@ -198,7 +198,7 @@ We apply the result above to classification models. Faced with predicting :math:
 
 	j = \underset{i \in [1..q]}{\operatorname{argmax}} \mathbb{P}(y=i | x=*)
 
-and it has accuracy :math:`\mathbb{P}(y=j | x=*)`, where :math:`y|x=*` is *true* data generating conditional distribution. Any other prediction :math:`i` would, by definition of :math:`j`, have a lower accuracy :math:`\mathbb{P}(y=i | x=*)`. 
+and it has accuracy :math:`\mathbb{P}(y=j | x=*)`, where :math:`y|x=*` is the *true* data generating conditional distribution. Any other prediction :math:`i` would, by definition of :math:`j`, have a lower accuracy :math:`\mathbb{P}(y=i | x=*)`. 
 
 
 The best possible overall accuracy a model can achieve is therefore
