@@ -12,19 +12,19 @@ from setuptools import setup, find_packages
 with open('README.md') as f:
 	long_description = f.read()
 	
-version = "0.1.3"
+version = "0.1.4"
 setup(name="kxy",
 	version=version,
 	zip_safe=False,
 	license="AGPLv3",
 	author="Dr. Yves-Laurent Kom Samo",
 	author_email="github@kxy.ai",
-	url="https://docs.kxysolutions.com",
+	url="https://www.kxy.ai",
 	description = "A Powerful Serverless Pre-Learning and Post-Learning Analysis Toolkit",
 	long_description=long_description,
 	long_description_content_type='text/markdown',  # This is important!
 	project_urls={
-		"Documentation": "https://docs.kxysolutions.com",
+		"Documentation": "https://www.kxy.ai/reference",
 		"Source Code": "https://github.com/kxytechnologies/kxy-python/"},
 	download_url = "https://github.com/kxytechnologies/kxy-python/archive/v%s.tar.gz" % version,
 	keywords = ["AutoML", "Pre-Learning", "Post-Learning", "Model-Free ML"],
