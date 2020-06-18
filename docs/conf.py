@@ -79,7 +79,7 @@ nbsphinx_output_prompt = 'Out[%s]:'
 source_suffix = ['.rst', '.md', '.ipynb']
 
 # Google Analytics
-googleanalytics_id = 'UA-167632834-1'
+googleanalytics_id = 'UA-167632834-2'
 googleanalytics_enabled = True
 
 
