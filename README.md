@@ -52,4 +52,4 @@ From **non-Gaussian** and **memory-robust** risk analysis, to **alternative data
 
 
 ## Documentation
-https://docs.kxysolutions.com/
+https://kxy.ai/reference
