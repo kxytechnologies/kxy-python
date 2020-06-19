@@ -1,13 +1,13 @@
 <div align="center">
-  <img src="https://docs.kxysolutions.com/_static/logo.svg"><br>
+  <img src="https://www.kxy.ai/theme/images/logos/logo.svg"><br>
 </div>
 
 -----------------
 
 # KXY: A Powerful Serverless Analysis Toolkit That Takes *Trial And Error* Out of Machine Learning Projects
 [![License](https://img.shields.io/badge/license-AGPLv3%2B-blue)](https://github.com/kxytechnologies/kxy-python/blob/master/LICENSE)
-[![PyPI Latest Release](https://img.shields.io/pypi/v/kxy.svg)](https://docs.kxysolutions.com/)
-[![Downloads](https://img.shields.io/pypi/dm/kxy.svg)](https://docs.kxysolutions.com/)
+[![PyPI Latest Release](https://img.shields.io/pypi/v/kxy.svg)](https://www.kxy.ai/)
+[![Downloads](https://img.shields.io/pypi/dm/kxy.svg)](https://www.kxy.ai/)
 
 
 ## Installation
@@ -24,7 +24,8 @@ All heavy-duty computations are run on our serverless infrastructure and require
 ```Bash
 kxy configure
 ```
-and follow the instructions. To request a demo and get a trial API key, email demo@kxy.ai.
+and follow the instructions. To request a demo and get a trial API key, [contact us.](https://wwww.kxy.ai/#request-a-trial)
+
 
 ## Applications
 
