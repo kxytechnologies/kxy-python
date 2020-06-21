@@ -10,6 +10,10 @@
 [![Downloads](https://img.shields.io/pypi/dm/kxy.svg)](https://www.kxy.ai/)
 
 
+## Documentation
+https://www.kxy.ai/reference
+
+
 ## Installation
 From PyPi:
 ```Bash
@@ -49,7 +53,3 @@ From **understanding** the marginal contribution of each variable towards the de
 ### Modern Financial Machine Learning
 
 From **non-Gaussian** and **memory-robust** risk analysis, to **alternative datasets valuation** the `kxy` toolkit propels quants from the age of Gaussian distributions/linear regression/LASSO/Ridge/Random Forest into the age of modern machine learning, rigorously and cost-effectively.
-
-
-## Documentation
-https://www.kxy.ai/reference
