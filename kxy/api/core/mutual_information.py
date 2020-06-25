@@ -6,9 +6,10 @@ import json
 import numpy as np
 import requests
 
-from kxy.api import APIClient, solve_copula_sync
+from kxy.api import APIClient, mutual_information_analysis
 
-from .utils import spearman_corr, pearson_corr
+
+from .utils import prepare_data_for_mutual_info_analysis
 from .entropy import least_structured_copula_entropy, least_structured_continuous_entropy, \
 	least_structured_mixed_entropy, discrete_entropy
 
@@ -48,8 +49,26 @@ def least_total_correlation(x, space='dual'):
 	return -least_structured_copula_entropy(x, space=space)
 
 
+def least_mutual_information(x_c, x_d, y_c, y_d, space='dual', non_monotonic_extension=True, \
+		categorical_encoding='two-split'):
+	"""
+	"""
+	res = prepare_data_for_mutual_info_analysis(x_c, x_d, y_c, y_d, space=space, \
+		non_monotonic_extension=non_monotonic_extension, categorical_encoding=categorical_encoding)
+	output_indices = res['output_indices']
+	corr = res['corr']
+	batch_indices = res['batch_indices']
 
-def least_continuous_mutual_information(x, y, space='dual', non_monotonic_extension=True):
+	mi_ana = mutual_information_analysis(corr, output_indices, space=space, batch_indices=batch_indices)
+
+	if mi_ana is None:
+		return None
+
+	return mi_ana['mutual_information']
+
+
+def least_continuous_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic_extension=True, \
+		categorical_encoding='two-split'):
 	"""
 	.. _least-continuous-mutual-information:
 	Estimates the mutual information between a :math:`d`-dimensional random vector :math:`x` of inputs
@@ -72,8 +91,11 @@ def least_continuous_mutual_information(x, y, space='dual', non_monotonic_extens
 
 	Parameters
 	----------
-	x : (n, d) np.array
-		n i.i.d. draws from the features generating distribution.
+	x_c : (n,) or (n, d) np.array
+		n i.i.d. draws from the continuous inputs data generating distribution.
+	x_d : (n, q) np.array or None (default)
+		n i.i.d. draws from the discrete inputs data generating distribution, jointly sampled with x_c, or None
+		if there are no discrete features.
 	y : (n,) np.array
 		n i.i.d. draws from the (continuous) labels generating distribution, sampled
 		jointly with x.
@@ -81,6 +103,9 @@ def least_continuous_mutual_information(x, y, space='dual', non_monotonic_extens
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -90,27 +115,15 @@ def least_continuous_mutual_information(x, y, space='dual', non_monotonic_extens
 	Raises
 	------
 	AssertionError
-		If y is not a one dimensional array or x or y are not numeric.
+		When input parameters are invalid.
 	"""
-	assert np.can_cast(x, float) and np.can_cast(y, float), 'x and y should represent draws from continuous random variables.'
-	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
-
-	x_ = np.reshape(x, (len(x), 1)) if len(x.shape) == 1 else x.copy()
-	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
-
-	corr = pearson_corr(np.hstack([y_, x_])) if space == 'primal' or not non_monotonic_extension else \
-		spearman_corr(np.hstack([y_, x_, np.abs(x_-x_.mean(axis=0))]))
-
-	d = x_.shape[1]
-	batch_indices = [[i, i+d] for i in range(1, d+1)] if non_monotonic_extension else [[i] for i in range(1, d+1)]
-	mi = solve_copula_sync(corr, mode='mutual_information_v_output', output_index=0, solve_async=False, \
-		space=space, batch_indices=batch_indices)
-
-	return mi
+	return least_mutual_information(x_c, x_d, y, None, space=space, non_monotonic_extension=non_monotonic_extension, \
+		categorical_encoding=categorical_encoding)
 
 
 
-def least_continuous_conditional_mutual_information(x, y, z, space='dual', non_monotonic_extension=True):
+def least_continuous_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, space='dual',\
+	non_monotonic_extension=True, categorical_encoding='two-split'):
 	"""
 	.. _least-continuous-conditional-mutual-information:
 	Estimates the conditional mutual information between a :math:`d`-dimensional random vector :math:`x` of inputs
@@ -136,18 +149,25 @@ def least_continuous_conditional_mutual_information(x, y, z, space='dual', non_m
 
 	Parameters
 	----------
-	x : (n, d) np.array
-		n i.i.d. draws from the inputs generating distribution.
+	x_c : (n, d) np.array
+		n i.i.d. draws from the continuous inputs data generating distribution.
+	x_d : (n, q) np.array or None (default)
+		n i.i.d. draws from the discrete inputs data generating distribution, jointly sampled with x_c, or None
+		if there are no discrete features.
 	y : (n,) np.array
 		n i.i.d. draws from the (continuous) labels generating distribution, sampled
 		jointly with x.
-	z : (n,) np.array
-		n i.i.d. draws from the (continuous) labels generating distribution, sampled
-		jointly with z.
+	z_c : (n, d) np.array
+		n i.i.d. draws from the generating distribution of continuous conditions.
+	z_d : (n, d) np.array or None (default), optional
+		n i.i.d. draws from the generating distribution of categorical conditions.
 	space : str, 'primal' | 'dual'
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -159,25 +179,34 @@ def least_continuous_conditional_mutual_information(x, y, z, space='dual', non_m
 	AssertionError
 		If y is not a one dimensional array or x, y and z are not all numeric.
 	"""
-	assert np.can_cast(x, float) and np.can_cast(y,  float) and np.can_cast(z, float), \
-		'x, y and z should represent draws from continuous random variables.'
+	assert np.can_cast(y, float), 'y should be an array of numeric values'
 	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
+	assert x_c is None or np.can_cast(x_c, float), 'x_c should represent draws from a continuous random variable.'
+	assert z_c is None or np.can_cast(z_c, float), 'x_c should represent draws from a continuous random variable.'
+	assert x_c is not None or x_d is not None, 'Both x_c and z_c cannot be None'
+	assert z_c is not None or z_d is not None, 'Both z_c and z_d cannot be None'
 
-	x_ = np.reshape(x, (len(x), 1)) if len(x.shape) == 1 else x.copy()
-	y_ = np.reshape(y, (len(y), 1)) if len(y.shape) == 1 else y.copy()
-	z_ = np.reshape(z, (len(z), 1)) if len(z.shape) == 1 else z.copy()
+	x_c_ = None if x_c is None else x_c[:, None] if len(x_c.shape) == 1 else x_c
+	z_c_ = None if z_c is None else z_c[:, None] if len(z_c.shape) == 1 else z_c
+	x_d_ = None if x_d is None else x_d[:, None] if len(x_d.shape) == 1 else x_d
+	z_d_ = None if z_d is None else z_d[:, None] if len(z_d.shape) == 1 else z_d
 
-	mi_y_xz = least_continuous_mutual_information(np.hstack([x_, z_]), y_, space=space, \
-		non_monotonic_extension=non_monotonic_extension)
-	mi_y_z = least_continuous_mutual_information(z_, y_, space=space, \
-		non_monotonic_extension=non_monotonic_extension)
+	# I(y; x_c, x_d | z_c, z_d) = I(y; x_c, x_d, z_c, z_d) - I(y; z_c, z_d)
+	j_c = None if (x_c is None and z_c is None) else x_c_ if z_c is None else z_c_ if x_c is None else np.hstack((x_c_, z_c_)) # (x_c, z_c)
+	j_d = None if (x_d is None and z_d is None) else x_d_ if z_d is None else z_d_ if x_d is None else np.hstack((x_d_, z_d_)) # (x_d, z_d)
 
-	return max(mi_y_xz-mi_y_z, 0.0)
+	cmi = least_continuous_mutual_information(j_c, y, x_d=j_d, space=space, \
+		non_monotonic_extension=non_monotonic_extension, categorical_encoding=categorical_encoding)
+	cmi -= least_continuous_mutual_information(z_c, y, x_d=z_d, space=space, \
+		non_monotonic_extension=non_monotonic_extension, categorical_encoding=categorical_encoding)
+
+	return max(cmi, 0.0)
 
 
 
 
-def least_mixed_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic_extension=True):
+def least_mixed_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic_extension=True, \
+		categorical_encoding='two-split'):
 	"""
 	.. _least-mixed-mutual-information:
 	Estimates the mutual inforrmation between some features (a d-dimensional random vector
@@ -207,9 +236,9 @@ def least_mixed_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic
 	Parameters
 	----------
 	x_c : (n, d) np.array
-		n i.i.d. draws from the continuous data generating distribution.
-	x_d : (n,) np.array or None (default)
-		n i.i.d. draws from the discrete data generating distribution, jointly sampled with x_c, or None
+		n i.i.d. draws from the continuous inputs data generating distribution.
+	x_d : (n, q) np.array or None (default)
+		n i.i.d. draws from the discrete inputs data generating distribution, jointly sampled with x_c, or None
 		if there are no discrete features.
 	y : (n,) np.array
 		n i.i.d. draws from the (discrete) labels generating distribution, sampled jointly with x.
@@ -217,6 +246,10 @@ def least_mixed_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
+
 
 	Returns
 	-------
@@ -228,49 +261,14 @@ def least_mixed_mutual_information(x_c, y, x_d=None, space='dual', non_monotonic
 	AssertionError
 		If y is not a one-dimensional array, or x_c is not an array of numbers.
 	"""
-	assert np.can_cast(x_c, float), 'x_c should represent draws from a continuous random variable.'
-	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
-
-	x_c_ = np.reshape(x_c, (len(x_c), 1)) if len(x_c.shape) == 1 else x_c.copy()
-	x_c_r = np.hstack((x_c_, np.abs(x_c_-x_c_.mean(axis=0)))) if non_monotonic_extension else x_c_
-	d = x_c_.shape[1]
-	batch_indices = [[i, i+d] for i in range(d)] if non_monotonic_extension else [[i] for i in range(d)]
-
-	categories = list(set(list(y)))
-	n = y.shape[0]
-	probas = np.array([1.*len(y[y==cat])/n for cat in categories])
-
-	h = least_structured_continuous_entropy(x_c_r, space=space, batch_indices=batch_indices) if x_d is None \
-		else least_structured_mixed_entropy(x_c_r, x_d, space=space, batch_indices=batch_indices)
-
-	if x_d is None:
-		wh = 0.0
-		def f_thread(args):
-			x_c_, p_ = args
-			return p_*least_structured_continuous_entropy(x_c_, space=space, batch_indices=batch_indices)
-
-		with ThreadPoolExecutor(max_workers=10) as p:
-			args_list = [(x_c_r[y==categories[i]], probas[i]) for i in range(len(categories))]
-			for _ in p.map(f_thread, args_list):
-				wh += _
-
-	else:
-		wh = 0.0
-		def f_thread(args):
-			x_c_, x_d_, p_ = args
-			return p_*least_structured_mixed_entropy(x_c_, x_d_, space=space, batch_indices=batch_indices)
-
-		with ThreadPoolExecutor(max_workers=10) as p:
-			args_list = [(x_c_r[y==categories[i]], x_d[y==categories[i]], probas[i]) for i in range(len(categories))]
-			for _ in p.map(f_thread, args_list):
-				wh += _
-
-	return max(h-wh, 0.0)
+	return least_mutual_information(x_c, x_d, None, y, space=space, non_monotonic_extension=non_monotonic_extension, \
+		categorical_encoding=categorical_encoding)
 
 
 
 
-def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, space='dual', non_monotonic_extension=True):
+def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, space='dual', \
+	non_monotonic_extension=True, categorical_encoding='two-split'):
 	"""
 	.. _least-mixed-conditional-mutual-information:
 	Estimates the conditional mutual information between a dimensional random vector :math:`x` of inputs
@@ -286,10 +284,10 @@ def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, 
 	----------
 	x_c : (n, d) np.array
 		n i.i.d. draws from the generating distribution of continuous inputs.
-	z_c : (n, d) np.array
-		n i.i.d. draws from the generating distribution of continuous conditions.
 	x_d : (n, d) np.array or None (default), optional
 		n i.i.d. draws from the generating distribution of categorical inputs.
+	z_c : (n, d) np.array
+		n i.i.d. draws from the generating distribution of continuous conditions.
 	z_d : (n, d) np.array or None (default), optional
 		n i.i.d. draws from the generating distribution of categorical conditions.
 	y : (n,) np.array
@@ -299,7 +297,9 @@ def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, 
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -311,70 +311,26 @@ def least_mixed_conditional_mutual_information(x_c, y, z_c, x_d=None, z_d=None, 
 	AssertionError
 		If y is not a one dimensional array or x and z are not all numeric.
 	"""
-	assert x_c is not None or z_c is not None, 'Both x_c and z_c cannot be None'
-	assert x_c is not None or x_d is not None, 'Both x_c and x_d cannot be None'
+	assert x_c is not None or x_d is not None, 'Both x_c and z_c cannot be None'
 	assert z_c is not None or z_d is not None, 'Both z_c and z_d cannot be None'
-	if z_c is None and z_d is not None and x_c is not None:
-		assert np.can_cast(x_c, float), 'x_c should be continuous'
-		# I(y; x_c | z_d, x_d) = \sum_i p_i I(y; x_c | x_d, z_d = i)
-		ds = z_d if x_d is None else np.hstack((x_d, z_d))
-		ds = np.array(['*_*'.join(list(_)) for _ in ds])
-		ds_cats, ds_counts = np.unique(ds)
-		ds_probas = ds_counts/ds.shape[0]
+	assert x_c is None or np.can_cast(x_c, float), 'x_c should represent draws from a continuous random variable.'
+	assert z_c is None or np.can_cast(z_c, float), 'x_c should represent draws from a continuous random variable.'
 
-		def f_thread(args):
-			x_c_, y_, p_ = args
-			return p_*least_mixed_mutual_information(x_c_, y_, x_d=None, space=space, \
-				non_monotonic_extension=non_monotonic_extension)
-
-		cmi = 0.0
-		with ThreadPoolExecutor(max_workers=10) as p:
-			args_list = [(x_c[ds==ds_cats[i]], y[ds==ds_cats[i]].flatten(), ds_probas[i]) \
-				for i in range(ds_cats.shape[0])]
-			for _ in p.map(f_thread, args_list):
-				cmi += _
-
-		return max(cmi, 0.0)
-
-
-	if x_c is None and x_d is not None and z_c is not None:
-		assert np.can_cast(z_c, float), 'z_c should be continuous'
-		# I(y; x_d | z_c, z_d) = I(y; x_d, z_c, z_d) - I(y; z_c, z_d)
-		ds = x_d if z_d is None else np.hstack((x_d, z_d))
-		ds = np.array(['*_*'.join(list(_)) for _ in ds])
-		cmi = least_mixed_mutual_information(\
-						z_c, y.flatten(), \
-						x_d=ds, space=space, \
-						non_monotonic_extension=non_monotonic_extension)
-
-		cmi -= least_mixed_mutual_information(\
-						z_c, y.flatten(), \
-						x_d=np.array(['*_*'.join(list(_)) for _ in x_d]), space=space, \
-						non_monotonic_extension=non_monotonic_extension)
-
-		return max(cmi, 0.0)
+	x_c_ = None if x_c is None else x_c[:, None] if len(x_c.shape) == 1 else x_c
+	z_c_ = None if z_c is None else z_c[:, None] if len(z_c.shape) == 1 else z_c
+	x_d_ = None if x_d is None else x_d[:, None] if len(x_d.shape) == 1 else x_d
+	z_d_ = None if z_d is None else z_d[:, None] if len(z_d.shape) == 1 else z_d
 
 	# I(y; x_c, x_d | z_c, z_d) = I(y; x_c, x_d, z_c, z_d) - I(y; z_c, z_d)
-	assert np.can_cast(x_c, float) and np.can_cast(z_c, float), 'z_c should be continuous'
-	ds = None if x_d is None and z_d is None else x_d if z_d is None else z_d if x_d is None else np.hstack((x_d, z_d))
-	ds = None if ds is None else np.array(['*_*'.join(list(_)) for _ in ds])
+	j_c = None if (x_c is None and z_c is None) else x_c_ if z_c is None else z_c_ if x_c is None else np.hstack((x_c_, z_c_)) # (x_c, z_c)
+	j_d = None if (x_d is None and z_d is None) else x_d_ if z_d is None else z_d_ if x_d is None else np.hstack((x_d_, z_d_)) # (x_d, z_d)
 
-	x_c_ = x_c[:, None] if len(x_c.shape) == 1 else x_c
-	z_c_ = z_c[:, None] if len(z_c.shape) == 1 else z_c
-	cs = np.hstack((x_c_, z_c_))
-
-	cmi = least_mixed_mutual_information(\
-					cs, y.flatten(), \
-					x_d=ds, space=space, \
-					non_monotonic_extension=non_monotonic_extension)
-
-	cmi -= least_mixed_mutual_information(\
-					z_c, y.flatten(), \
-					x_d=z_d, space=space, \
-					non_monotonic_extension=non_monotonic_extension)
+	cmi = least_mixed_mutual_information(j_c, y.flatten(), x_d=j_d, space=space, \
+		non_monotonic_extension=non_monotonic_extension, categorical_encoding=categorical_encoding)
+	cmi -= least_mixed_mutual_information(z_c, y.flatten(), x_d=z_d, space=space, \
+		non_monotonic_extension=non_monotonic_extension, categorical_encoding=categorical_encoding)
 
 	return max(cmi, 0.0)
-
 
 
 
@@ -386,7 +342,7 @@ def discrete_mutual_information(x, y):
 
 	Parameters
 	----------
-	x : (n,) np.array or None (default)
+	x : (n,) or (n, d) np.array or None (default)
 		n i.i.d. draws from a discrete distribution.
 	y : (n,) np.array
 		n i.i.d. draws from another discrete distribution, sampled jointly with x.
@@ -402,12 +358,13 @@ def discrete_mutual_information(x, y):
 		If y or x is not a one-dimensional array, or if x and y have different shapes.
 	"""
 	assert len(y.shape) == 1 or y.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
-	assert len(x.shape) == 1 or x.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
 	assert x.shape[0] == y.shape[0], 'Both arrays should have the same dimension.'
 
-	hx = discrete_entropy(x)
+	x_ = x.flatten() if (len(x.shape) == 1) or (x.shape[1] == 1) else np.array(['*_*'.join([str(_) for _ in x[i]]) for i in len(x)])
+
+	hx = discrete_entropy(x_)
 	hy = discrete_entropy(y)
-	hxy = discrete_entropy(np.array([str(x[i]) + '*_*' + str(y[i]) for i in range(x.shape[0])]))
+	hxy = discrete_entropy(np.array([str(x_[i]) + '*_*' + str(y[i]) for i in range(x.shape[0])]))
 
 	return max(0., hx+hy-hxy)
 

@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
-from kxy.api.core import least_mixed_mutual_information, discrete_mutual_information
+from kxy.api.core import discrete_mutual_information
 
-from .pre_learning import classification_variable_selection_analysis, \
-	classification_achievable_performance_analysis
+from .pre_learning import classification_variable_selection_analysis, classification_achievable_performance_analysis
 
 
-def classification_model_improvability_analysis(x_c, y_p, y, x_d=None, space='dual'):
+def classification_model_improvability_analysis(x_c, y_p, y, x_d=None, space='dual', categorical_encoding='two-split'):
 	"""
 	.. _classification-model-improvability-analysis:
 	Runs the model improvability analysis on a trained classification model.
@@ -27,7 +26,9 @@ def classification_model_improvability_analysis(x_c, y_p, y, x_d=None, space='du
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -44,8 +45,8 @@ def classification_model_improvability_analysis(x_c, y_p, y, x_d=None, space='du
 
 		Section :ref:`3 - Model Improvability`.
 	"""
-	achievable_perf = classification_achievable_performance_analysis(x_c, y, x_d=x_d, space=space)
-	achieved_perf = classification_achievable_performance_analysis(None, y, x_d=y_p, space=space)
+	achievable_perf = classification_achievable_performance_analysis(x_c, y, x_d=x_d, space=space, categorical_encoding=categorical_encoding)
+	achieved_perf = classification_achievable_performance_analysis(None, y, x_d=y_p, space=space, categorical_encoding=categorical_encoding)
 
 	improvable_perf = achievable_perf-achieved_perf
 	improvable_perf.rename(columns={col: col.replace('Achievable', 'Lost') for col in improvable_perf.columns}, inplace=True)
@@ -55,7 +56,7 @@ def classification_model_improvability_analysis(x_c, y_p, y, x_d=None, space='du
 
 
 
-def classification_model_explanation_analysis(x_c, f_x, x_d=None, space='dual'):
+def classification_model_explanation_analysis(x_c, f_x, x_d=None, space='dual', categorical_encoding='two-split'):
 	"""
 	.. _classification-model-explanation-analysis:
 	Runs the model explanation analysis on a trained classification model.
@@ -72,7 +73,9 @@ def classification_model_explanation_analysis(x_c, f_x, x_d=None, space='dual'):
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -91,7 +94,7 @@ def classification_model_explanation_analysis(x_c, f_x, x_d=None, space='dual'):
 
 		Section :ref:`a) Model Explanation`.
 	"""
-	res = classification_variable_selection_analysis(x_c, f_x, x_d=x_d, space=space)
+	res = classification_variable_selection_analysis(x_c, f_x, x_d=x_d, space=space, categorical_encoding=categorical_encoding)
 	res = res[['Variable', 'Selection Order', 'Univariate Achievable R^2', 'Maximum Marginal R^2 Increase', \
 		'Running Achievable R^2']]
 	res.rename(columns={'Univariate Achievable R^2': 'Univariate Explained R^2', \

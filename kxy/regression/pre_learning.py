@@ -6,11 +6,10 @@ import pandas as pd
 
 
 from kxy.api import mutual_information_analysis
-from kxy.api.core import least_continuous_mutual_information, least_mixed_conditional_mutual_information, \
-	scalar_continuous_entropy, spearman_corr, pearson_corr
+from kxy.api.core import scalar_continuous_entropy, prepare_data_for_mutual_info_analysis
 
 
-def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual'):
+def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual', categorical_encoding='two-split'):
 	"""
 	.. _regression-achievable-performance-analysis:
 	Quantifies the :math:`R^2` that can be achieved when trying to predict :math:`y` with :math:`x`.
@@ -22,17 +21,19 @@ def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual'):
 
 	Parameters
 	----------
-	x_c : (n,d) np.array
+	x_c : (n,) or (n, d) np.array
 		Continuous inputs.
+	x_d : (n,) or (n, d) np.array or None (default), optional
+		Discrete inputs.
 	y : (n,) np.array
 		Labels.
-	x_d : (n, d) np.array or None (default), optional
-		Discrete inputs.
 	space : str, 'primal' | 'dual'
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -48,35 +49,14 @@ def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual'):
 
 		Section :ref:`1 - Achievable Performance`.
 	"""
-	assert len(y.shape) == 1 or y.shape[1] == 1, 'y should be a one dimensional numpy array'
+	data = prepare_data_for_mutual_info_analysis(x_c, x_d, y, None, space=space, \
+		non_monotonic_extension=True, categorical_encoding=categorical_encoding)
+	output_indices = data['output_indices']
+	corr = data['corr']
+	batch_indices = data['batch_indices']
 
-	if x_d is None:
-		d = x_c.shape[1] if len(x_c.shape) > 1 else 1
-		if d == 1:
-			data = np.hstack((y[:, None], x_c[:, None], np.abs(x_c[:, None]-np.nanmean(x_c[:, None], axis=0))))
-		else:
-			data = np.hstack((y[:, None], x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))	
-		corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
-
-		batch_indices = [[i, i+d] for i in range(1, d+1)]
-		mi_analysis = mutual_information_analysis(corr, 0, space=space, batch_indices=batch_indices)
-		mi = mi_analysis['mutual_information']
-
-	else:
-		y_ = y[:, None] if len(y.shape) == 1 else y
-		x_d_ = np.array(['*_*'.join(list(r)) for r in x_d]) if len(y.shape) > 1 else x_d
-
-		# I(y; x_d)
-		mi = least_mixed_conditional_mutual_information(y, x_d_, space=space, non_monotonic_extension=False)
-		categories = list(set(list(x_d_)))
-		n = x_d_.shape[0]
-		probas = np.array([1.*len(x_d_[x_d_==cat])/n for cat in categories])
-
-		# I(y; x_c|x_d)
-		mi += np.sum([probas[i]*least_continuous_mutual_information(\
-			x_c[x_d_==categories[i]], y[x_d_==categories[i]], space=space) for i in range(len(categories))\
-			if probas[i] > 0.0])
-
+	mi_analysis = mutual_information_analysis(corr, output_indices, space=space, batch_indices=batch_indices)
+	mi = mi_analysis['mutual_information']
 	hy = scalar_continuous_entropy(y, space=space)
 
 	return pd.DataFrame({\
@@ -85,7 +65,7 @@ def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual'):
 
 
 
-def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
+def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual', categorical_encoding='two-split'):
 	"""
 	.. _regression-variable-selection-analysis:
 	Runs the variable selection analysis for a regression problem.
@@ -103,7 +83,9 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -126,13 +108,15 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 
 		Section :ref:`2 - Variable Selection Analysis`.
 	"""
-	assert x_d is None, 'Variable selection for regression does not yet support discrete variables'
+	data = prepare_data_for_mutual_info_analysis(x_c, x_d, y, None, space=space, \
+		non_monotonic_extension=True, categorical_encoding=categorical_encoding)
+	output_indices = data['output_indices']
+	corr = data['corr']
+	batch_indices = data['batch_indices']
 
-	d = x_c.shape[1] if len(x_c.shape) > 1 else 1
-	data = np.hstack((y[:, None] , x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))
-	corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
-	batch_indices = [[i, i+d] for i in range(1, d+1)]
-	mi_analysis = mutual_information_analysis(corr, 0, space=space, batch_indices=batch_indices)
+	mi_analysis = mutual_information_analysis(corr, output_indices, space=space, batch_indices=batch_indices)
+
+	d = len(batch_indices)
 	batches = [_ for _ in range(d)]
 	remaining_columns = [_ for _ in range(d)]
 

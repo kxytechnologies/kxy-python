@@ -62,7 +62,7 @@ From **non-Gaussian** and **memory-robust** risk analysis, to **alternative data
 	:hidden:
 	:caption: EXAMPLES
 
-	latest/examples/classification/index
+	latest/examples/index
 
 
 .. toctree::

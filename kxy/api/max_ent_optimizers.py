@@ -11,126 +11,10 @@ import numpy as np
 from .client import APIClient
 
 
-
-def solve_copula_async(corr):
-	"""
-	.. _solve-copula-async:
-	Solve the maximum-entropy copula problem under Spearman rank correlation matrix constraints asynchronously.
-
-	.. note:: 
-
-		The solution to the optimization problem is not returned. This function should be used to pre-compute the solution to the optimization problem for later use.
-
-
-	.. seealso::
-
-		:ref:`kxy.api.optimizers.solve_sync <solve-copula-sync>`.
-
-
-	Parameters
-	----------
-	corrr : np.array
-		The Spearman correlation matrix.
-
-
-	Returns
-	-------
-	success : bool
-		Whether the request went through successfully.
-	"""
-	try:
-		c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
-		logging.debug('Launching a max-ent solver in the background with corr=%s' % c)
-		api_response = APIClient.route(path='/core/dependence/copula/maximum-entropy/entropy/rv/pre-compute', \
-			method='POST', corr=c)
-
-		if api_response.status_code == requests.codes.ok:
-			return True
-
-		logging.info(api_response.json())
-		return False
-
-	except:
-		return False
-
-
-
-
-
-def solve_copula_sync(corr, mode=None, output_index=None, solve_async=True, space='dual', batch_indices=[]):
-	"""
-	.. _solve-copula-sync:
-	Solve the maximum-entropy copula problem under Spearman rank correlation matrix constraints synchronously.
-
-	.. note:: 
-
-		This function blocks until the optimization problem is solved, and returrns the requested quantity.
-
-	.. seealso::
-
-		:ref:`kxy.api.optimizers.solve_sync <solve-copula-async>`.
-
-
-	Parameters
-	----------
-	corrr : np.array
-		The Spearman correlation matrix.
-
-	mode : str
-		One of :code:`'copula_entropy'`, and :code:`'mutual_information_v_output'`.
-
-		When mode is :code:`'copula_entropy'` the function returns the entropy of the copula of the random
-		vector whose Spearman correlation matrix is the input :code:`corr`.
-
-		When mode is :code:`'mutual_information_v_output'` the function returns the mutual information between 
-		a continuous output variable :math:`y` (specificied by :code:`output_index`) and continuous input 
-		variables :math:`x` (specificied by the other variables): :math:`I(x, y)`. We recall that the mutual information 
-		between two continuous variables is the mutual information of their copula-uniform dual representations. The copula 
-		of :math:`(x, y)` is learned as the maximum-entropy copula under the constraint that the Spearman correlation matrix 
-		is the input :code:`corr`.
-
-	output_index : int
-		The index of the column that should be used as output variable when mode is :code:`'mutual_information_v_output'`.
-
-
-
-	Returns
-	-------
-	r : float
-		The requested result, namely the copula entropy, the mutual information or the conditional
-		mutual information, depending on the value of the mode.
-	"""
-	assert mode in ('copula_entropy', 'mutual_information_v_output')
-
-	if mode in ['mutual_information_v_output', 'conditional_mutual_information']:
-		assert output_index is not None, 'The output index should be provided'
-
-	if solve_async:
-		solve_copula_async(corr)
-
-	if mode == 'mutual_information_v_output':
-		res = mutual_information_analysis(corr, output_index, space=space, batch_indices=batch_indices)
-		if res is None:
-			return None
-
-		return res['mutual_information']
-
-	if mode == 'copula_entropy':
-		res = copula_entropy_analysis(corr, space=space)
-		if res is None:
-			return None
-		return res['copula_entropy']
-
-
-	return None
-
-
-
-def mutual_information_analysis(corr, output_index, space='dual', batch_indices=[]):
+def mutual_information_analysis(corr, output_indices, space='dual', batch_indices=[]):
 	'''
 	Analyzes the dependency between :math:`d`-dimensional continuous random vector :math:`x=\\left(x_1, \\dots, x_d \\right)` and
-	a continuous random scalar :math:`y` whose joint correlation matrix is :code:`corr`, the column :code:`output_index` of which 
-	represents the variable :math:`y` and the others the variable :math:`x`.
+	one or more continuous random scalar :math:`y`.
 
 
 	Recall that, for any permutation :math:`\\pi_1, \\dots, \\pi_d` of :math:`1, \\dots, d`, by the tower law,
@@ -151,11 +35,17 @@ def mutual_information_analysis(corr, output_index, space='dual', batch_indices=
 
 	Parameters
 	----------
-	corr : np.array
+	corr : (d, d) np.array
 		The Spearman correlation matrix.
 
-	output_index: int
-		The index of the column to use as output.
+	output_indices: list of int 
+		The index (indices) of the column to use as output.
+
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
+
 
 
 	Returns
@@ -165,6 +55,8 @@ def mutual_information_analysis(corr, output_index, space='dual', batch_indices=
 	'''
 	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
 	bi = json.dumps(batch_indices)
+	oi = json.dumps(output_indices)
+
 	opt_launched = False
 	max_retry = 60
 	first_try = True
@@ -176,10 +68,11 @@ def mutual_information_analysis(corr, output_index, space='dual', batch_indices=
 		if request_id == '':
 			query_start_time = time()
 			# First attempt
-			logging.debug('Querying mutual information analysis with corr=%s and output_index=%d' % (c, output_index))
+			logging.debug('Querying mutual information analysis with corr=%s and output_indices=%s' % (c, output_indices))
 			api_response = APIClient.route(path='/rv/mutual-information-analysis', method='POST',\
-				corr=c, output_index=output_index, request_id=request_id, timestamp=int(time()), \
+				corr=c, output_indices=oi, request_id=request_id, timestamp=int(time()), \
 				space=space, batch_indices=bi)
+
 			query_duration = time()-query_start_time
 
 		else:
@@ -194,7 +87,6 @@ def mutual_information_analysis(corr, output_index, space='dual', batch_indices=
 		if api_response.status_code == requests.codes.retry:
 			request_id = api_response.json()['request_id']
 			sleep(.1 if query_duration > 10. else 10.)
-
 
 	if api_response.status_code == requests.codes.ok:
 		return api_response.json()
@@ -233,6 +125,11 @@ def copula_entropy_analysis(corr, space='dual'):
 
 	output_index: int
 		The index of the column to use as output.
+
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
 
 
 	Returns
@@ -304,6 +201,11 @@ def information_adjusted_correlation_from_spearman(corr, space='dual'):
 	----------
 	corr : np.array
 		The Spearman correlation matrix.
+
+	space : str, 'primal' | 'dual'
+		The space in which the maximum entropy problem is solved. 
+		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
+		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
 
 
 	Returns

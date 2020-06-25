@@ -85,5 +85,5 @@ googleanalytics_enabled = True
 
 # Sitemap
 html_baseurl = 'https://www.kxy.ai/reference/'
-html_extra_path = ['robots.txt']
+# html_extra_path = ['robots.txt']
 

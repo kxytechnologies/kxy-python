@@ -9,7 +9,7 @@ import numpy as np
 import scipy.special as spe
 import statsmodels.api as sm
 
-from kxy.api import APIClient, solve_copula_sync
+
 from .utils import spearman_corr, pearson_corr
 
 
@@ -20,8 +20,7 @@ def _scalar_continuous_entropy(x, space='dual', method='gaussian-kde'):
 	if method == '1-spacing':
 		sorted_x = np.unique(x)
 		n = sorted_x.shape[0]
-		ent = np.sum(np.log(n*(sorted_x[1:]-sorted_x[:-1])))/n - spe.digamma(1)
-		return ent
+		return np.sum(np.log(n*(sorted_x[1:]-sorted_x[:-1])))/n - spe.digamma(1)
 
 	if method == 'gaussian-kde':
 		kde = sm.nonparametric.KDEUnivariate(x)
@@ -51,8 +50,6 @@ def scalar_continuous_entropy(x, space='dual', method='gaussian-kde'):
 		h(x) \\approx \\frac{1}{n} \\sum_{i=1}^n \\log\\left( \\hat{p}\\left(x_i\\right) \\right)
 
 	where :math:`\\hat{p}` is the Gaussian kernel density estimator of the true pdf using :code:`statsmodels.api.nonparametric.KDEUnivariate`.
-
-
 
 	
 	Parameters
@@ -97,7 +94,7 @@ def scalar_continuous_entropy(x, space='dual', method='gaussian-kde'):
 		return _scalar_continuous_entropy(x, space=space, method=method)
 
 
-	if len(continuous_part) == 0:
+	if len(continuous_part) <= 20:
 		return discrete_entropy(discrete_part)
 
 
@@ -107,7 +104,10 @@ def scalar_continuous_entropy(x, space='dual', method='gaussian-kde'):
 	proba_continuous = 1.-proba_discrete 
 	ent_disc_cont = -proba_discrete*np.log(proba_discrete)-proba_continuous*np.log(proba_continuous)
 
-	return ent_disc_part + ent_cont_part - ent_disc_cont
+	ent = ent_disc_part + ent_cont_part - ent_disc_cont
+	assert not np.isnan(ent)
+
+	return ent
 
 
 
@@ -171,10 +171,12 @@ def least_structured_copula_entropy(x, space='dual', batch_indices=[]):
 	h : float
 		The (differential) entropy of the least structured copula consistent with maximum-entropy constraints.
 	"""
+	from kxy.api import solve_copula_sync
 	if len(x.shape) == 1 or x.shape[1] == 1:
 		# By convention, the copula-dual representation of a 1d random variable is the uniform[0, 1].
 		return 0.0
 
+	x = x.astype(float)
 	corr = pearson_corr(x) if space == 'primal' else spearman_corr(x)
 	h = solve_copula_sync(corr, mode='copula_entropy', solve_async=False, space=space, batch_indices=batch_indices)
 

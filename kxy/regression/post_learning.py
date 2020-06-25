@@ -3,14 +3,15 @@
 import numpy as np
 import pandas as pd
 
-from kxy.api.core import least_continuous_mutual_information, least_mixed_mutual_information
+from kxy.api import mutual_information_analysis
+from kxy.api.core import prepare_data_for_mutual_info_analysis
 
 from .pre_learning import regression_variable_selection_analysis, \
 	regression_achievable_performance_analysis
 
 
 
-def regression_model_improvability_analysis(x_c, y_p, y, x_d=None, space='dual'):
+def regression_model_improvability_analysis(x_c, y_p, y, x_d=None, space='dual', categorical_encoding='two-split'):
 	"""
 	.. _regression-model-improvability-analysis:
 	Runs the model improvability analysis on a trained regression model.
@@ -29,7 +30,9 @@ def regression_model_improvability_analysis(x_c, y_p, y, x_d=None, space='dual')
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -45,14 +48,14 @@ def regression_model_improvability_analysis(x_c, y_p, y, x_d=None, space='dual')
 
 		Section :ref:`3 - Model Improvability`.
 	"""
-	achievable_perf = regression_achievable_performance_analysis(x_c, y, x_d=x_d, space=space)
-	achieved_perf   = regression_achievable_performance_analysis(y_p, y, x_d=None, space=space)
+	achievable_perf = regression_achievable_performance_analysis(x_c, y, x_d=x_d, space=space, categorical_encoding=categorical_encoding)
+	achieved_perf   = regression_achievable_performance_analysis(y_p, y, x_d=None, space=space, categorical_encoding=categorical_encoding)
 	
 	improvable_perf = achievable_perf-achieved_perf
 	improvable_perf.rename(columns={col: col.replace('Achievable', 'Lost') for col in improvable_perf.columns}, inplace=True)
 	improvable_perf = np.maximum(improvable_perf, 0.0)
 
-	residual_perf = regression_achievable_performance_analysis(x_c, y-y_p, x_d=x_d, space=space)
+	residual_perf = regression_achievable_performance_analysis(x_c, y-y_p, x_d=x_d, space=space, categorical_encoding=categorical_encoding)
 	residual_perf.rename(columns={col: col.replace('Achievable', 'Residual') for col in residual_perf.columns}, inplace=True)
 	residual_perf = np.maximum(residual_perf, 0.0)
 
@@ -60,7 +63,7 @@ def regression_model_improvability_analysis(x_c, y_p, y, x_d=None, space='dual')
 
 
 
-def regression_model_explanation_analysis(x_c, f_x, x_d=None, space='dual'):
+def regression_model_explanation_analysis(x_c, f_x, x_d=None, space='dual', categorical_encoding='two-split'):
 	"""
 	.. _regression-model-explanation-analysis:
 	Runs the model explanation analysis on a trained regression model.
@@ -77,7 +80,9 @@ def regression_model_explanation_analysis(x_c, f_x, x_d=None, space='dual'):
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -95,7 +100,7 @@ def regression_model_explanation_analysis(x_c, f_x, x_d=None, space='dual'):
 
 		Section :ref:`a) Model Explanation`.
 	"""
-	res = regression_variable_selection_analysis(x_c, f_x, x_d=x_d, space=space)
+	res = regression_variable_selection_analysis(x_c, f_x, x_d=x_d, space=space, categorical_encoding=categorical_encoding)
 	res = res[['Variable', 'Selection Order', 'Univariate Achievable R^2', 'Maximum Marginal R^2 Increase', \
 		'Running Achievable R^2']]
 	res.rename(columns={'Univariate Achievable R^2': 'Univariate Explained R^2', \
@@ -106,7 +111,7 @@ def regression_model_explanation_analysis(x_c, f_x, x_d=None, space='dual'):
 
 
 
-def regression_bias(f_x, z, linear_scale=True, space='dual'):
+def regression_bias(f_x, z, linear_scale=True, space='dual', categorical_encoding='two-split'):
 	"""
 	.. _regression-bias:
 	Quantifies the bias in a regression model as the mutual information between a category variable and model predictions.
@@ -118,7 +123,9 @@ def regression_bias(f_x, z, linear_scale=True, space='dual'):
 		The model decisions.
 	z : (n,) np.array
 		The associated variable through which the bias could arise.
-
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 
 	Returns
@@ -131,7 +138,15 @@ def regression_bias(f_x, z, linear_scale=True, space='dual'):
 
 		Section :ref:`b) Quantifying Bias in Models`.
 	"""
-	mi = least_mixed_mutual_information(f_x, z, space=space, non_monotonic_extension=True)
+	data = prepare_data_for_mutual_info_analysis(f_x, None, None, z, space=space, \
+		non_monotonic_extension=True, categorical_encoding=categorical_encoding)
+	output_indices = data['output_indices']
+	corr = data['corr']
+	batch_indices = data['batch_indices']
+
+	mi_analysis = mutual_information_analysis(corr, output_indices, space=space, batch_indices=batch_indices)
+	mi = mi_analysis['mutual_information']
+
 	if linear_scale:
 		mi = 1.-np.exp(-2.*mi)
 

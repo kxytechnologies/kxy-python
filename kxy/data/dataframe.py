@@ -22,7 +22,7 @@ from kxy.asset_management import information_adjusted_beta, information_adjusted
 	robust_pearson_corr
 
 from kxy.api import mutual_information_analysis
-from kxy.api.core import spearman_corr, pearson_corr, auto_predictability
+from kxy.api.core import spearman_corr, pearson_corr, auto_predictability, prepare_data_for_mutual_info_analysis
 
 from kxy.classification import classification_achievable_performance_analysis, \
 	classification_variable_selection_analysis, classification_model_improvability_analysis, \
@@ -177,7 +177,7 @@ class KXYAccessor(object):
 
 
 
-	def achievable_performance_analysis(self, label_column, input_columns=(), space='dual'):
+	def achievable_performance_analysis(self, label_column, input_columns=(), space='dual', categorical_encoding='two-split'):
 		"""
 		Runs the achievable performance analysis on a trained supervised learning model.
 
@@ -194,6 +194,9 @@ class KXYAccessor(object):
 			The space in which the maximum entropy problem is solved. 
 			When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 			When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
+		categorical_encoding : str, 'one-hot' | 'two-split' (default)
+			The encoding method to use to represent categorical variables. 
+			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 
 
@@ -227,14 +230,15 @@ class KXYAccessor(object):
 		x_c = self._obj[continuous_columns].values if len(continuous_columns) > 0 else None
 		x_d = self._obj[discrete_columns].values if len(discrete_columns) > 0 else None
 
-		res = regression_achievable_performance_analysis(x_c, y, x_d=x_d, space=space) if problem == 'regression' \
-			else classification_achievable_performance_analysis(x_c, y, x_d=x_d, space=space)
+		res = regression_achievable_performance_analysis(x_c, y, x_d=x_d, space=space, categorical_encoding=categorical_encoding) \
+			if problem == 'regression' else classification_achievable_performance_analysis(x_c, y, x_d=x_d, space=space, \
+				categorical_encoding=categorical_encoding)
 		res = res.style.hide_index()
 
 		return res
 
 
-	def variable_selection_analysis(self, label_column, input_columns=(), space='dual'):
+	def variable_selection_analysis(self, label_column, input_columns=(), space='dual', categorical_encoding='two-split'):
 		"""
 		Runs the model variable selection analysis on a trained supervised learning model.
 
@@ -251,6 +255,9 @@ class KXYAccessor(object):
 			The space in which the maximum entropy problem is solved. 
 			When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 			When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
+		categorical_encoding : str, 'one-hot' | 'two-split' (default)
+			The encoding method to use to represent categorical variables. 
+			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 
 		Returns
@@ -295,8 +302,9 @@ class KXYAccessor(object):
 		x_c = self._obj[continuous_columns].values.astype(float) if len(continuous_columns) > 0 else None
 		x_d = self._obj[discrete_columns].values.astype(str) if len(discrete_columns) > 0 else None
 
-		res = regression_variable_selection_analysis(x_c, y, x_d=x_d, space=space) if problem == 'regression' \
-			else classification_variable_selection_analysis(x_c, y, x_d=x_d, space=space)
+		res = regression_variable_selection_analysis(x_c, y, x_d=x_d, space=space, categorical_encoding=categorical_encoding) \
+			if problem == 'regression' else classification_variable_selection_analysis(x_c, y, x_d=x_d, space=space, \
+				categorical_encoding=categorical_encoding)
 
 		variable_columns = continuous_columns + discrete_columns
 		res['Variable'] = res['Variable'].map({i: variable_columns[i] for i in range(len(variable_columns))})
@@ -309,7 +317,7 @@ class KXYAccessor(object):
 
 
 	def model_improvability_analysis(self, label_column, model_prediction_column, input_columns=(), 
-			space='dual'):
+			space='dual', categorical_encoding='two-split'):
 		"""
 		Runs the model improvability analysis on a trained supervised learning model.
 
@@ -328,7 +336,9 @@ class KXYAccessor(object):
 			The space in which the maximum entropy problem is solved. 
 			When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 			When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+		categorical_encoding : str, 'one-hot' | 'two-split' (default)
+			The encoding method to use to represent categorical variables. 
+			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 
 		Returns
@@ -361,15 +371,17 @@ class KXYAccessor(object):
 		x_c = self._obj[continuous_columns].values.astype(float) if len(continuous_columns) > 0 else None
 		x_d = self._obj[discrete_columns].values.astype(str) if len(discrete_columns) > 0 else None
 
-		res = regression_model_improvability_analysis(x_c, y_p, y, x_d=x_d, space=space) if problem == 'regression' \
-			else classification_model_improvability_analysis(x_c, y_p, y, x_d=x_d, space=space)
+		res = regression_model_improvability_analysis(x_c, y_p, y, x_d=x_d, space=space, \
+				categorical_encoding=categorical_encoding) if problem == 'regression' \
+			else classification_model_improvability_analysis(x_c, y_p, y, x_d=x_d, space=space, \
+				categorical_encoding=categorical_encoding)
 		res = res.style.hide_index()
 
 		return res
 
 
 
-	def model_explanation_analysis(self, model_prediction_column, input_columns=(), space='dual'):
+	def model_explanation_analysis(self, model_prediction_column, input_columns=(), space='dual', categorical_encoding='two-split'):
 		"""
 		Runs the model explanation analysis on a trained supervised learning model.
 
@@ -385,6 +397,9 @@ class KXYAccessor(object):
 			The space in which the maximum entropy problem is solved. 
 			When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 			When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
+		categorical_encoding : str, 'one-hot' | 'two-split' (default)
+			The encoding method to use to represent categorical variables. 
+			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 
 		Returns
@@ -419,8 +434,8 @@ class KXYAccessor(object):
 		x_c = self._obj[continuous_columns].values.astype(float) if len(continuous_columns) > 0 else None
 		x_d = self._obj[discrete_columns].values.astype(str) if len(discrete_columns) > 0 else None
 
-		res = regression_model_explanation_analysis(x_c, f_x, x_d=x_d, space=space) if problem == 'regression' \
-			else classification_model_explanation_analysis(x_c, f_x, x_d=x_d, space=space)
+		res = regression_model_explanation_analysis(x_c, f_x, x_d=x_d, space=space, categorical_encoding=categorical_encoding) if problem == 'regression' \
+			else classification_model_explanation_analysis(x_c, f_x, x_d=x_d, space=space, categorical_encoding=categorical_encoding)
 
 		variable_columns = continuous_columns + discrete_columns
 		res['Variable'] = res['Variable'].map({i: variable_columns[i] for i in range(len(variable_columns))})
@@ -433,7 +448,7 @@ class KXYAccessor(object):
 
 
 
-	def bias(self, bias_source_column, model_prediction_column, linear_scale=True):
+	def bias(self, bias_source_column, model_prediction_column, linear_scale=True, categorical_encoding='two-split'):
 		"""
 		Quantifies the bias in a supervised learning model as the mutual information between a possible cause and model predictions.
 
@@ -448,7 +463,9 @@ class KXYAccessor(object):
 			The name of the column containing predicted labels associated to the values of :code:`bias_source_column`.
 		linear_scale : bool
 			Whether the bias should be returned in the linear/correlation scale or in the mutual information scale (in nats).
-
+		categorical_encoding : str, 'one-hot' | 'two-split' (default)
+			The encoding method to use to represent categorical variables. 
+			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 		Returns
 		-------
@@ -470,7 +487,7 @@ class KXYAccessor(object):
 		f_x = self._obj[model_prediction_column].values
 		z = self._obj[bias_source_column].values
 
-		return regression_bias(f_x, z, linear_scale=linear_scale) if problem == 'regression' \
+		return regression_bias(f_x, z, linear_scale=linear_scale, categorical_encoding=categorical_encoding) if problem == 'regression' \
 			else classification_bias(f_x, z, linear_scale=linear_scale)
 
 
@@ -526,7 +543,7 @@ class KXYAccessor(object):
 
 
 
-	def dataset_valuation(self, label_column, existing_input_columns, new_input_columns, space="dual"):
+	def dataset_valuation(self, label_column, existing_input_columns, new_input_columns, space="dual", categorical_encoding="two-split"):
 		"""
 		Quantifies the additional performance that can be brought about by adding a set of new variables, as the difference between achievable performance with and without the new dataset.
 
@@ -543,7 +560,9 @@ class KXYAccessor(object):
 			The space in which the maximum entropy problem is solved. 
 			When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 			When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+		categorical_encoding : str, 'one-hot' | 'two-split' (default)
+			The encoding method to use to represent categorical variables. 
+			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 		Returns
 		-------
@@ -565,7 +584,8 @@ class KXYAccessor(object):
 			* :ref:`kxy.classification.classification_achievable_performance_analysis <classification-achievable-performance-analysis>`
 		"""
 		if existing_input_columns is None or len(existing_input_columns) == 0:
-			return self.achievable_performance_analysis(label_column, input_columns=new_input_columns)
+			return self.achievable_performance_analysis(label_column, input_columns=new_input_columns, \
+				categorical_encoding=categorical_encoding)
 
 		if new_input_columns is None or len(new_input_columns) == 0:
 			problem = 'classification' if self.is_discrete(label_column) else 'regression'
@@ -582,8 +602,10 @@ class KXYAccessor(object):
 					'Achievable Log-Likelihood Per Sample': [0.0]})	
 
 		all_inputs = set(list(existing_input_columns)+list(new_input_columns))
-		new_perf = self.achievable_performance_analysis(label_column, input_columns=all_inputs, space=space)
-		old_perf = self.achievable_performance_analysis(label_column, input_columns=existing_input_columns, space=space)
+		new_perf = self.achievable_performance_analysis(label_column, input_columns=all_inputs, space=space, \
+			categorical_encoding=categorical_encoding)
+		old_perf = self.achievable_performance_analysis(label_column, input_columns=existing_input_columns, space=space, \
+			categorical_encoding=categorical_encoding)
 		imp_perf = new_perf-old_perf
 		imp_perf.rename(columns={col: col.replace('Achievable', 'Increased Achievable') for col in imp_perf.columns}, inplace=True)
 
@@ -592,19 +614,54 @@ class KXYAccessor(object):
 
 		return imp_perf
 
-	def _mutual_information_analysis(self, label_column, input_columns=(), space='dual'):
+	def _mutual_information_analysis(self, label_column, input_columns=(), space='dual', \
+		categorical_encoding="two-split", non_monotonic_extension=True):
 		"""
 		"""
-		columns =  [col for col in self._obj.columns if not self.is_categorical(col)]
-		x_c = self._obj[columns].values
-		y = self._obj[label_column].values
-		d = x_c.shape[1] if len(x_c.shape) > 1 else 1
-		data = np.hstack((y[:, None] , x_c, np.abs(x_c-np.nanmean(x_c, axis=0))))
-		corr = pearson_corr(data) if space == 'primal' else spearman_corr(data)
-		batch_indices = [[i, i+d] for i in range(1, d+1)]
-		mi_analysis = mutual_information_analysis(corr, 0, space=space, batch_indices=batch_indices)
+		columns = input_columns if len(input_columns) > 0 else [_ for _ in self._obj.columns if _ != label_column]
+		cont_columns =  [col for col in columns if not self.is_categorical(col)]
+		cat_columns = [col for col in columns if self.is_categorical(col)]
 
-		return mi_analysis
+		x_c = self._obj[cont_columns].values if len(cont_columns) > 0 else None
+		x_d = self._obj[cat_columns].values if len(cat_columns) > 0 else None
+		y_c = None if self.is_categorical(label_column) else self._obj[label_column].values
+		y_d = None if not self.is_categorical(label_column) else self._obj[label_column].values
+
+		res = prepare_data_for_mutual_info_analysis(x_c, x_d, y_c, y_d, space=space, \
+			non_monotonic_extension=non_monotonic_extension, categorical_encoding=categorical_encoding)
+		output_indices = res['output_indices']
+		corr = res['corr']
+		batch_indices = res['batch_indices']
+		mi_ana = mutual_information_analysis(corr, output_indices, space=space, batch_indices=batch_indices)
+
+		return mi_ana, res
+
+
+	def describe(self,):
+		for col in sorted(self._obj.columns):
+			print('       ')
+			print('---------' + '-'.join(['' for c in col]))
+			print('Column: %s' % col)
+			print('---------' + '-'.join(['' for c in col]))
+			if self._obj.kxy.is_categorical(col):
+				print('Type:      Categorical')
+				labels, counts = np.unique(self._obj[col].values, return_counts=True)
+				labels_with_counts = [(labels[i], 100.*counts[i]/self._obj.shape[0]) \
+									  for i in range(len(labels))]
+				labels_with_counts = sorted(labels_with_counts, key=lambda x: -x[1])
+				tot = 0.0
+				for label, freq in labels_with_counts:
+					print('Frequency: %s%%, Label: %s' % (('%.2f' % freq).rjust(5, ' '), label))
+					tot += freq
+					if tot > 90. and tot < 100.:
+						print('Other Labels: %.2f%%' % (100.-tot))
+						break
+			else:
+				print('Type:   Continuous')
+				print('Max:    %.4f' % self._obj[col].max())
+				print('Mean:   %.4f' % self._obj[col].mean())
+				print('Median: %.4f' % self._obj[col].median())
+				print('Min:    %.4f' % self._obj[col].min())  
 
 
 	def __hash__(self):

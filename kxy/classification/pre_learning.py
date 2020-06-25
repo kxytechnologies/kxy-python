@@ -5,11 +5,12 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pandas as pd
 
-from kxy.api.core import least_mixed_mutual_information, discrete_mutual_information, \
-	discrete_entropy, hqi, least_mixed_conditional_mutual_information
+from kxy.api import mutual_information_analysis, discrete_mutual_information
+from kxy.api.core import discrete_entropy, hqi, prepare_data_for_mutual_info_analysis, \
+	one_hot_encoding, two_split_encoding, scalar_continuous_entropy
 
-
-def classification_achievable_performance_analysis(x_c, y, x_d=None, space='dual'):
+def classification_achievable_performance_analysis(x_c, y, x_d=None, space='dual', \
+		categorical_encoding='two-split'):
 	"""
 	.. _classification-achievable-performance-analysis:
 	Quantifies the performance that can be achieved when trying to predict :math:`y` with :math:`x`.
@@ -26,7 +27,9 @@ def classification_achievable_performance_analysis(x_c, y, x_d=None, space='dual
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -43,19 +46,19 @@ def classification_achievable_performance_analysis(x_c, y, x_d=None, space='dual
 
 		Section :ref:`1 - Achievable Performance`.
 	"""
-	assert x_d is not None or x_c is not None, "x_c and x_d cannot be both None."
+	data = prepare_data_for_mutual_info_analysis(x_c, x_d, None, y, space=space, \
+		non_monotonic_extension=True, categorical_encoding=categorical_encoding)
+	output_indices = data['output_indices']
+	corr = data['corr']
+	batch_indices = data['batch_indices']
 
-
-	if x_c is None:
-		mi = discrete_mutual_information(x_d, y)
-
-	else:
-		mi = least_mixed_mutual_information(x_c, y, x_d=x_d, space=space, non_monotonic_extension=True)
-
+	mi_analysis = mutual_information_analysis(corr, output_indices, space=space, batch_indices=batch_indices)
+	mi = mi_analysis['mutual_information']
+	huy = mi_analysis['output_copula_entropy']
 
 	q = len(list(set(y)))
-	n = y.shape[0]
-	hy = discrete_entropy(y)
+	e = one_hot_encoding(y) if categorical_encoding == 'one-hot' else two_split_encoding(y)
+	hy = np.sum([scalar_continuous_entropy(e[:, i]) for i in range(e.shape[1])]) + huy
 
 	return pd.DataFrame({\
 		'Achievable R^2': [1.-np.exp(-2.*mi)], \
@@ -64,7 +67,7 @@ def classification_achievable_performance_analysis(x_c, y, x_d=None, space='dual
 
 
 
-def classification_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
+def classification_variable_selection_analysis(x_c, y, x_d=None, space='dual', categorical_encoding='two-split'):
 	"""
 	.. _classification-variable-selection-analysis:
 	Runs the variable selection analysis for a classification problem.
@@ -81,7 +84,9 @@ def classification_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 		The space in which the maximum entropy problem is solved. 
 		When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
 		When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-
+	categorical_encoding : str, 'one-hot' | 'two-split' (default)
+		The encoding method to use to represent categorical variables. 
+		See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
 
 	Returns
 	-------
@@ -110,128 +115,97 @@ def classification_variable_selection_analysis(x_c, y, x_d=None, space='dual'):
 
 		Section :ref:`2 - Variable Selection Analysis`.
 	"""
-	x_c_ = x_c[:, None] if len(x_c.shape) == 1 else x_c
-	x_d_ = None if x_d is None else x_d[:, None] if len(x_d.shape) == 1 else x_d
-	n_inputs = x_c_.shape[1] if x_d is None else x_c_.shape[1] + x_d_.shape[1]
-	inputs = [_ for _ in range(n_inputs)]
-	categorical_inputs = [_ for _ in range(x_c_.shape[1], n_inputs)]
+	data = prepare_data_for_mutual_info_analysis(x_c, x_d, None, y, space=space, \
+		non_monotonic_extension=True, categorical_encoding=categorical_encoding)
+	output_indices = data['output_indices']
+	corr = data['corr']
+	batch_indices = data['batch_indices']
+	mi_analysis = mutual_information_analysis(corr, output_indices, space=space, batch_indices=batch_indices)
 
-	final_cmis = {}
-	final_mis = {}
-	final_univariate_rsq = {}
-	final_univariate_acc = {}
-	final_univariate_llik = {}
+
+	d = len(batch_indices)
+	batches = [_ for _ in range(d)]
+	remaining_columns = [_ for _ in range(d)]
+
+	if mi_analysis is None:
+		return None
+
+	cmis = {}
+	rsqs = {}
+	accs = {}
+	mis = {}
+	log_liks = {}
 	order = {}
-	categorical_conditions = []
-	continuous_conditions = []
-	hy = discrete_entropy(y)
+	idx = 1
+	huy = mi_analysis['output_copula_entropy']
+	e = one_hot_encoding(y) if categorical_encoding == 'one-hot' else two_split_encoding(y)
+	hy = discrete_entropy(e[:, 0]) if e.shape[1] == 1 else \
+		np.sum([scalar_continuous_entropy(e[:, i]) for i in range(e.shape[1])]) + huy
 	q = len(list(set(y)))
-	n = y.shape[0]
-
-	def conditional_mutual_information(args):
-		# Calculate the conditional mutual information
-		i_, cont_cs, cat_cs = args
-		_cat_cs = [_-x_c_.shape[1] for _ in cat_cs]
-		z_c = None if len(cont_cs) == 0 else x_c_[:, list(cont_cs)]
-		z_d = None if len(cat_cs) == 0 else x_d_[:, list(_cat_cs)]
-		_x_c = None if i_ in categorical_inputs else x_c_[:, [i_]]
-		_x_d = None if x_d_ is None else x_d_[:, i_-x_c_.shape[1]] if i_ in categorical_inputs else None
-		is_cat = i_ in categorical_inputs
-
-		mi_ = discrete_mutual_information(_x_d, y) if _x_c is None else \
-			least_mixed_mutual_information(_x_c, y, space=space, non_monotonic_extension=True)
-
-		mi_ = min(mi_, hy) # I(y, x) = h(y)-h(y|x) <= h(y) when y is discrete.
-
-		if len(cont_cs) == 0 and len(cat_cs) == 0:
-			# (discrete, continuous) | None, or (discrete, discrete) | None
-			cmi_ = mi_
-
-		else:
-			# (discrete, continuous | discrete & continuous)
-			cmi_ = least_mixed_conditional_mutual_information(_x_c, y, z_c, \
-				x_d=_x_d[:, None] if _x_d is not None else None, z_d=z_d, \
-				space=space, non_monotonic_extension=True)
-			cmi_ = min(cmi_, hy)
-			
-		return {i_: [cmi_, mi_]}
-
-
-	while len(inputs) > 0:
-		cmis = {}
-		with ThreadPoolExecutor(max_workers=10) as p:
-			args = [(i, continuous_conditions, categorical_conditions) for i in inputs]
-			for cmi in p.map(conditional_mutual_information, args):
-				cmis.update(cmi)
-
-		for key, value in sorted(cmis.items(), key=lambda x: -x[1][0]):
-			final_cmis[key] = value[0]
-			final_mis[key] = value[1]
-			final_univariate_rsq[key] = 1.-np.exp(-2.*final_mis[key])
-			final_univariate_acc[key] = hqi(max(hy-final_mis[key], 0.0), q)
-			final_univariate_llik[key] = min(final_mis[key]-hy, 0.0)
-
-			inputs.remove(key)
-			if key in categorical_inputs:
-				categorical_conditions += [key]
+	for i in range(1, d+1):
+		column_id = mi_analysis['selection_order'][str(i)]
+		column = batches[column_id]
+		if column in remaining_columns:
+			mis[column] = mi_analysis['individual_mutual_informations'][str(i)]
+			if idx == 1:
+				cmis[column] = mis[column]
 			else:
-				continuous_conditions += [key]
-			order[key] = len(categorical_conditions) + len(continuous_conditions)
-			break
+				cmis[column] = mi_analysis['conditional_mutual_informations'][str(i)]
+			rsqs[column] = 1.-np.exp(-2.*mis[column])
+			accs[column] = hqi(max(hy-mis[column], 0.0), q)
+			log_liks[column] = -max(hy-mis[column], 0.0)
+			order[column] = idx
+			idx += 1
+			remaining_columns.remove(column)
 
-
-	final_rsq_inc = {}
-	final_run_rsqs = {}
-
-	final_acc_inc = {}
-	final_run_acc = {}
-
-	final_llik_inc = {}
-	final_run_llik = {}
-
+	rsq_inc = {}
+	acc_inc = {}
+	log_lik_inc = {}
 	run_mi = 0
+	run_rsqs = {}
+	run_accs = {}
+	run_log_liks = {}
 	for v, o in sorted(order.items(), key=lambda item: item[1]):
-		run_mi += final_cmis[v]
-		final_run_rsqs[o] = 1.-np.exp(-2.*run_mi)
-		final_run_acc[o] = hqi(max(hy-run_mi, 0.0), q)
-		final_run_llik[o] = -max(hy-run_mi, 0.0)
+		run_mi += cmis[v]
+		run_rsqs[o] = 1.-np.exp(-2.*run_mi)
+		run_accs[o] = hqi(max(hy-run_mi, 0.0), q)
+		run_log_liks[o] = -max(hy-run_mi, 0.0)
 
-		if final_rsq_inc == {}:
-			final_rsq_inc[o] = final_run_rsqs[o]
-			final_acc_inc[o] = final_run_acc[o]
-			final_llik_inc[o] = final_run_llik[o]
+		if rsq_inc == {}:
+			rsq_inc[o] = 1.-np.exp(-2.*cmis[v])
+			acc_inc[o] = run_accs[o]-hqi(hy, q)
+			log_lik_inc[o] = run_mi
 			
 		else:
-			final_rsq_inc[o] = final_run_rsqs[o]-final_run_rsqs[o-1]
-			final_acc_inc[o] = final_run_acc[o]-final_run_acc[o-1]
-			final_llik_inc[o] = final_run_llik[o]-final_run_llik[o-1]
+			rsq_inc[o] = run_rsqs[o]-run_rsqs[o-1]
+			acc_inc[o] = run_accs[o]-run_accs[o-1]
+			log_lik_inc[o] = run_log_liks[o]-run_log_liks[o-1]
 
-
-	sorted_order = sorted(order.items(), key=lambda item: item[1])
-	max_r_2 = np.max([_ for _ in final_run_rsqs.values()])
+	max_r_2 = np.max([_ for _ in run_rsqs.values()])
 	importance_df = pd.DataFrame({
-		'Variable': [v for v, o in sorted_order], \
-		'Selection Order': [o for v, o in sorted_order], \
+		'Variable': [v for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Selection Order': [o for v, o in sorted(order.items(), key=lambda item: item[1])], \
 
 		# Achievable R^2 analysis
-		'Univariate Achievable R^2': [final_univariate_rsq[v] for v, o in sorted_order], \
-		'Maximum Marginal R^2 Increase': [final_rsq_inc[o] for v, o in sorted_order], \
-		'Running Achievable R^2': [final_run_rsqs[o] for v, o in sorted_order], \
-		'Running Achievable R^2 (%)': [100.*final_run_rsqs[o]/max_r_2 for v, o in sorted_order], \
+		'Univariate Achievable R^2': [rsqs[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Maximum Marginal R^2 Increase': [rsq_inc[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Running Achievable R^2': [run_rsqs[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Running Achievable R^2 (%)': [100.*run_rsqs[o]/max_r_2 for v, o in sorted(order.items(), key=lambda item: item[1])], \
 
-		# Achievable accuracy analysis
-		'Univariate Achievable Accuracy': [final_univariate_acc[v] for v, o in sorted_order], \
-		'Maximum Marginal Accuracy Increase': [final_acc_inc[o] for v, o in sorted_order], \
-		'Running Achievable Accuracy': [final_run_acc[o] for v, o in sorted_order], \
-
-		# Achievable log-likelihood analysis
-		'Univariate Achievable True Log-Likelihood Per Sample': [final_univariate_llik[v] for v, o in sorted_order], \
-		'Maximum Marginal True Log-Likelihood Per Sample Increase': [final_llik_inc[o] for v, o in sorted_order], \
-		'Running Achievable True Log-Likelihood Per Sample': [final_run_llik[o] for v, o in sorted_order], \
+		# Accuracy Analysis
+		'Univariate Achievable Accuracy': [accs[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Maximum Marginal Accuracy Increase': [acc_inc[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Running Achievable Accuracy': [run_accs[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
 
 		# Conditional mutual information analysis
-		'Univariate Mutual Information (nats)': [final_mis[v] for v, o in sorted_order], \
-		'Conditional Mutual Information (nats)': [final_cmis[v] for v, o in sorted_order]})
+		'Univariate Mutual Information (nats)': [mis[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Conditional Mutual Information (nats)': [cmis[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+
+		# The largest likelihood by which the likelihood can be increased as a result of adding this variable
+		'Univariate Achievable True Log-Likelihood Per Sample': [log_liks[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Maximum Marginal True Log-Likelihood Per Sample Increase': [log_lik_inc[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Running Achievable True Log-Likelihood Per Sample': [run_log_liks[o] for v, o in sorted(order.items(), key=lambda item: item[1])]})
+
 	importance_df['Running Mutual Information (nats)'] = importance_df['Conditional Mutual Information (nats)'].cumsum()
 	max_mi = importance_df['Running Mutual Information (nats)'].max()
 	importance_df['Running Mutual Information (%)'] = 100.*importance_df['Running Mutual Information (nats)']/max_mi
