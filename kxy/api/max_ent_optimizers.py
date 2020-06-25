@@ -120,7 +120,7 @@ def copula_entropy_analysis(corr, space='dual'):
 
 	Parameters
 	----------
-	corrr : np.array
+	corr : np.array
 		The Spearman correlation matrix.
 
 	output_index: int
