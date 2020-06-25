@@ -34,7 +34,7 @@ setup(name="kxy",
 	classifiers=[
 		"License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
 		"Programming Language :: Python :: 3 :: Only",
-		"Development Status :: 3 - Alpha",
+		"Development Status :: 4 - Beta",
 		"Topic :: Scientific/Engineering :: Artificial Intelligence",
 		"Topic :: Scientific/Engineering :: Mathematics"
 	],
