@@ -1,6 +1,6 @@
 .. meta::
-   :description: A Powerful Serverless Analysis Toolkit That Takes *Trial And Error* Out of Machine Learning Projects
-   :keywords: AutoML, Pre-Learning, Post-Learning, KXY, KXY Technologies, Guesswork-Free Machine Learning
+   :description: Documentation of the KXY Lean AutoML platform.
+   :keywords: AutoML, Lean AutoML, KXY AutoML, Pre-Learning, Post-Learning
 
 
 
