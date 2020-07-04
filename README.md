@@ -11,7 +11,7 @@
 
 
 ## Documentation
-https://www.kxy.ai/reference
+https://www.kxy.ai/reference/
 
 
 ## Installation
@@ -28,7 +28,7 @@ All heavy-duty computations are run on our serverless infrastructure and require
 ```Bash
 kxy configure
 ```
-and follow the instructions. To request a demo and get a trial API key, [contact us.](https://wwww.kxy.ai/#request-a-trial)
+and follow the instructions. To request a demo and get a trial API key, [contact us.](https://wwww.kxy.ai/request-a-trial/)
 
 
 ## Applications
