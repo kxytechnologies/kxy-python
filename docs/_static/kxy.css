@@ -102,3 +102,13 @@ span.eqno {
 }
 
 
+mark.kxy-blue{
+    color: #2C3960;
+    background: rgba(2,233,102, 0.3);
+    border-radius: 2px;
+    font-weight: normal;
+}
+
+i {
+	font-style: italic;
+}

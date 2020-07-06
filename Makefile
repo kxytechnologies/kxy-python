@@ -17,6 +17,18 @@ pypi_release:
 install:
 	pip install .
 
+
+one_shot_release:
+	make clean
+	make html
+	make deploy_docs
+	make refresh_web PATHS=/reference/*
+
+
+osr:
+	make one_shot_release
+
+
 # Route any other make target to Sphinx
 # You can set these variables from the command line, and also
 # from the environment for the first two.

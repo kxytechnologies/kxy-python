@@ -262,8 +262,10 @@ Going back to our toy example, the Spearman rank correlation between :math:`y` a
 .. note::
 
 	The current version of the :code:`kxy` package does not yet fully capture all non-monotonic associations; a notable exception is periodic associations. Support for periodic associations will be added in the near future. Note that, although we only discussed bivariate constraint functions above, the extension to the multivariate case is trivial, and would consist of choosing a vector-valued :math:`\phi` with coordinates all pairwise constraints.
-
-
+.. meta::
+	:description: A primer on maximum-entropy mutual information estimation.
+	:keywords:  Mutual Information, Copula-Uniform Dual, Maximum Entropy.
+	:http-equiv=content-language: en
 
 5 - Primal v Dual Spaces
 ------------------------

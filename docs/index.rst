@@ -1,6 +1,7 @@
 .. meta::
    :description: Documentation of the KXY Lean AutoML platform.
    :keywords: AutoML, Lean AutoML, KXY AutoML, Pre-Learning, Post-Learning
+   :http-equiv=content-language: en
 
 
 

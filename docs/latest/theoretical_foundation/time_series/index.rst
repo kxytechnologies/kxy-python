@@ -1,4 +1,6 @@
-
+.. meta::
+   :description: The theoretical foundation of the KXY Lean AutoML platform, for time series.
+   :http-equiv=content-language: en
 ***********
 Time Series
 ***********

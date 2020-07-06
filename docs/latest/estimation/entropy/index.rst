@@ -1,4 +1,8 @@
 
+.. meta::
+	:description: Low level core entropy estimation methods.
+	:http-equiv=content-language: en
+
 =======
 Entropy
 =======

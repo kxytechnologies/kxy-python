@@ -1,3 +1,6 @@
+.. meta::
+	:description: Low level core optimization methods.
+	:http-equiv=content-language: en
 
 ==========
 Optimizers

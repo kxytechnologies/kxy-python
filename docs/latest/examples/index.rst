@@ -1,5 +1,7 @@
-
-
+.. meta::
+	:description: Examples and tutorials illustrating how the KXY AutoML platform works, and what can be done with it.
+	:keywords:  KXY Tutorials, KXY Examples.
+	:http-equiv=content-language: en
 
 Classification Examples
 -----------------------

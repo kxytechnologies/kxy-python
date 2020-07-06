@@ -1,6 +1,7 @@
 .. meta::
 	:description: A primer on information theory and copulas for quantifying informativeness and associations.
 	:keywords:  Information Theory Tutorial, Information Theory Primer, Copula-Uniform Dual, Copulas
+	:http-equiv=content-language: en
 
 
 II - Quantifying Informativeness
@@ -14,7 +15,7 @@ II - Quantifying Informativeness
 
 	In section :ref:`2 - Association and Copula` we introduce *copulas*, we discuss their importance for *modeling associations*, and we provide a fundamental identity relating the entropy of a random vector to the entropy of its copula and the entropies of its marginals. 
 
-	Finally, in section :ref:`3 - Quantifying Association` we introduce Shannon, differential and mixed mutual informations, we discuss their importance for *quantifying associations* between random variables, and we provide fundamental identities relating the differential or mixed mutual informations between two random variables and the associated copulas, among which the fact that the differential mutual information between two random variables does not depend on their marginals.
+	Finally, in section :ref:`3 - Quantifying Association` we introduce Shannon, differential and mixed mutual informations, we discuss their importance for *quantifying associations* between random variables, and we provide fundamental identities relating the differential or mixed mutual informations between two random variables and the associated copulas. In particular, we show that the differential mutual information between two random variables does not depend on their marginals.
 
 
 
@@ -79,7 +80,7 @@ The differential entropy enjoys much of the same properties as Shannon's entropy
 	Let :math:`\text{Vol}(\mathcal{C}) = \int_{\mathcal{C}} dx` denote the possibly infinite volume of the range of the distribution.
 
 	#. :math:`h(x) \leq \log \text{Vol}(\mathcal{C})`.
-	#. If :math:`\text{Vol}(\mathcal{C}) < +\infty` then :math:`h(x) = \log \text{Vol}(\mathcal{C})` if and only if :math:`x` is uniform, i.e. :math:`p(x) = \mathbb{1} \left(x \in \text{Vol}(\mathcal{C}) \right)/\text{Vol}(\mathcal{C})`.
+	#. If :math:`\text{Vol}(\mathcal{C}) < +\infty` then :math:`h(x) = \log \text{Vol}(\mathcal{C})` if and only if :math:`x` is uniform, i.e. :math:`p(x) = \mathbb{1} \left(x \in \mathcal{C} \right)/\text{Vol}(\mathcal{C})`.
 	#. :math:`h(x, y) \leq h(x) + h(y)` for all continuous random variables :math:`x` and :math:`y`.
 	#. :math:`h(x, y) = h(x) + h(y)` if and only if :math:`x` and :math:`y` are statistically independent.
 	#. :math:`h(x + c) = h(x)` for any deterministic constant :math:`c`.

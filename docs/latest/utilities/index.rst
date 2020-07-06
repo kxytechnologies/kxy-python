@@ -1,4 +1,5 @@
-
+.. meta::
+   :http-equiv=content-language: en
 ====
 Misc
 ====

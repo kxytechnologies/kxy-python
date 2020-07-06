@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'KXY (Model-Free & Serverless AutoML)'
+project = 'KXY (Lean AutoML, As A Service)'
 copyright = '2020, KXY Technologies, Inc.'
 author = 'Dr. Yves-Laurent Kom Samo'
 version = 'latest'
@@ -85,5 +85,6 @@ googleanalytics_enabled = True
 
 # Sitemap
 html_baseurl = 'https://www.kxy.ai/reference/'
+html_title = 'The KXY Platform: Lean AutoML, As A Service'
 # html_extra_path = ['robots.txt']
 

@@ -1,4 +1,8 @@
 
+.. meta::
+	:description: Low level core mutual information estimation methods.
+	:http-equiv=content-language: en
+
 ==================
 Mutual Information
 ==================

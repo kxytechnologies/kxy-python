@@ -1,6 +1,8 @@
 .. meta::
-   :description: Model-Free Pre-Learning and Post-Learning
-   :keywords: Achievable R^2, Achievable R Squared, Achievable Performance, Model-Free Variable Selection, Model Explanation, Model Audit, KXY, KXY Technologies, Guesswork-Free Machine Learning
+   :description: Introduction of key concepts critical for taking trials and errors out of machine learning projects.
+   :keywords: Achievable R^2, Achievable R Squared, Achievable Performance, Model-Free Variable Selection, Model Explanation, Model Audit, KXY, Trial and Error Machine Learning.
+   :http-equiv=content-language: en
+
 
 III - Applications
 ==================
