@@ -36,13 +36,13 @@ The Docker image [kxytechnologies/kxy](https://hub.docker.com/repository/docker/
 
 To start a Jupyter Notebook server from a sandboxed Docker, run
 ```Bash
-docker run -i -t -p 5555:8888 kxytechnologies/kxy /bin/bash -c "kxy configure <YOUR API KEY> && /opt/conda/bin/jupyter notebook --notebook-dir=/opt/notebooks --ip='*' --port=8888 --no-browser --allow-root --NotebookApp.token=''"
+docker run -i -t -p 5555:8888 kxytechnologies/kxy:latest /bin/bash -c "kxy configure <YOUR API KEY> && /opt/conda/bin/jupyter notebook --notebook-dir=/opt/notebooks --ip='*' --port=8888 --no-browser --allow-root --NotebookApp.token=''"
 ```
 where you should replace `<YOUR API KEY>` with your API key and navigate to [http://localhost:5555](http://localhost:5555) in your browser.
 
 To start a Jupyter Notebook server from an existing directory of notebooks, run
 ```Bash
-docker run -i -t --mount src=</path/to/your/local/dir>,target=/opt/notebooks,type=bind -p 5555:8888 kxytechnologies/kxy /bin/bash -c "kxy configure <YOUR API KEY> && /opt/conda/bin/jupyter notebook --notebook-dir=/opt/notebooks --ip='*' --port=8888 --no-browser --allow-root --NotebookApp.token=''"
+docker run -i -t --mount src=</path/to/your/local/dir>,target=/opt/notebooks,type=bind -p 5555:8888 kxytechnologies/kxy:latest /bin/bash -c "kxy configure <YOUR API KEY> && /opt/conda/bin/jupyter notebook --notebook-dir=/opt/notebooks --ip='*' --port=8888 --no-browser --allow-root --NotebookApp.token=''"
 ```
 where you should replace `</path/to/your/local/dir>` with the path to your local notebook folder and navigate to [http://localhost:5555](http://localhost:5555) in your browser.
 
