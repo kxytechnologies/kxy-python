@@ -18,12 +18,18 @@ install:
 	pip install .
 
 
+docker_release:
+	docker build -t kxytechnologies/kxy:latest ./docker/kxy/
+	docker login --username drylnks && docker push kxytechnologies/kxy:latest
+
+
 one_shot_release:
 	make clean
 	make html
 	make deploy_docs
 	make refresh_web PATHS=/reference/*
-
+	make docker_release
+	
 
 osr:
 	make one_shot_release
