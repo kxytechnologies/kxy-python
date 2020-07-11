@@ -25,4 +25,4 @@ from kxy.api import *
 from kxy.regression import *
 from kxy.classification import *
 from kxy.asset_management import *
-from kxy.data import *
+from kxy.pandas_extension import *

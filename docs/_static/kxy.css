@@ -112,3 +112,11 @@ mark.kxy-blue{
 i {
 	font-style: italic;
 }
+
+
+@media only screen 
+and (max-device-width : 767px) {
+	.wy-nav-top {
+		background: #2C3960;
+	}
+}

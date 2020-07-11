@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import inspect
 
 def decorate_methods(decorator, include=[]):
