@@ -11,7 +11,7 @@
 
 
 ## Documentation
-https://www.kxy.ai/reference
+https://www.kxy.ai/reference/
 
 
 ## Installation
@@ -30,6 +30,7 @@ kxy configure
 ```
 and follow the instructions. To request a demo and get a trial API key, [contact us.](https://www.kxy.ai/request-a-trial)
 
+
 ## Starting A Docker Jupyter Notebook With Anaconda and the kxy Package
 The Docker image `kxytechnologies/kxy` has been built for your convenience, and comes with anaconda, auto-sklearn, and the kxy package.
 
@@ -44,7 +45,6 @@ To start a Jupyter Notebook server from an existing directory of notebooks, run
 docker run -i -t --mount src=</path/to/your/local/dir>,target=/opt/notebooks,type=bind -p 5555:8888 kxytechnologies/kxy /bin/bash -c "kxy configure <YOUR API KEY> && /opt/conda/bin/jupyter notebook --notebook-dir=/opt/notebooks --ip='*' --port=8888 --no-browser --allow-root --NotebookApp.token=''"
 ```
 where you should replace `</path/to/your/local/dir>` with the path to your local notebook folder and navigate to [http://localhost:5555](http://localhost:5555) in your browser.
-
 
 
 ## Applications
