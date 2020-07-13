@@ -27,7 +27,7 @@ class PostLearningAccessor(BaseAccessor):
 	"""
 
 	def model_improvability_analysis(self, label_column, model_prediction_column, input_columns=(), 
-			space='dual', categorical_encoding='two-split'):
+			space='dual', categorical_encoding='two-split', problem=None):
 		"""
 		Runs the model improvability analysis on a trained supervised learning model.
 
@@ -49,6 +49,8 @@ class PostLearningAccessor(BaseAccessor):
 		categorical_encoding : str, 'one-hot' | 'two-split' (default)
 			The encoding method to use to represent categorical variables. 
 			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
+		problem : None | 'classification' | 'regression'
+			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
 
 
 		Returns
@@ -70,7 +72,9 @@ class PostLearningAccessor(BaseAccessor):
 			* :ref:`kxy.regression.regression_model_improvability_analysis <regression-model-improvability-analysis>`
 			* :ref:`kxy.classification.classification_model_improvability_analysis <classification-model-improvability-analysis>`
 		"""
-		problem = 'classification' if self.is_discrete(label_column) else 'regression'
+		if problem is None:
+			problem = 'classification' if self.is_discrete(label_column) else 'regression'
+
 		columns = [col for col in self._obj.columns if col != label_column and col != model_prediction_column] \
 			if len(input_columns) == 0 else input_columns
 		discrete_columns = [col for col in columns if self.is_categorical(col)]
@@ -91,7 +95,7 @@ class PostLearningAccessor(BaseAccessor):
 
 
 
-	def model_explanation_analysis(self, model_prediction_column, input_columns=(), space='dual', categorical_encoding='two-split'):
+	def model_explanation_analysis(self, model_prediction_column, input_columns=(), space='dual', categorical_encoding='two-split', problem=None):
 		"""
 		Runs the model explanation analysis on a trained supervised learning model.
 
@@ -110,6 +114,8 @@ class PostLearningAccessor(BaseAccessor):
 		categorical_encoding : str, 'one-hot' | 'two-split' (default)
 			The encoding method to use to represent categorical variables. 
 			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
+		problem : None | 'classification' | 'regression'
+			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
 
 
 		Returns
@@ -134,7 +140,9 @@ class PostLearningAccessor(BaseAccessor):
 			* :ref:`kxy.regression.regression_model_explanation_analysis <regression-model-explanation-analysis>`
 			* :ref:`kxy.classification.classification_model_explanation_analysis <classification-model-explanation-analysis>`
 		"""
-		problem = 'classification' if self.is_discrete(model_prediction_column) else 'regression'
+		if problem is None:
+			problem = 'classification' if self.is_discrete(model_prediction_column) else 'regression'
+
 		columns = [col for col in self._obj.columns if col != model_prediction_column] if len(input_columns) == 0\
 			else input_columns
 		discrete_columns = [col for col in columns if self.is_categorical(col)]
@@ -158,7 +166,7 @@ class PostLearningAccessor(BaseAccessor):
 
 
 
-	def bias(self, bias_source_column, model_prediction_column, linear_scale=True, categorical_encoding='two-split'):
+	def bias(self, bias_source_column, model_prediction_column, linear_scale=True, categorical_encoding='two-split', problem=None):
 		"""
 		Quantifies the bias in a supervised learning model as the mutual information between a possible cause and model predictions.
 
@@ -176,6 +184,8 @@ class PostLearningAccessor(BaseAccessor):
 		categorical_encoding : str, 'one-hot' | 'two-split' (default)
 			The encoding method to use to represent categorical variables. 
 			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
+		problem : None | 'classification' | 'regression'
+			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
 
 		Returns
 		-------
@@ -192,7 +202,8 @@ class PostLearningAccessor(BaseAccessor):
 			* :ref:`kxy.regression.regression_bias <regression-bias>`
 			* :ref:`kxy.classification.classification_bias <classification-bias>`
 		"""
-		problem = 'classification' if self.is_discrete(model_prediction_column) else 'regression'
+		if problem is None:
+			problem = 'classification' if self.is_discrete(model_prediction_column) else 'regression'
 
 		f_x = self._obj[model_prediction_column].values
 		z = self._obj[bias_source_column].values

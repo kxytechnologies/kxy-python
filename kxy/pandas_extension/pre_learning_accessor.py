@@ -24,7 +24,7 @@ class PreLearningAccessor(BaseAccessor):
 
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_pre_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
-	def achievable_performance_analysis(self, label_column, input_columns=(), space='dual', categorical_encoding='two-split'):
+	def achievable_performance_analysis(self, label_column, input_columns=(), space='dual', categorical_encoding='two-split', problem=None):
 		"""
 		Runs the achievable performance analysis on a trained supervised learning model.
 
@@ -44,6 +44,8 @@ class PreLearningAccessor(BaseAccessor):
 		categorical_encoding : str, 'one-hot' | 'two-split' (default)
 			The encoding method to use to represent categorical variables. 
 			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
+		problem : None | 'classification' | 'regression'
+			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
 
 
 
@@ -67,7 +69,8 @@ class PreLearningAccessor(BaseAccessor):
 			* :ref:`kxy.regression.regression_achievable_performance_analysis <regression-achievable-performance-analysis>`
 			* :ref:`kxy.classification.classification_achievable_performance_analysis <classification-achievable-performance-analysis>`
 		"""
-		problem = 'classification' if self.is_discrete(label_column) else 'regression'
+		if problem is None:
+			problem = 'classification' if self.is_discrete(label_column) else 'regression'
 		columns = [col for col in self._obj.columns if col != label_column] if len(input_columns) == 0\
 			else input_columns
 		discrete_columns = [col for col in columns if self.is_categorical(col)]
@@ -85,7 +88,7 @@ class PreLearningAccessor(BaseAccessor):
 		return res
 
 
-	def variable_selection_analysis(self, label_column, input_columns=(), space='dual', categorical_encoding='two-split'):
+	def variable_selection_analysis(self, label_column, input_columns=(), space='dual', categorical_encoding='two-split', problem=None):
 		"""
 		Runs the model variable selection analysis on a trained supervised learning model.
 
@@ -105,7 +108,8 @@ class PreLearningAccessor(BaseAccessor):
 		categorical_encoding : str, 'one-hot' | 'two-split' (default)
 			The encoding method to use to represent categorical variables. 
 			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
-
+		problem : None | 'classification' | 'regression'
+			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
 
 		Returns
 		-------
@@ -139,7 +143,9 @@ class PreLearningAccessor(BaseAccessor):
 			* :ref:`kxy.regression.regression_variable_selection_analysis <regression-variable-selection-analysis>`
 			* :ref:`kxy.classification.classification_variable_selection_analysis <classification-variable-selection-analysis>`
 		"""
-		problem = 'classification' if self.is_discrete(label_column) else 'regression'
+		if problem is None:
+			problem = 'classification' if self.is_discrete(label_column) else 'regression'
+
 		columns = [col for col in self._obj.columns if col != label_column] if len(input_columns) == 0\
 			else input_columns
 		discrete_columns = [col for col in columns if self.is_categorical(col)]
@@ -214,7 +220,7 @@ class PreLearningAccessor(BaseAccessor):
 
 
 
-	def dataset_valuation(self, label_column, existing_input_columns, new_input_columns, space="dual", categorical_encoding="two-split"):
+	def dataset_valuation(self, label_column, existing_input_columns, new_input_columns, space="dual", categorical_encoding="two-split", problem=None):
 		"""
 		Quantifies the additional performance that can be brought about by adding a set of new variables, as the difference between achievable performance with and without the new dataset.
 
@@ -234,6 +240,8 @@ class PreLearningAccessor(BaseAccessor):
 		categorical_encoding : str, 'one-hot' | 'two-split' (default)
 			The encoding method to use to represent categorical variables. 
 			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
+		problem : None | 'classification' | 'regression'
+			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
 
 		Returns
 		-------
@@ -259,7 +267,9 @@ class PreLearningAccessor(BaseAccessor):
 				categorical_encoding=categorical_encoding)
 
 		if new_input_columns is None or len(new_input_columns) == 0:
-			problem = 'classification' if self.is_discrete(label_column) else 'regression'
+			if problem is None:
+				problem = 'classification' if self.is_discrete(label_column) else 'regression'
+
 			if problem == 'classification':
 				probas = [1.*(self._obj[self._obj[label_column]==cat].shape[0])/self._obj.shape[0] for cat in list(set(list(self._obj[label_column].values)))]
 				return pd.DataFrame({\

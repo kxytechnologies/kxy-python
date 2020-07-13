@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 with open('README.md') as f:
 	long_description = f.read()
 	
-version = "0.2.3"
+version = "0.2.4"
 setup(name="kxy",
 	version=version,
 	zip_safe=False,
@@ -32,6 +32,15 @@ setup(name="kxy",
 	install_requires=["numpy>=1.13.1", "scipy>=1.4.1", "pandas>=0.23.0", "requests==2.22.0", \
 		"statsmodels"],
 	classifiers=[
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Education",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Information Technology",
+        "Natural Language :: English",
+        "Operating System :: OS Independent",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Scientific/Engineering :: Information Analysis",
 		"License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
 		"Programming Language :: Python :: 3 :: Only",
 		"Development Status :: 4 - Beta",
