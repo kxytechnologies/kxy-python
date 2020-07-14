@@ -34,11 +34,11 @@ and follow the instructions. To request a demo and get a trial API key, [contact
 ## Docker
 The Docker image [kxytechnologies/kxy](https://hub.docker.com/repository/docker/kxytechnologies/kxy) has been built for your convenience, and comes with anaconda, auto-sklearn, and the kxy package.
 
-To start a Jupyter Notebook server from a sandboxed Docker, run
+To start a Jupyter Notebook server from a sandboxed Docker environment, run
 ```Bash
 docker run -i -t -p 5555:8888 kxytechnologies/kxy:latest /bin/bash -c "kxy configure <YOUR API KEY> && /opt/conda/bin/jupyter notebook --notebook-dir=/opt/notebooks --ip='*' --port=8888 --no-browser --allow-root --NotebookApp.token=''"
 ```
-where you should replace `<YOUR API KEY>` with your API key and navigate to [http://localhost:5555](http://localhost:5555) in your browser.
+where you should replace `<YOUR API KEY>` with your API key and navigate to [http://localhost:5555](http://localhost:5555) in your browser. This docker environment comes with [all examples available on the documentation website](https://www.kxy.ai/reference/latest/examples/).
 
 To start a Jupyter Notebook server from an existing directory of notebooks, run
 ```Bash
