@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import pandas as pd
 
 from kxy.api import mutual_information_analysis
 from kxy.api.core import prepare_data_for_mutual_info_analysis, spearman_corr, pearson_corr
