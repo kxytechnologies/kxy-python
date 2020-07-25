@@ -26,7 +26,7 @@ class APIClient(object):
 		v : str
 			The API stage to use.
 		"""
-		return 'v0'
+		return 'v1'
 
 	@staticmethod
 	def url(path):
