@@ -171,14 +171,17 @@ def least_structured_copula_entropy(x, space='dual', batch_indices=[]):
 	h : float
 		The (differential) entropy of the least structured copula consistent with maximum-entropy constraints.
 	"""
-	from kxy.api import solve_copula_sync
 	if len(x.shape) == 1 or x.shape[1] == 1:
 		# By convention, the copula-dual representation of a 1d random variable is the uniform[0, 1].
 		return 0.0
 
 	x = x.astype(float)
 	corr = pearson_corr(x) if space == 'primal' else spearman_corr(x)
-	h = solve_copula_sync(corr, mode='copula_entropy', solve_async=False, space=space, batch_indices=batch_indices)
+
+	res = copula_entropy_analysis(corr, space=space)
+	if res is None:
+		return None
+	h = res['copula_entropy']
 
 	return h
 
