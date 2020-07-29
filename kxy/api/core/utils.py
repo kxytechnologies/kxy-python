@@ -129,7 +129,7 @@ def hqi(h, q):
 def one_hot_encoding(x):
 	"""
 	.. _one-hot-encoding:
-	Computes the `one-hot-encoding <https://en.wikipedia.org/wiki/One-hot>`_ representation of the input array.
+	Computes the `one hot encoding <https://en.wikipedia.org/wiki/One-hot>`_ representation of the input array.
 
 	The representation used is the one where all distincts inputs are first converted to string, then sorted using Python's :code:`sorted` method. 
 

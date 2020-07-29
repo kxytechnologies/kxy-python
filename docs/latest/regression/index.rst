@@ -10,6 +10,7 @@ Regression Functions
 
 	pre_learning/index
 
+	learning/index
+	
 	post_learning/index
-
 
