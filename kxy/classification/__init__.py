@@ -19,3 +19,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from .pre_learning import *
 from .post_learning import *
+from .learning import *

@@ -7,6 +7,8 @@ import numpy as np
 from scipy.stats.mstats import rankdata
 from numpy.dual import svd
 
+
+
 def spearman_corr(x):
 	"""
 	Calculate the Spearman rank correlation matrix, ignoring nans.
@@ -24,7 +26,6 @@ def spearman_corr(x):
 	corr : np.array
 		The Spearman rank correlation matrix.
 	"""
-	n, m = x.shape
 	mask = np.isnan(x).copy()
 	valid_mask = np.logical_not(mask).astype(int)
 	R = rankdata(x, axis=0)
@@ -201,21 +202,9 @@ def two_split_encoding(x):
 	return res
 
 
-
-def prepare_data_for_mutual_info_analysis(x_c, x_d, y_c, y_d, non_monotonic_extension=True, \
-		categorical_encoding='two-split', space='dual'):
-	"""
-	"""
-	from kxy.api.core import scalar_continuous_entropy
-	assert y_c is None or np.can_cast(y_c, float), 'y_c should be an array of numeric values'
-	assert y_c is None or len(y_c.shape) == 1 or y_c.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
-	assert y_d is None or len(y_d.shape) == 1 or y_d.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
-	assert x_c is None or np.can_cast(x_c, float), 'x_c should represent draws from a continuous random variable.'
-	assert x_c is not None or x_d is not None, 'Both x_c and z_c cannot be None'
-	assert y_c is not None or y_d is not None, 'Both y_c and y_d cannot be None'
-	assert y_c is None or y_d is None, 'Both y_c and y_d cannot be not None'
-
-	res = {}
+def get_y_data(y_c, y_d, categorical_encoding='two-split'):
+	'''
+	'''
 	to_stack = []
 	# Ouput
 	if y_d is None:
@@ -224,10 +213,6 @@ def prepare_data_for_mutual_info_analysis(x_c, x_d, y_c, y_d, non_monotonic_exte
 		to_stack += [y_.copy()]
 		output_indices = [0]
 		n_outputs = y_.shape[1]
-		# if non_monotonic_extension and space=='dual':
-		# 	to_stack += [np.abs(y_-np.nanmean(y_, axis=0))]
-		# 	output_indices += [1]
-		# 	n_outputs += y_.shape[1]
 
 	if y_c is None:
 		# Classification: threat the label like its encoded version
@@ -235,12 +220,17 @@ def prepare_data_for_mutual_info_analysis(x_c, x_d, y_c, y_d, non_monotonic_exte
 		to_stack += [y_.copy()]
 		output_indices = [_ for _ in range(y_.shape[1])]
 		n_outputs = y_.shape[1]
-		# if non_monotonic_extension and space=='dual':
-		# 	to_stack += [np.abs(y_-np.nanmean(y_, axis=0))]
-		# 	output_indices += [_ for _ in range(y_.shape[1], 2*y_.shape[1])]
-		# 	n_outputs += y_.shape[1]
 
-	# Inputs
+	z = np.hstack(to_stack).astype(float)
+
+	return z, output_indices
+
+
+def get_x_data(x_c, x_d, n_outputs, categorical_encoding='two-split', non_monotonic_extension=True, \
+		space='dual'):
+	'''
+	'''
+	to_stack = []
 	n_inputs = 0
 	n_features = 0
 
@@ -265,7 +255,7 @@ def prepare_data_for_mutual_info_analysis(x_c, x_d, y_c, y_d, non_monotonic_exte
 	if x_d is not None:
 		n_inputs += x_d_.shape[1]
 		for j in range(x_d_.shape[1]):
-			n_vars = z.shape[1]
+			n_vars = z.shape[1] + n_outputs
 			e = one_hot_encoding(x_d_[:, j]) if categorical_encoding == 'one-hot' else two_split_encoding(x_d_[:, j])
 			dd = e.shape[1]
 			# Threat the encoding of categorical variables as continuous
@@ -277,21 +267,107 @@ def prepare_data_for_mutual_info_analysis(x_c, x_d, y_c, y_d, non_monotonic_exte
 			batch_indices += [[_ for _ in range(n_vars, n_vars+dd)]]
 
 	z = z.astype(float)
-
-	# Constraints
-	corr = pearson_corr(z) if space == 'primal' else spearman_corr(z)
-
 	# Parameter validation
 	assert len(batch_indices) == n_inputs
-	assert corr.shape == (n_outputs+n_features, n_outputs+n_features)
+
+	return z, batch_indices
+
+
+def prepare_data_for_mutual_info_analysis(x_c, x_d, y_c, y_d, non_monotonic_extension=True, \
+		categorical_encoding='two-split', space='dual'):
+	"""
+	"""
+	from kxy.api.core import scalar_continuous_entropy
+	assert y_c is None or np.can_cast(y_c, float), 'y_c should be an array of numeric values'
+	assert y_c is None or len(y_c.shape) == 1 or y_c.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
+	assert y_d is None or len(y_d.shape) == 1 or y_d.shape[1] == 1, 'Only one-dimensional outputs are supported for now.'
+	assert x_c is None or np.can_cast(x_c, float), 'x_c should represent draws from a continuous random variable.'
+	assert x_c is not None or x_d is not None, 'Both x_c and z_c cannot be None'
+	assert y_c is not None or y_d is not None, 'Both y_c and y_d cannot be None'
+	assert y_c is None or y_d is None, 'Both y_c and y_d cannot be not None'
+
+	res = {}
+	y_data, output_indices = get_y_data(y_c, y_d, categorical_encoding=categorical_encoding)
+	n_outputs = y_data.shape[1]
+	x_data, batch_indices = get_x_data(x_c, x_d, n_outputs, categorical_encoding=categorical_encoding, \
+		non_monotonic_extension=non_monotonic_extension, space=space)
+	all_data = np.hstack((y_data, x_data))
+
+	# Constraints
+	corr = pearson_corr(all_data) if space == 'primal' else spearman_corr(all_data)
+
+	# Parameter validation
 	assert not np.isnan(corr).any()
 
 	# Putting everything together
 	res['corr'] = corr
 	res['batch_indices'] = batch_indices
 	res['output_indices'] = output_indices
+	res['x_data'] = x_data
+	res['y_data'] = y_data
 
 	return res
+
+
+def empirical_copula_uniform(x):
+	'''
+	Evaluate the empirical copula-uniform dual representation of x as rank(x)/n.
+
+	Parameters
+	----------
+	x : (n, d) np.array
+		n i.i.d. draws from a d-dimensional distribution.
+
+	'''
+	mask = np.isnan(x).copy()
+	valid_mask = np.logical_not(mask).astype(int)
+	r = rankdata(x, axis=0)
+	np.copyto(r, np.nan, where=mask)
+	non_nan_ns = valid_mask.astype(float).sum(axis=0)
+	u = r/non_nan_ns
+
+	return u
+
+
+def prepare_test_data_for_prediction(test_x_c, test_x_d, train_x_c, train_x_d, train_y_c, train_y_d, \
+		non_monotonic_extension=True, categorical_encoding='two-split', space='dual'):
+	"""
+	"""
+	train_res = prepare_data_for_mutual_info_analysis(\
+		train_x_c, train_x_d, train_y_c, train_y_d, non_monotonic_extension=non_monotonic_extension, \
+		categorical_encoding=categorical_encoding, space=space)
+
+	train_x_data = train_res['x_data']
+	train_y_data = train_res['y_data']
+	n_outputs = train_y_data.shape[1]
+	train_output_indices = train_res['output_indices']
+	train_batch_indices = train_res['batch_indices']
+	train_corr = train_res['corr']
+
+	test_x_data, _ = get_x_data(test_x_c, test_x_d, n_outputs, categorical_encoding=categorical_encoding, \
+		non_monotonic_extension=non_monotonic_extension, space=space)
+
+	x = np.vstack((train_x_data, test_x_data))
+	u_x = empirical_copula_uniform(x)
+	test_u_x = u_x[train_x_data.shape[0]:, :]
+
+	u_x_dict_list = [{n_outputs+i: row[i] for i in range(len(row)) \
+		if not np.isnan(row[i]) and row[i] is not None} for row in test_u_x]
+
+	res = {}
+	res['corr'] = train_corr
+	res['output_indices'] = train_output_indices
+	res['batch_indices'] = train_batch_indices
+	res['u_x_dict_list'] = u_x_dict_list
+	if train_y_d is not None:
+		train_y_data = train_y_data.astype(int)
+		train_y_d_f = train_y_d.flatten()
+	output_map = {str(train_y_data[i]): train_y_d_f[i] for i in range(len(train_y_d_f))} if not train_y_d is None else {}
+	res['output_map'] = output_map
+	res['train_y_data'] = train_y_data
+
+	return res
+
 
 
 

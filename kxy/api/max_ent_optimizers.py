@@ -3,6 +3,7 @@
 
 import json
 import logging
+import os
 import requests
 from time import sleep, time
 
@@ -57,7 +58,6 @@ def mutual_information_analysis(corr, output_indices, space='dual', batch_indice
 	bi = json.dumps(batch_indices)
 	oi = json.dumps(output_indices)
 
-	opt_launched = False
 	max_retry = 60
 	first_try = True
 	retry_count = 0
@@ -138,7 +138,6 @@ def copula_entropy_analysis(corr, space='dual'):
 		Dictionary with keys :code:`copula_entropy`, :code:`selection_order`, and :code:`conditional_copula_entropies`.
 	'''
 	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
-	opt_launched = False
 	max_retry = 60
 	first_try = True
 	retry_count = 0
@@ -214,7 +213,6 @@ def information_adjusted_correlation_from_spearman(corr, space='dual'):
 		The array of equivalent Pearson correlation coefficients.
 	'''
 	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
-	opt_launched = False
 	max_retry = 60
 	first_try = True
 	retry_count = 0
@@ -273,5 +271,73 @@ def robust_pearson_corr_from_spearman(corr):
 	'''
 	return information_adjusted_correlation_from_spearman(corr, space='primal')
 
+
+
+
+def predict_copula_uniform(u_x_dict_list, corr, output_indices, space='dual', batch_indices=[]):
+	'''
+	'''
+	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
+	ux = json.dumps(u_x_dict_list)
+	bi = json.dumps(batch_indices)
+	oi = json.dumps(output_indices)
+
+	max_retry = 60
+	first_try = True
+	retry_count = 0
+	request_id = ''
+
+	while (first_try or api_response.status_code == requests.codes.retry) and retry_count < max_retry:
+		first_try = False
+
+		if request_id == '':
+			query_start_time = time()
+			# First attempt
+			logging.debug('Requesting predictions endpoint.')
+			api_response = APIClient.route(path='/rv/predictions', method='POST', request_type='auth',
+			 timestamp=int(time()))
+			request_id   = api_response.json()['request_id']
+			response = api_response.json()['prediction_endpoint']
+			prediction_endpoint = response['url']
+			additional_fields = response['fields']
+
+			logging.debug('Submitting prediction job.')
+			params = {'corr': c, 'output_indices': oi, 'request_id': request_id, 'timestamp': int(time()), \
+				'space': space, 'batch_indices': bi, 'u_x_dict_list': ux
+			}
+
+			key = 'rv_predict_full/' + request_id + '.json'
+			os.makedirs('rv_predict_full', exist_ok=True)
+			with open(key, 'w') as f:
+				json.dump(params, f)
+
+			with open(key, 'rb') as f:
+				files = {'file': (key, f)}
+				response = requests.post(prediction_endpoint, data=response['fields'], \
+					files=files)
+
+			logging.debug('Done submitting prediction job.')
+			query_duration = time()-query_start_time
+
+		else:
+			query_start_time = time()
+			# Subsequent attempt: refer to the initial request
+			logging.debug('Requesting predictions.')
+			api_response = APIClient.route(path='/rv/predictions', method='POST',\
+				request_id=request_id, timestamp=int(time()))
+			query_duration = time()-query_start_time
+
+		retry_count += 1
+		if api_response.status_code == requests.codes.retry:
+			request_id = api_response.json()['request_id']
+			sleep(.1 if query_duration > 10. else 10.)
+
+	if api_response.status_code == requests.codes.ok:
+		return api_response.json()
+
+	else:
+		logging.warning(api_response.json())
+
+	return None
 
 
