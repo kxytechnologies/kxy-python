@@ -51,9 +51,10 @@ class MaxEntRegressor(object):
 		corr = data['corr']
 		batch_indices = data['batch_indices']
 		self.corr_train = corr
-		self.train_x_c = x_c
-		self.train_x_d = x_d
-		self.train_y_c = y
+		self.train_x_c = x_c.astype(float)
+		self.train_x_d = x_d.astype(str) if x_d is not None else None
+		self.train_y_c = y.astype(float).flatten()
+
 		self.space = space
 		self.categorical_encoding = categorical_encoding
 		mi_analysis = mutual_information_analysis(corr, output_indices, space=space, batch_indices=batch_indices)

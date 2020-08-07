@@ -46,9 +46,9 @@ class MaxEntClassifier(object):
 			* :code:`'Achievable Accuracy'`: The highest classification accuracy that can be achieved by a classification model using provided inputs to predict the label.
 		"""
 		assert space in ('dual', 'primal')
-		self.train_x_c = x_c
-		self.train_x_d = x_d
-		self.train_y_d = y
+		self.train_x_c = x_c.astype(float)
+		self.train_x_d = x_d.astype(str) if x_d is not None else None
+		self.train_y_d = y.astype(str).flatten()
 		self.space = space
 		self.categorical_encoding = categorical_encoding
 
