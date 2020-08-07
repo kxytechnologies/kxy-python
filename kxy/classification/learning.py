@@ -117,12 +117,13 @@ class MaxEntClassifier(object):
 			space=self.space)
 
 		corr = res['corr']
-		u_x_dict_list = res['u_x_dict_list']
+		u_x_dict_list  = res['u_x_dict_list']
 		output_indices = res['output_indices']
 		batch_indices  = res['batch_indices']
+		problem_type   = res['problem_type']
 
 		predictions = predict_copula_uniform(u_x_dict_list, corr, output_indices, space=self.space, \
-			batch_indices=batch_indices)
+			batch_indices=batch_indices, problem_type=problem_type)
 
 		posterior_mean_u_y = np.array(predictions['posterior_means']).astype(float)
 		posterior_std_u_y = np.array(predictions['posterior_stds']).astype(float)

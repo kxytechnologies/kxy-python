@@ -274,7 +274,8 @@ def robust_pearson_corr_from_spearman(corr):
 
 
 
-def predict_copula_uniform(u_x_dict_list, corr, output_indices, space='dual', batch_indices=[]):
+def predict_copula_uniform(u_x_dict_list, corr, output_indices, space='dual', batch_indices=[], \
+		problem_type='regression'):
 	'''
 	'''
 	c = json.dumps([['%.3f' % corr[i, j]  for j in range(corr.shape[1])] for i in range(corr.shape[0])])
@@ -303,7 +304,7 @@ def predict_copula_uniform(u_x_dict_list, corr, output_indices, space='dual', ba
 
 			logging.debug('Submitting prediction job.')
 			params = {'corr': c, 'output_indices': oi, 'request_id': request_id, 'timestamp': int(time()), \
-				'space': space, 'batch_indices': bi, 'u_x_dict_list': ux
+				'space': space, 'batch_indices': bi, 'u_x_dict_list': ux, 'problem_type': problem_type
 			}
 
 			key = 'rv_predict_full/' + request_id + '.json'

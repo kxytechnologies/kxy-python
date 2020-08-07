@@ -359,6 +359,8 @@ def prepare_test_data_for_prediction(test_x_c, test_x_d, train_x_c, train_x_d, t
 	res['output_indices'] = train_output_indices
 	res['batch_indices'] = train_batch_indices
 	res['u_x_dict_list'] = u_x_dict_list
+	res['problem_type'] = 'regression' if train_y_d is None else 'classification'
+	
 	if train_y_d is not None:
 		train_y_data = train_y_data.astype(int)
 		train_y_d_f = train_y_d.flatten()
