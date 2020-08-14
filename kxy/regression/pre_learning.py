@@ -43,7 +43,7 @@ def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual', c
 
 		* :code:`'Achievable R^2'`: The highest :math:`R^2` that can be achieved by a regression model using provided inputs.
 		* :code:`'Achievable Log-Likelihood Per Sample'`: The highest true log-likelihood per sample that can be achieved by a regression model using provided inputs.
-		
+		* :code:`'Achievable RMSE'`: The lowest RMSE that can be achieved by a regression model using provided inputs.
 
 	.. admonition:: Theoretical Foundation
 
@@ -58,10 +58,12 @@ def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual', c
 	mi_analysis = mutual_information_analysis(corr, output_indices, space=space, batch_indices=batch_indices)
 	mi = mi_analysis['mutual_information']
 	hy = scalar_continuous_entropy(y, space=space)
+	std_y = np.sqrt(np.var(y))
 
 	return pd.DataFrame({\
 		'Achievable R^2': [1.-np.exp(-2.*mi)], \
-		'Achievable True Log-Likelihood Per Sample': [hy-mi]})
+		'Achievable True Log-Likelihood Per Sample': [hy-mi],
+		'Achievable RMSE': std_y*np.exp(-mi)})
 
 
 
@@ -123,8 +125,10 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual', categ
 	if mi_analysis is None:
 		return None
 
+	std_y = np.sqrt(np.var(y))
 	cmis = {}
 	rsqs = {}
+	rmses = {}
 	mis = {}
 	order = {}
 	idx = 1
@@ -138,22 +142,28 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual', categ
 			else:
 				cmis[column] = mi_analysis['conditional_mutual_informations'][str(i)]
 			rsqs[column] = 1.-np.exp(-2.*mis[column])
+			rmses[column] = std_y*np.exp(-mis[column])
 			order[column] = idx
 			idx += 1
 			remaining_columns.remove(column)
 
 	rsq_inc = {}
+	rmse_dec = {}
 	run_mi = 0
 	run_rsqs = {}
+	run_rmses = {}
 	for v, o in sorted(order.items(), key=lambda item: item[1]):
 		run_mi += cmis[v]
 		run_rsqs[o] = 1.-np.exp(-2.*run_mi)
+		run_rmses[o] = std_y*np.exp(-run_mi)
 
 		if rsq_inc == {}:
 			rsq_inc[o] = 1.-np.exp(-2.*cmis[v])
+			rmse_dec[o] = std_y-std_y*np.exp(-cmis[v])
 			
 		else:
 			rsq_inc[o] = run_rsqs[o]-run_rsqs[o-1]
+			rmse_dec[o] = run_rmses[o-1]-run_rmses[o]
 
 	n = y.shape[0]
 	max_r_2 = np.max([_ for _ in run_rsqs.values()])
@@ -166,6 +176,12 @@ def regression_variable_selection_analysis(x_c, y, x_d=None, space='dual', categ
 		'Maximum Marginal R^2 Increase': [rsq_inc[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
 		'Running Achievable R^2': [run_rsqs[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
 		'Running Achievable R^2 (%)': [100.*run_rsqs[o]/max_r_2 for v, o in sorted(order.items(), key=lambda item: item[1])], \
+
+		# Achievable RMSE analysis
+		'Univariate Achievable RMSE': [rmses[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Maximum Marginal RMSE Decrease': [rmse_dec[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Running Achievable RMSE': [run_rmses[o] for v, o in sorted(order.items(), key=lambda item: item[1])], \
+		'Running Achievable RMSE/STD (%)': [100.*run_rmses[o]/std_y for v, o in sorted(order.items(), key=lambda item: item[1])], \
 
 		# Conditional mutual information analysis
 		'Univariate Mutual Information (nats)': [mis[v] for v, o in sorted(order.items(), key=lambda item: item[1])], \

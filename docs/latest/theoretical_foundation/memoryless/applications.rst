@@ -251,6 +251,49 @@ where the second inequality is an equality when the entropy of the *true* data g
 
 
 
+d) Regression Achievable-RMSE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In a regression model :math:`y=f(x) + \epsilon` denoted :math:`\mathcal{M}`, the Root Mean Squared Error (RMSE) is defined as the square root of the mean of the squared error:
+
+.. math::
+
+	RMSE \left(\mathcal{M}\right) &= \sqrt{E\left[\left(y-f(x)\right)^2 \right]} \\
+								  &= \sqrt{\mathbb{V}\text{ar}\left(y \vert f(x)\right) + \left[E\left(y-f(x)\right)\right]^2} \\
+								  &= \sqrt{\mathbb{V}\text{ar}\left(y\right)} \sqrt{\frac{\mathbb{V}\text{ar}\left(y \vert f(x)\right)}{\mathbb{V}\text{ar}\left(y\right)} + \frac{\left[E\left(y-f(x)\right)\right]^2}{\mathbb{V}\text{ar}\left(y\right)}}.
+
+Following the same reasoning as for the achievable-:math:`R^2`, we generalize the ratio :math:`\frac{\mathbb{V}\text{ar}\left(y \vert f(x)\right)}{\mathbb{V}\text{ar}\left(y\right)}` by replacing it by :math:`e^{-2I\left(y; f(x)\right)}`. We obtain
+
+.. math::
+
+	RMSE \left(\mathcal{M}\right) = \sqrt{\mathbb{V}\text{ar}\left(y\right)} \sqrt{e^{-2I\left(y; f(x)\right)} + \frac{\left[E\left(y-f(x)\right)\right]^2}{\mathbb{V}\text{ar}\left(y\right)}}.
+
+
+Note that when :math:`(y, f(x))` is jointly Gaussian (e.g. Gaussian Process regression, including linear regression with Gaussian additive noise), the generalized RMSE above is identical to the original RMSE. It follows from the data processing inequaliy that the smallest RMSE any regression model can achieve is :math:`\bar{RMSE}(x) = e^{-I\left(y; x\right)} \sqrt{\mathbb{V}\text{ar}\left(y\right)}`. This lower bound is reachable (for example when :math:`f(x)=E(y|x)`).
+
+
+
+.. admonition:: Definition
+
+	For any regression model :math:`\mathcal{M}`,
+
+	.. math::
+		:label: min_rmse
+
+		RMSE \left(\mathcal{M}\right) \geq e^{-I\left(y; x\right)} \sqrt{\mathbb{V}\text{ar}\left(y\right)} := \bar{RMSE}(x).
+
+	We refer to :math:`\bar{RMSE}(x)` as the **achievable-RMSE** using inputs :math:`x`.
+
+
+.. note::
+
+	The achievable-RMSE places a hard bound on the performance that can be achieved by any regression model, no matter how deep or fancy. It is solely a function of the mutual information between inputs used and the label :math:`I\left(y; x\right)`, which quantifies how informative inputs are collectively about the label, and the output standard deviation, which is the RMSE of the naive strategy consisting of always predicting :math:`E(y)`.
+
+	As expected, when inputs are not informative about the label, no model, no matter how fancy, can do better than the naive benchmark consisting of always predicting the mean output :math:`f(x) = E(y)`.
+
+	All we need to estimate the achievable-RMSE is an estimator for the mutual information :math:`I\left(y; x\right)`, which we will provide on the following page.
+
+
 2 - Variable Selection Analysis
 -------------------------------
 We consider a supervised learning problem consisting of predicting label :math:`y`. There are :math:`d` candidate inputs or variables, namely :math:`x = (x_1, \dots, x_d)`, that we could use to do so, and our aim is to quantify the maximum value every one of them could bring to the table.
@@ -270,6 +313,16 @@ By applying the results of the section :ref:`1 - Achievable Performance` to each
 		:label: uni_r_2
 
 		\bar{R}^2(x_i) := 1-e^{-2I(y; x_i)}.
+
+
+* **Univariate Achievable-RMSE**: The smallest RMSE that can be achieved by any model solely using input :math:`x_i` is given by 
+
+.. admonition:: Important Equation
+
+	.. math::
+		:label: uni_rmse
+
+		\bar{R}^2(x_i) := e^{-I(y; x_i)} \sqrt{\mathbb{V}\text{ar}\left(y\right)}.
 
 
 * **Univariate Achievable True Log-Likelihood Per Sample:** The highest true log-likelihood per sample that can be achieved by any supervised learning model solely using :math:`x_i` is given by
@@ -354,6 +407,19 @@ The maximum contribution of :math:`\pi_{i+1}` to the achievable-:math:`R^2` is t
 
 
 Note that, as expected, the achievable-:math:`R^2` can never decrease as a result of adding an input. Additionally, it would only increase if the conditional mutual information :math:`I\left(y; x_{\pi_{i+1}} | x_{\pi_1}, \dots, x_{\pi_i}\right)` is strictly positive, meaning :math:`x_{\pi_{i+1}}` is not redundant in light of :math:`x_{\pi_1}, \dots, x_{\pi_i}`. The higher the conditional mutual information the more complementary value the new input is expected to add.
+
+
+Maximum Marginal RMSE Decrease
+******************************
+Following the same reasoning as for the :math:`R^2`, we obtain 
+
+.. admonition:: Important Equation
+
+	.. math::
+		:label: marg_rmse
+		
+		\bar{RMSE}\left( x_{\pi_1}, \dots, x_{\pi_i} \right) - \bar{RMSE}\left( x_{\pi_1}, \dots, x_{\pi_{i+1}} \right) &= \left[e^{-I\left(y; x_{\pi_1}, \dots, x_{\pi_i}\right)} - e^{-I\left(y; x_{\pi_1}, \dots, x_{\pi_{i+1}}\right)}\right]\sqrt{\mathbb{V}\text{ar}\left(y\right)} \\
+		                                                                                                              &= \bar{RMSE}\left( x_{\pi_1}, \dots, x_{\pi_i} \right) \left[1- e^{-I\left(y; x_{\pi_{i+1}} | x_{\pi_1}, \dots, x_{\pi_i}\right)} \right].
 
 
 Maximum Marginal True Log-Likelihood Per Sample Increase 
@@ -498,6 +564,27 @@ As expected, the suboptimality score SO plays a key role in the amount of :math:
 The more suboptimal the trained model is, the more :math:`R^2` was lost by the model.
 
 
+Excess RMSE
+***********
+The smallest RMSE that can be achieved in predicting :math:`y` with :math:`x` is the achievable-RMSE :math:`\bar{RMSE}(x) = e^{-I(y;x)}\sqrt{\mathbb{V}\text{ar}\left(y\right)}`, and the smallest RMSE that can be achieved by predicting :math:`y` with :math:`f(x)` is :math:`RMSE(\mathcal{M}) = e^{-I\left(y;f(x)\right)}\sqrt{\mathbb{V}\text{ar}\left(y\right)}`.
+
+Taking the difference, we get the **Excess RMSE**:
+
+
+.. math::
+
+	RMSE(\mathcal{M}) - \bar{RMSE}(x) &= e^{-I(y;f(x))} \sqrt{\mathbb{V}\text{ar}\left(y\right)} \left[1 - e^{- \left[I(y;x)-I(y;f(x)) \right]} \right] \\
+												 &= RMSE(\mathcal{M}) \left[1 - e^{-SO(\mathcal{M})}\right].
+
+
+.. admonition:: Important Equation
+
+	.. math::
+		:label: exc_rmse
+
+		\bar{RMSE}(x) - RMSE(\mathcal{M}) = RMSE(\mathcal{M}) \left[1 - e^{-SO(\mathcal{M})}\right]
+
+
 
 
 Lost True Log-Likelihood Per Sample
@@ -553,6 +640,21 @@ The residual :math:`R^2` reads
 
 		\text{Residual-}R^2\left(\mathcal{M}\right) &= 1-e^{-2I(y-f(x); x)} \\
 															 &= 1-e^{-2\text{ASO}(\mathcal{M})}.
+
+
+Residual RMSE
+**************
+
+The residual RMSE reads
+
+
+.. admonition:: Important Equation
+
+	.. math::
+		:label: res_rmse
+
+		\text{Residual-RMSE}\left(\mathcal{M}\right) &= e^{-I(y-f(x); x)} \sqrt{\mathbb{V}\text{ar}\left(y-f(x)\right)}  \\
+															 &= e^{-\text{ASO}(\mathcal{M})}\sqrt{\mathbb{V}\text{ar}\left(y-f(x)\right)}.
 
 
 Residual Log-Likelihood

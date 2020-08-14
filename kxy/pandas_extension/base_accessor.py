@@ -125,7 +125,7 @@ class BaseAccessor(object):
 			print('---------' + '-'.join(['' for c in col]))
 			if self._obj.kxy.is_categorical(col):
 				print('Type:      Categorical')
-				labels, counts = np.unique(self._obj[col].values, return_counts=True)
+				labels, counts = np.unique(self._obj[col].values.astype(str), return_counts=True)
 				labels_with_counts = [(labels[i], 100.*counts[i]/self._obj.shape[0]) \
 									  for i in range(len(labels))]
 				labels_with_counts = sorted(labels_with_counts, key=lambda x: -x[1])

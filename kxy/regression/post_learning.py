@@ -40,9 +40,9 @@ def regression_model_improvability_analysis(x_c, y_p, y, x_d=None, space='dual',
 
 		Dataframe with columns:
 
-		* :code:`'Leftover R^2'`: The amount by which the trained model's :math:`R^2` can still be improved without resorting to additional inputs, simply through better modeling.
-		* :code:`'Leftover Log-Likelihood Per Sample'`: The amount by which the trained model's true log-likelihood per sample can still be increased without resorting to additional inputs, simply through better modeling.
-
+		* :code:`'Lost R^2'`: The amount by which the trained model's :math:`R^2` can still be improved without resorting to additional inputs, simply through better modeling.
+		* :code:`'Lost Log-Likelihood Per Sample'`: The amount by which the trained model's true log-likelihood per sample can still be increased without resorting to additional inputs, simply through better modeling.
+		* :code:`'Excess RMSE'`: The amount by which the trained model's RMSE can still be reduced without resorting to additional inputs, simply through better modeling.
 
 	.. admonition:: Theoretical Foundation
 
@@ -52,7 +52,10 @@ def regression_model_improvability_analysis(x_c, y_p, y, x_d=None, space='dual',
 	achieved_perf   = regression_achievable_performance_analysis(y_p, y, x_d=None, space=space, categorical_encoding=categorical_encoding)
 	
 	improvable_perf = achievable_perf-achieved_perf
+	improvable_perf['Achievable RMSE'] = -improvable_perf['Achievable RMSE']
+
 	improvable_perf.rename(columns={col: col.replace('Achievable', 'Lost') for col in improvable_perf.columns}, inplace=True)
+	improvable_perf.rename(columns={'Lost RMSE': 'Excess RMSE'}, inplace=True)
 	improvable_perf = np.maximum(improvable_perf, 0.0)
 
 	residual_perf = regression_achievable_performance_analysis(x_c, y-y_p, x_d=x_d, space=space, categorical_encoding=categorical_encoding)
