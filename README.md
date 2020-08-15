@@ -7,7 +7,7 @@
 # KXY: A Powerful Serverless Analysis Toolkit That Takes *Trial And Error* Out of Machine Learning Projects
 [![License](https://img.shields.io/badge/license-AGPLv3%2B-blue)](https://github.com/kxytechnologies/kxy-python/blob/master/LICENSE)
 [![PyPI Latest Release](https://img.shields.io/pypi/v/kxy.svg)](https://www.kxy.ai/)
-[![Downloads](https://img.shields.io/pypi/dm/kxy.svg)](https://www.kxy.ai/)
+[![Downloads](https://pepy.tech/badge/kxy)](https://www.kxy.ai/)
 
 
 ## Documentation
