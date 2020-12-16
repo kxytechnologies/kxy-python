@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
 from kxy.api.core import auto_predictability
 
@@ -163,7 +162,12 @@ class PreLearningAccessor(BaseAccessor):
 		res['Variable'] = res['Variable'].map({i: variable_columns[i] for i in range(len(variable_columns))})
 		res.set_index(['Variable'], inplace=True)
 
-		cm = sns.light_palette("green", as_cmap=True)
+		try:
+			import seaborn as sns
+			cm = sns.light_palette("green", as_cmap=True)
+		except:
+			pass
+
 		res = res.style.background_gradient(cmap=cm)
 
 		return res
@@ -290,7 +294,12 @@ class PreLearningAccessor(BaseAccessor):
 		imp_perf = new_perf-old_perf
 		imp_perf.rename(columns={col: col.replace('Achievable', 'Increased Achievable') for col in imp_perf.columns}, inplace=True)
 
-		cm = sns.light_palette("green", as_cmap=True)
+		try:
+			import seaborn as sns
+			cm = sns.light_palette("green", as_cmap=True)
+		except:
+			pass
+
 		imp_perf = imp_perf.style.background_gradient(cmap=cm)
 
 		return imp_perf

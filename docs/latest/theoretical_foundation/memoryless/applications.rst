@@ -160,7 +160,7 @@ All possible values for :math:`h` lie in :math:`[0, \log q]`. [*]_ Let us denote
 
 	\bar{h}_q(a) = -a \log a -(1-a) \log \left(\frac{1-a}{q-1}\right), ~~~~ a \geq \frac{1}{q}.
 
-A simple study of the function :math:`a \to \bar{h}_q(a)` shows that it is differentiable, decreasing, convex, and invertible on :math:`\Big[\frac{1}{q}, 1\Big]`, and the image of :math:`\Big[\frac{1}{q}, 1\Big]` is :math:`[0, \log q]`; which is what we needed to show.
+A simple study of the function :math:`a \to \bar{h}_q(a)` shows that it is differentiable, decreasing, concave, and invertible on :math:`\Big[\frac{1}{q}, 1\Big]`, and the image of :math:`\Big[\frac{1}{q}, 1\Big]` is :math:`[0, \log q]`; which is what we needed to show.
 
 Putting everything together, for a given entropy :math:`h` the best accuracy that can be achieved by predicting an outcome of any discrete distribution taking :math:`q` distinct values, and that has entropy :math:`h` is given by
 
@@ -221,7 +221,7 @@ It follows from the previous analysis that its highest outcome probability is gr
 	
 	\bar{h}_q^{-1}\left(h(y|x=*)\right) \geq  \underset{i \in [1..q]}{\operatorname{max}} \mathbb{P}(y=i | x=*),
 
-with equality when the *true* data generating predictive distribution happens to make no distinction between the :math:`(q-1)` least likely outcomes. Additionally, it follows from the convexity of :math:`\bar{h}_q^{-1}` that
+with equality when the *true* data generating predictive distribution happens to make no distinction between the :math:`(q-1)` least likely outcomes. Additionally, it follows from the concavity of :math:`\bar{h}_q^{-1}` that
 
 .. math::
 

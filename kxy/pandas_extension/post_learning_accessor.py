@@ -3,7 +3,6 @@
 
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
 from kxy.api.core import auto_predictability, prepare_data_for_mutual_info_analysis
 
@@ -159,7 +158,12 @@ class PostLearningAccessor(BaseAccessor):
 		res['Variable'] = res['Variable'].map({i: variable_columns[i] for i in range(len(variable_columns))})
 		res.set_index(['Variable'], inplace=True)
 
-		cm = sns.light_palette("green", as_cmap=True)
+		try:
+			import seaborn as sns
+			cm = sns.light_palette("green", as_cmap=True)
+		except:
+			pass
+			
 		res = res.style.background_gradient(cmap=cm)
 
 		return res
