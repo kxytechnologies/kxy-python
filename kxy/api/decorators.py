@@ -24,7 +24,7 @@ def get_api_key():
 			existing_key = config.get('KXY_API_KEY', None)
 			return existing_key
 	except:
-		return None
+		return os.environ.get('KXY_API_KEY', None)
 
 	return None
 
