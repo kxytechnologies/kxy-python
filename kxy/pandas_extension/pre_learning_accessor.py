@@ -165,10 +165,9 @@ class PreLearningAccessor(BaseAccessor):
 		try:
 			import seaborn as sns
 			cm = sns.light_palette("green", as_cmap=True)
+			res = res.style.background_gradient(cmap=cm)
 		except:
-			pass
-
-		res = res.style.background_gradient(cmap=cm)
+			res = res.style.background_gradient()
 
 		return res
 
@@ -297,9 +296,8 @@ class PreLearningAccessor(BaseAccessor):
 		try:
 			import seaborn as sns
 			cm = sns.light_palette("green", as_cmap=True)
+			imp_perf = imp_perf.style.background_gradient(cmap=cm)
 		except:
-			pass
-
-		imp_perf = imp_perf.style.background_gradient(cmap=cm)
+			imp_perf = imp_perf.style.background_gradient()		
 
 		return imp_perf

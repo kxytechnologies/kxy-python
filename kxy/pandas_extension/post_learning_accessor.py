@@ -161,10 +161,10 @@ class PostLearningAccessor(BaseAccessor):
 		try:
 			import seaborn as sns
 			cm = sns.light_palette("green", as_cmap=True)
+			res = res.style.background_gradient(cmap=cm)
 		except:
-			pass
+			res = res.style.background_gradient()
 			
-		res = res.style.background_gradient(cmap=cm)
 
 		return res
 
