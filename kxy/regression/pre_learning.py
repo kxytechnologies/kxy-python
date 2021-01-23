@@ -62,7 +62,7 @@ def regression_achievable_performance_analysis(x_c, y, x_d=None, space='dual', c
 
 	return pd.DataFrame({\
 		'Achievable R^2': [1.-np.exp(-2.*mi)], \
-		'Achievable Log-Likelihood Per Sample': [hy-mi],
+		'Achievable Log-Likelihood Per Sample': [mi-hy],
 		'Achievable RMSE': std_y*np.exp(-mi)})
 
 
