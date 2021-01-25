@@ -28,7 +28,7 @@ All heavy-duty computations are run on our serverless infrastructure and require
 ```Bash
 kxy configure
 ```
-and follow the instructions. To request a demo and get a trial API key, [contact us.](https://www.kxy.ai/request-a-trial)
+and follow the instructions. To get an API key you need an account; you can sign up for a free trial [here](https://www.kxy.ai/signup/). You'll then be automatically given an API key which you can find [here](https://www.kxy.ai/portal/profile/identity/).
 
 
 ## Docker
