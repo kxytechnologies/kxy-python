@@ -425,7 +425,7 @@ Now that we are equipped with the right tools, we can answer the question that i
 
 .. [*] See Theorem 9.2.2 in [1]_.
 
-.. [*] :math:`1 \text{nat} = (1/\log2) \text{bits} \approx 3.32 \text{bits}`
+.. [*] :math:`1 \text{nat} = (1/\log2) \text{bits} \approx 1.44 \text{bits}`
 
 .. [*] Hint: Use Definition (8.54) in [1]_ and note that there is a one-to-one map between partitions of the range of :math:`x` (resp. :math:`y`) and partitions of the range of :math:`f(x)` (resp. :math:`g(y)`), and that the mutual informations of the associated quantized variables are the same.
 
