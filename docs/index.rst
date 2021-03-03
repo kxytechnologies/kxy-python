@@ -13,7 +13,7 @@ A Powerful Serverless Analysis Toolkit That Takes *Trial And Error* Out of Machi
 .. image:: https://img.shields.io/pypi/v/kxy.svg
    :alt: PyPI Latest Release
    :target: https://pypi.org/project/kxy/
-.. image:: https://img.shields.io/pypi/dm/kxy.svg
+.. image:: https://pepy.tech/badge/kxy
    :alt: Downloads
    :target: https://github.com/kxytechnologies/kxy-python/
 
