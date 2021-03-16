@@ -99,13 +99,3 @@ def upload_data(df):
 	return None
 
 
-
-
-if __name__ == '__main__':
-	import kxy
-	df = pd.read_csv('kaggle_house_prices_advanced_regression.csv')
-	print(upload_data(df))
-
-	# print(generate_upload_url('testing123').json())
-
-

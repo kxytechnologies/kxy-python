@@ -33,7 +33,3 @@ def get_upcoming_invoice():
 	except:
 		logging.exception('Failed to retrieve your upcoming invoice.')
 		return {}
-
-
-if __name__ == '__main__':
-	print(get_upcoming_invoice())
