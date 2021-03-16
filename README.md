@@ -5,7 +5,7 @@
 -----------------
 
 # KxY: The Lean AutoML Platform
-[![License](https://img.shields.io/badge/license-AGPLv3%2B-blue)](https://github.com/kxytechnologies/kxy-python/blob/master/LICENSE)
+[![License](https://img.shields.io/badge/license-GPLv3%2B-blue)](https://github.com/kxytechnologies/kxy-python/blob/master/LICENSE)
 [![PyPI Latest Release](https://img.shields.io/pypi/v/kxy.svg)](https://www.kxy.ai/)
 [![Downloads](https://pepy.tech/badge/kxy)](https://www.kxy.ai/)
 
