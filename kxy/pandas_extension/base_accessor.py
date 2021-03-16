@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import hashlib
 import numpy as np
 import pandas as pd
-
-from kxy.api import mutual_information_analysis
-from kxy.api.core import prepare_data_for_mutual_info_analysis, spearman_corr, pearson_corr
-
-from kxy.asset_management import information_adjusted_correlation, robust_pearson_corr
 
 
 class BaseAccessor(object):
@@ -18,103 +13,34 @@ class BaseAccessor(object):
 		self._obj = pandas_obj
 
 
-	def corr(self, columns=(), method='information-adjusted', min_periods=1, p=0, p_ic='hqic'):
-		"""
-		Calculates the auto-correlation matrix of all columns or the input subset.
-
-
-		Parameters
-		----------
-		columns : set, optional
-			The set of columns to use. If not provided, all columns are used.
-		method : str, optional
-			Which method to use to calculate the auto-correlation matrix. Supported
-			values are 'information-adjusted' (the default) and all 'method' values of pandas.DataFrame.corr.
-		p : int, optional
-			The number of auto-correlation lags to use as empirical evidence in the maximum-entropy problem. 
-			The default value is 0, which corresponds to assuming rows are i.i.d. Values other than 0 are only
-			supported in the robust-pearson method. When p is None, it is inferred from the sample.
-		min_periods : int, optional
-			Only used when method is not 'information-adjusted'. 
-			See the documentation of pandas.DataFrame.corr.
-		p_ic : str
-			The criterion used to learn the optimal value of :code:`p` (by fitting a VAR(p) model) when :code:`p=None`. Should be one of 'hqic' (Hannan-Quinn Information Criterion), 'aic' (Akaike Information Criterion), 'bic' (Bayes Information Criterion) and 't-stat' (based on last lag). Same as the 'ic' parameter of :code:`statsmodels.tsa.api.VAR`.
-
-
-
-		Returns
-		-------
-		c : pandas.DataFrame
-			The auto-correlation matrix.
-
-
-		.. seealso::
-
-			:ref:`kxy.finance.risk_analysis.information_adjusted_correlation <information-adjusted-correlation>`
-			:ref:`kxy.finance.risk_analysis.robust_pearson_corr <robust-pearson-corr>`
-		"""
-		columns = self._obj.columns if columns == () else list(columns)
-
-		if method == 'information-adjusted':
-			c = information_adjusted_correlation(self._obj[columns].values, y=None)
-			return pd.DataFrame(c, columns=columns, index=columns)
-
-		if method == 'robust-pearson':
-			c = robust_pearson_corr(self._obj[columns].values, y=None, p=p, p_ic=p_ic)
-			return pd.DataFrame(c, columns=columns, index=columns)
-
-		if method == 'spearman':
-			c = spearman_corr(self._obj[columns].values)
-			return pd.DataFrame(c, columns=columns, index=columns)
-
-		if method == 'pearson':
-			c = pearson_corr(self._obj[columns].values)
-			return pd.DataFrame(c, columns=columns, index=columns)
-
-		else:
-			return pd.DataFrame.corr(self._obj[columns], method=method, min_periods=min_periods)
-
-
 	def is_discrete(self, column):
 		"""
-		Determine whether the input column contains discrete observations.
+		Determine whether the input column contains discrete (i.e as opposed to continuous) observations.
 		"""
-		ret = (not np.can_cast(self._obj[column].values, float))
-		ret = ret or len(list(set(self._obj[column].values))) < 0.5*self._obj.shape[0]
+		if self.is_categorical(column):
+			return True
 
-		return ret
+		n = self._obj.shape[0]
+		values, counts = np.unique(self._obj[column].values, return_counts=True)
+		unique_n = len(values)
+
+		if unique_n < 0.05*n:
+			return True
+
+		counts = np.array(list(sorted(counts)))
+		if np.sum(counts[-10:]) > 0.8*n:
+			return True
+
+		return False
 
 
 	def is_categorical(self, column):
 		"""
-		Determine whether the input column contains categorical observations.
+		Determine whether the input column contains categorical (i.e. non-ordinal) observations.
 		"""
 		ret = (not np.can_cast(self._obj[column].values, float))
 
 		return ret
-
-
-	def _mutual_information_analysis(self, label_column, input_columns=(), space='dual', \
-		categorical_encoding="two-split", non_monotonic_extension=True):
-		"""
-		"""
-		columns = input_columns if len(input_columns) > 0 else [_ for _ in self._obj.columns if _ != label_column]
-		cont_columns =  [col for col in columns if not self.is_categorical(col)]
-		cat_columns = [col for col in columns if self.is_categorical(col)]
-
-		x_c = self._obj[cont_columns].values if len(cont_columns) > 0 else None
-		x_d = self._obj[cat_columns].values if len(cat_columns) > 0 else None
-		y_c = None if self.is_categorical(label_column) else self._obj[label_column].values
-		y_d = None if not self.is_categorical(label_column) else self._obj[label_column].values
-
-		res = prepare_data_for_mutual_info_analysis(x_c, x_d, y_c, y_d, space=space, \
-			non_monotonic_extension=non_monotonic_extension, categorical_encoding=categorical_encoding)
-		output_indices = res['output_indices']
-		corr = res['corr']
-		batch_indices = res['batch_indices']
-		mi_ana = mutual_information_analysis(corr, output_indices, space=space, batch_indices=batch_indices)
-
-		return mi_ana, res
 
 
 	def describe(self,):
@@ -137,14 +63,63 @@ class BaseAccessor(object):
 						print('Other Labels: %.2f%%' % (100.-tot))
 						break
 			else:
+				m   = self._obj[col].min()
+				M   = self._obj[col].max()
+				mn  = self._obj[col].mean()
+				q50 = self._obj[col].median()
+				q25 = self._obj[col].quantile(0.25)
+				q75 = self._obj[col].quantile(0.75)
+
 				print('Type:   Continuous')
-				print('Max:    %.4f' % self._obj[col].max())
-				print('Mean:   %.4f' % self._obj[col].mean())
-				print('Median: %.4f' % self._obj[col].median())
-				print('Min:    %.4f' % self._obj[col].min())  
+				print('Max:    %s' % ('%.1f' % M if M < 10. else '{:,}'.format(int(M))))
+				print('p75:    %s' % ('%.1f' % q75 if q75 < 10. else '{:,}'.format(int(q75))))
+				print('Mean:   %s' % ('%.1f' % mn if mn < 10. else '{:,}'.format(int(mn))))
+				print('Median: %s' % ('%.1f' % q50 if q50 < 10. else '{:,}'.format(int(q50))))
+				print('p25:    %s' % ('%.1f' % q25 if q25 < 10. else '{:,}'.format(int(q25))))
+				print('Min:    %s' % ('%.1f' % m if m < 10. else '{:,}'.format(int(m))))
+
+
+	def anonymize(self, columns_to_exclude=[]):
+		"""
+		Anonymize the dataframe in a manner that leaves all pre-learning and post-learning analyses (including data valuation, variable selection, model-driven improvability, data-driven improvability and model explanation) invariant.
+
+		Any transformation on continuous variables that preserves ranks will not change our pre-learning and post-learning analyses. The same holds for any 1-to-1 transformation on categorical variables.
+
+		This implementation replaces ordinal values (i.e. any column that can be cast as a float) with their within-column ranks. For each non-ordinal column, we form the set of all possible values, we assign a unique integer index to each value in the set, and we systematically replace said value appearing in the dataframe by the hexadecimal code of its associated integer index. 
+
+		For regression problems, accurate estimation of RMSE related metrics require the target column (and the prediction column for post-learning analyses) not to be anonymized.
+
+
+		Parameters
+		----------
+		columns_to_exclude: list (optional)
+			List of columns not to anonymize (e.g. target and prediction columns for regression problems).
+
+
+		Returns
+		-------
+		result : pandas.DataFrame
+			The result is a pandas.Dataframe with columns (where applicable):
+		"""
+		df = self._obj.copy()
+		for col in df.columns:
+			if col in columns_to_exclude:
+				continue
+
+			if df.kxy.is_categorical(col):
+				unique_values = list(sorted(set(list(df[col].values))))
+				mapping = {unique_values[i]: "0x{:03x}".format(i) for i in range(len(unique_values))}
+				df[col] = df[col].apply(lambda x: mapping.get(x))
+			else:
+				df[col] = 1+np.argsort(np.argsort(df[col].values))
+
+		return df
+
 
 
 	def __hash__(self):
-		return hash(self._obj.to_string())
+		return hashlib.sha256(self._obj.to_string().encode()).hexdigest()
+
+
 
 

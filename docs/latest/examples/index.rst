@@ -3,64 +3,22 @@
 	:keywords:  KXY Tutorials, KXY Examples.
 	:http-equiv=content-language: en
 
+
+
 Classification Examples
 -----------------------
 
-I - Classification Pre-Learning
-*******************************
-
-* :ref:`Model-Free Classification Variable Selection Explained`
-
-* :ref:`Calculating the Best Performance Achievable in a Classification Problem`
-
-* :ref:`Understanding Factors Influencing US Household Income`
-
-
-II - Classification Post-Learning
-*********************************
-
-* :ref:`Can a Trained Classification Model Be Improved Without Additional Variables?`
-
-
+* :ref:`Toy Visual Classification Example`
+* :ref:`Classification Problem With Some Useless Variables`
+* :ref:`Complex Classification Example`
+* :ref:`How To Anonymize Your Data`
 
 
 Regression Examples
 -------------------
+* :ref:`Toy 1D Regression Examples`
+* :ref:`Regression Problem With Some Useless Variables`
+* :ref:`Complex Regression Example`
+* :ref:`How To Anonymize Your Regression Data`
 
-I - Regression Pre-Learning
-***************************
-
-* :ref:`Model-Free Regression Variable Selection Explained`
-
-* :ref:`Calculating the Best Performance Achievable in a Regression Problem`
-
-
-
-II - Regression Post-Learning
-*****************************
-
-
-* :ref:`Can a Trained Regression Model Be Improved Without Additional Variables?`
-
-
-
-
-Asset Management Examples
--------------------------
-
-* :ref:`Outliers & Nonlinearity Robust Risk Analysis`
-
-* :ref:`Memory-Robust Risk Analysis`
-
-
-
-
-Coming Up Soon
---------------
-
-* :ref:`Alternative Dataset Valuation` 
-
-* :ref:`How to Make Sense of a Complex Classification/Regression Model?`
-
-* :ref:`How to Quantify Bias in a Trained Classification/Regression Model?`
 

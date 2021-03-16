@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Copyright (C) 2020 KXY TECHNOLOGIES, INC.
+Copyright (C) 2021 KXY TECHNOLOGIES, INC.
 Author: Dr Yves-Laurent Kom Samo
 
 This program is free software: you can redistribute it and/or modify

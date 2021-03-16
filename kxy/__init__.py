@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 __version__ = "0.3.4"
 
 from kxy.api import *
-from kxy.regression import *
-from kxy.classification import *
-from kxy.asset_management import *
+from kxy.pre_learning import *
+from kxy.post_learning import *
 from kxy.pandas_extension import *
+from kxy.billing import * 

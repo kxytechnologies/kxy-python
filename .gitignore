@@ -134,3 +134,7 @@ lambdas/
 learners/
 
 .DS_Store
+
+*.csv
+*.pkl
+local_*.py
