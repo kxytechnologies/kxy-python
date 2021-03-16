@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-import numpy as np
 import pandas as pd
 
-from kxy.api.core import auto_predictability, prepare_data_for_mutual_info_analysis
-
-from kxy.classification import classification_model_improvability_analysis, \
-	classification_model_explanation_analysis, classification_bias
-
-from kxy.regression import regression_model_improvability_analysis, \
-	regression_model_explanation_analysis, regression_bias
+from kxy.api import upload_data
+from kxy.post_learning import data_driven_improvability as ddi
+from kxy.post_learning import model_driven_improvability as mdi
+from kxy.post_learning import model_explanation as me
 
 from .base_accessor import BaseAccessor
-
 
 @pd.api.extensions.register_dataframe_accessor("kxy_post_learning")
 class PostLearningAccessor(BaseAccessor):
@@ -25,192 +19,139 @@ class PostLearningAccessor(BaseAccessor):
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_post_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
 
-	def model_improvability_analysis(self, label_column, model_prediction_column, input_columns=(), 
-			space='dual', categorical_encoding='two-split', problem=None):
+	def data_driven_improvability(self, target_column, new_variables, problem_type=None):
 		"""
-		Runs the model improvability analysis on a trained supervised learning model.
-
-		The nature of the supervised learning problem (i.e. regression or classification) is inferred from whether or not :code:`label_column` is categorical.
+		Estimate the potential performance boost that a set of new explanatory variables can bring about.
 
 
 		Parameters
 		----------
-		label_column : str
+		target_column : str
 			The name of the column containing true labels.
-		model_prediction_column : str
-			The name of the column containing labels predicted by the model.
-		input_columns : set
-			List of columns to use as inputs. When an empty set/list is provided, all columns but :code:`model_prediction_column` and :code:`label_column` are used as inputs.
-		space : str, 'primal' | 'dual'
-			The space in which the maximum entropy problem is solved. 
-			When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
-			When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-		categorical_encoding : str, 'one-hot' | 'two-split' (default)
-			The encoding method to use to represent categorical variables. 
-			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
-		problem : None | 'classification' | 'regression'
-			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
+		new_variables : list
+			The names of the columns to use as new explanatory variables.
+		problem_type : None | 'classification' | 'regression'
+			The type of supervised learning problem. When None, it is inferred from whether or not :code:`target_column` is categorical.
+
 
 
 		Returns
 		-------
-		res : pandas.Styler
-			res.data is a pandas.Dataframe with columns (where applicable):
+		result : pandas.Dataframe
+			The result is a pandas.Dataframe with columns (where applicable):
 
-				* :code:`'Leftover R^2'`: The amount by which the trained model's :math:`R^2` can still be increased without resorting to additional inputs, simply through better modeling.
-				* :code:`'Leftover Log-Likelihood Per Sample'`: The amount by which the trained model's true log-likelihood per sample can still be increased without resorting to additional inputs, simply through better modeling.
-				* :code:`'Leftover Accuracy'`: The amount by which the trained model's classification accuracy can still be increased without resorting to additional inputs, simply through better modeling.
+			* :code:`'Accuracy Boost'`: The classification accuracy boost that the new explanatory variables can bring about.
+			* :code:`'R-Squared Boost'`: The :math:`R^2` boost that the new explanatory variables can bring about.
+			* :code:`'RMSE Reduction'`: The reduction in Root Mean Square Error that the new explanatory variables can bring about.
+			* :code:`'Log-Likelihood Per Sample Boost'`: The boost in log-likelihood per sample that the new explanatory variables can bring about.
 
 
 		.. admonition:: Theoretical Foundation
 
 			Section :ref:`3 - Model Improvability`.
 
+
 		.. seealso::
 
-			* :ref:`kxy.regression.regression_model_improvability_analysis <regression-model-improvability-analysis>`
-			* :ref:`kxy.classification.classification_model_improvability_analysis <classification-model-improvability-analysis>`
+			:ref:`kxy.post_learning.improvability.data_driven_improvability <data-driven-improvability>`
+
 		"""
-		if problem is None:
-			problem = 'classification' if self.is_discrete(label_column) else 'regression'
+		if problem_type is None:
+			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
-		columns = [col for col in self._obj.columns if col != label_column and col != model_prediction_column] \
-			if len(input_columns) == 0 else input_columns
-		discrete_columns = [col for col in columns if self.is_categorical(col)]
-		continuous_columns =  [col for col in columns if not self.is_categorical(col)]
-
-		y = self._obj[label_column].values
-		y_p = self._obj[model_prediction_column].values
-		x_c = self._obj[continuous_columns].values.astype(float) if len(continuous_columns) > 0 else None
-		x_d = self._obj[discrete_columns].values.astype(str) if len(discrete_columns) > 0 else None
-
-		res = regression_model_improvability_analysis(x_c, y_p, y, x_d=x_d, space=space, \
-				categorical_encoding=categorical_encoding) if problem == 'regression' \
-			else classification_model_improvability_analysis(x_c, y_p, y, x_d=x_d, space=space, \
-				categorical_encoding=categorical_encoding)
-		res = res.style.hide_index()
-
-		return res
+		return ddi(self._obj, target_column, new_variables, problem_type)
 
 
-
-	def model_explanation_analysis(self, model_prediction_column, input_columns=(), space='dual', categorical_encoding='two-split', problem=None):
+	def model_driven_improvability(self, target_column, prediction_column, problem_type=None):
 		"""
-		Runs the model explanation analysis on a trained supervised learning model.
+		Estimate the extent to which a trained supervised learner may be improved in a model-driven fashion (i.e. without resorting to additional explanatory variables).
 
-		The nature of the supervised learning problem (i.e. regression or classification) is inferred from whether or not :code:`model_prediction_column` is categorical.
 
 		Parameters
 		----------
-		model_prediction_column : str
-			The name of the column containing predicted labels.
-		input_columns : set
-			List of columns to use as inputs. When an empty set/list is provided, all columns but :code:`model_prediction_column` are used as inputs.
-		space : str, 'primal' | 'dual'
-			The space in which the maximum entropy problem is solved. 
-			When :code:`space='primal'`, the maximum entropy problem is solved in the original observation space, under Pearson covariance constraints, leading to the Gaussian copula.
-			When :code:`space='dual'`, the maximum entropy problem is solved in the copula-uniform dual space, under Spearman rank correlation constraints.
-		categorical_encoding : str, 'one-hot' | 'two-split' (default)
-			The encoding method to use to represent categorical variables. 
-			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
-		problem : None | 'classification' | 'regression'
-			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
+		target_column : str
+			The name of the column containing true labels.
+		prediction_column : str
+			The name of the column containing model predictions.
+		problem_type : None | 'classification' | 'regression'
+			The type of supervised learning problem. When None, it is inferred from whether or not :code:`target_column` is categorical.
+
 
 
 		Returns
 		-------
-		res : pandas.Styler
-			res.data is a pandas.Dataframe with columns:
+		result : pandas.Dataframe
+			The result is a pandas.Dataframe with columns (where applicable):
 
-				* :code:`'Variable'`: The column name corresponding to the input variable.
-				* :code:`'Selection Order'`: The order in which the associated variable was selected, starting at 1 for the most important variable.
-				* :code:`'Univariate Explained R^2'`: The :math:`R^2` between predicted labels and this variable.
-				* :code:`'Running Explained R^2'`: The :math:`R^2` between predicted labels and all variables selected so far, including this one.
-				* :code:`'Marginal Explained R^2'`: The increase in :math:`R^2` between predicted labels and all variables selected so far that is due to adding this variable in the selection scheme.
+			* :code:`'Lost Accuracy'`: The amount of classification accuracy that was irreversibly lost when training the supervised learner.
+			* :code:`'Lost R-Squared'`: The amount of :math:`R^2` that was irreversibly lost when training the supervised learner.
+			* :code:`'Lost RMSE'`: The amount of Root Mean Square Error that was irreversibly lost when training the supervised learner.		
+			* :code:`'Lost Log-Likelihood Per Sample'`: The amount of true log-likelihood per sample that was irreversibly lost when training the supervised learner.
 
+			* :code:`'Residual R-Squared'`: For regression problems, this is the highest :math:`R^2` that may be achieved when using explanatory variables to predict regression residuals.
+			* :code:`'Residual RMSE'`: For regression problems, this is the lowest Root Mean Square Error that may be achieved when using explanatory variables to predict regression residuals.
+			* :code:`'Residual Log-Likelihood Per Sample'`: For regression problems, this is the highest log-likelihood per sample that may be achieved when using explanatory variables to predict regression residuals.
 
 
 		.. admonition:: Theoretical Foundation
 
-			Section :ref:`a) Model Explanation`.
+			Section :ref:`3 - Model Improvability`.
+
 
 		.. seealso::
 
-			* :ref:`kxy.regression.regression_model_explanation_analysis <regression-model-explanation-analysis>`
-			* :ref:`kxy.classification.classification_model_explanation_analysis <classification-model-explanation-analysis>`
+			:ref:`kxy.post_learning.improvability.model_driven_improvability <model-driven-improvability>`
+
 		"""
-		if problem is None:
-			problem = 'classification' if self.is_discrete(model_prediction_column) else 'regression'
+		if problem_type is None:
+			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
-		columns = [col for col in self._obj.columns if col != model_prediction_column] if len(input_columns) == 0\
-			else input_columns
-		discrete_columns = [col for col in columns if self.is_categorical(col)]
-		continuous_columns =  [col for col in columns if not self.is_categorical(col)]
+		return mdi(self._obj, target_column, prediction_column, problem_type)
 
-		f_x = self._obj[model_prediction_column].values
-		x_c = self._obj[continuous_columns].values.astype(float) if len(continuous_columns) > 0 else None
-		x_d = self._obj[discrete_columns].values.astype(str) if len(discrete_columns) > 0 else None
 
-		res = regression_model_explanation_analysis(x_c, f_x, x_d=x_d, space=space, categorical_encoding=categorical_encoding) if problem == 'regression' \
-			else classification_model_explanation_analysis(x_c, f_x, x_d=x_d, space=space, categorical_encoding=categorical_encoding)
+	def model_explanation(self, prediction_column, problem_type=None):
+		"""
+		Analyzes the variables that a model relies on the most in a brute-force fashion.
+		
+		The first variable is the variable the model relies on the most. The second variable is the variable that complements the first variable the most in explaining model decisions etc.
 
-		variable_columns = continuous_columns + discrete_columns
-		res['Variable'] = res['Variable'].map({i: variable_columns[i] for i in range(len(variable_columns))})
-		res.set_index(['Variable'], inplace=True)
+		Running performances should be understood as the performance achievable when trying to guess model predictions using variables with selection order smaller or equal to that of the row.
 
-		try:
-			import seaborn as sns
-			cm = sns.light_palette("green", as_cmap=True)
-			res = res.style.background_gradient(cmap=cm)
-		except:
-			res = res.style.background_gradient()
+		When :code:`problem_type=None`, the nature of the supervised learning problem (i.e. regression or classification) is inferred from whether or not :code:`target_column` is categorical.
+
+
+		Parameters
+		----------
+		target_column : str
+			The name of the column containing true labels.
+		problem_type : None | 'classification' | 'regression'
+			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
+
+		Returns
+		-------
+		result : pandas.DataFrame
+			The result is a pandas.Dataframe with columns (where applicable):
+
+			* :code:`'Selection Order'`: The order in which the associated variable was selected, starting at 1 for the most important variable.
+			* :code:`'Variable'`: The column name corresponding to the input variable.
+			* :code:`'Running Achievable R^2'`: The highest :math:`R^2` that can be achieved by a classification model using all variables selected so far, including this one.
+			* :code:`'Running Achievable Accuracy'`: The highest classification accuracy that can be achieved by a classification model using all variables selected so far, including this one.
+			* :code:`'Running Achievable RMSE'`: The highest classification accuracy that can be achieved by a classification model using all variables selected so far, including this one.
+
+
+		.. admonition:: Theoretical Foundation
+
+			Section :ref:`2 - Variable Selection Analysis`.
+
+
+		.. seealso::
+
+			:ref:`kxy.post_learning.model_explanation.model_explanation <variable-selection>`
 			
-
-		return res
-
-
-
-	def bias(self, bias_source_column, model_prediction_column, linear_scale=True, categorical_encoding='two-split', problem=None):
 		"""
-		Quantifies the bias in a supervised learning model as the mutual information between a possible cause and model predictions.
+		if problem_type is None:
+			problem_type = 'classification' if self.is_discrete(prediction_column) else 'regression'
 
-		The nature of the supervised learning problem (i.e. regression or classification) is inferred from whether or not :code:`model_prediction_column` is categorical.
-
-
-		Parameters
-		----------
-		bias_source_column : str
-			The name of the column containing values of the bias factor (e.g. age, gender, etc.)
-		model_prediction_column : str
-			The name of the column containing predicted labels associated to the values of :code:`bias_source_column`.
-		linear_scale : bool
-			Whether the bias should be returned in the linear/correlation scale or in the mutual information scale (in nats).
-		categorical_encoding : str, 'one-hot' | 'two-split' (default)
-			The encoding method to use to represent categorical variables. 
-			See :ref:`kxy.api.core.utils.one_hot_encoding <one-hot-encoding>` and :ref:`kxy.api.core.utils.two_split_encoding <two-split-encoding>`.
-		problem : None | 'classification' | 'regression'
-			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
-
-		Returns
-		-------
-		 : float
-			The mutual information :math:`m` or :math:`1-e^{-2m}` if :code:`linear_scale=True`.
+		return me(self._obj, prediction_column, problem_type)
 
 
-		.. admonition:: Theoretical Foundation
-
-			Section :ref:`b) Quantifying Bias in Models`.
-
-		.. seealso::
-
-			* :ref:`kxy.regression.regression_bias <regression-bias>`
-			* :ref:`kxy.classification.classification_bias <classification-bias>`
-		"""
-		if problem is None:
-			problem = 'classification' if self.is_discrete(model_prediction_column) else 'regression'
-
-		f_x = self._obj[model_prediction_column].values
-		z = self._obj[bias_source_column].values
-
-		return regression_bias(f_x, z, linear_scale=linear_scale, categorical_encoding=categorical_encoding) if problem == 'regression' \
-			else classification_bias(f_x, z, linear_scale=linear_scale)

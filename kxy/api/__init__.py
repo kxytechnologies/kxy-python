@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Copyright (C) 2020 KXY TECHNOLOGIES, INC.
+Copyright (C) 2021 KXY TECHNOLOGIES, INC.
 Author: Dr Yves-Laurent Kom Samo
 
 This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from .utils import *
 from .decorators import *
 from .client import *
-from .max_ent_optimizers import *
-from kxy.api.core import *
+from .data_transfer import *

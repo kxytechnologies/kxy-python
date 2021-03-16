@@ -3,9 +3,9 @@
 	:keywords:  Pandas Dataframe, AutoML, KXY.
 	:http-equiv=content-language: en
 
-===================
-Pandas Extension
-===================
+=============================
+DataFrame Extension Deep Dive
+=============================
 
 .. automodule:: kxy.pandas_extension.accessor
 	:members:

@@ -52,7 +52,7 @@ This generalized :math:`R^2` applies to both regression and classification probl
 
 .. important:: 
 	
-	**Data Processing Inequality (DPI):** For any function :math:`f`, for any random variables :math:`x` and :math:`y`, :math:`I(x; y) \geq I(f(x); y)`. Moreover, the equality holds when either :math:`f` is invertible or :math:`x` and :math:`y` are independent conditional on :math:`f(x)`, :math:`x \perp y ~\vert~ f(x)`. [*]_
+	**Data Processing Inequality (DPI):** For any function :math:`f`, for any random variables :math:`x` and :math:`y`, :math:`I(x; y) \geq I(f(x); y)`. Moreover, the equality holds when either :math:`f` is invertible or :math:`x` and :math:`y` are independent conditional on :math:`f(x)`, :math:`x \perp y ~\vert~ f(x)`. [[*]_]
 
 
 It follows from the data processing inequaliy that the maximum :math:`R^2` a supervised learning model can achieve is :math:`\bar{R}^2(x) = 1 - e^{-2I\left(y; x\right)}`. This upper bound is achieved when :math:`x \perp y ~\vert~ f(x)` or, in plain english, when :math:`f(x)` carries all the information about :math:`y` that there is in :math:`x`.
@@ -74,7 +74,7 @@ It follows from the data processing inequaliy that the maximum :math:`R^2` a sup
 
 	The achievable-:math:`R^2` places a hard bound on the performance that can be achieved by any supervised learning model, no matter how deep or fancy. It is solely a function of the mutual information between inputs used and the label :math:`I\left(y; x\right)`, which quantifies how informative inputs are collectively about the label.
 
-	As expected, when inputs are not informative about the label, no model, no matter how fancy, can predict the label. The reverse is also true. There exists a regression model using :math:`x` to predict :math:`y` whose :math:`R^2` is :math:`\bar{R}^2`. [*]_
+	As expected, when inputs are not informative about the label, no model, no matter how fancy, can predict the label. The reverse is also true. There exists a regression model using :math:`x` to predict :math:`y` whose :math:`R^2` is :math:`\bar{R}^2`. [[*]_]
 
 	All we need to estimate the achievable-:math:`R^2` is an estimator for the mutual information :math:`I\left(y; x\right)`, which we will provide on the following page.
 
@@ -154,7 +154,7 @@ if there is one whose :math:`(q-1)` least likely outcomes have the same probabil
 
 We complement this result by showing that for any possible value :math:`h` of the entropy of a discrete distribution taking :math:`q` distinct values, there exists a discrete distribution whose entropy is :math:`h` and whose :math:`(q-1)` least likely outcomes have the same probability. 
 
-All possible values for :math:`h` lie in :math:`[0, \log q]`. [*]_ Let us denote :math:`\bar{h}_q(a)` the entropy of a discrete distribution whose most likely outcome has probability :math:`a`, and whose :math:`(q-1)` least likely outcomes have the same probability:
+All possible values for :math:`h` lie in :math:`[0, \log q]`. [[*]_] Let us denote :math:`\bar{h}_q(a)` the entropy of a discrete distribution whose most likely outcome has probability :math:`a`, and whose :math:`(q-1)` least likely outcomes have the same probability:
 
 .. math::
 
@@ -213,7 +213,7 @@ where the expectation is taken under the *true* data generating distribution of 
 
 For a model to achieve maximum accuracy, all that is needed is for its most likely outcome to coincide with that of :math:`y|x=*` for every value :math:`x=*`. Among all such models, there is the *true* data generating predictive distribution :math:`* \to y|x=*`, which is the maximum-accuracy model that has the lowest cross-entropy loss as discussed in the previous section.
 
-Another maximum-accuracy model is the model whose predictive distribution has the same entropy as that of the previously mentioned model, namely :math:`h(y|x=*)` and, of course, whose outcome with the highest probability is the same as that of :math:`y|x=*`. [*]_ 
+Another maximum-accuracy model is the model whose predictive distribution has the same entropy as that of the previously mentioned model, namely :math:`h(y|x=*)` and, of course, whose outcome with the highest probability is the same as that of :math:`y|x=*`. [[*]_] 
 
 It follows from the previous analysis that its highest outcome probability is greater than or equal to the model accuracy (which is the highest outcome probability of the distribution :math:`y|x=*` which has the same entropy),
 
@@ -751,7 +751,7 @@ If the answer is no, then chances are that the empirical distribution :math:`(x_
 
 .. rubric:: Footnotes
 
-.. [*] Hint: The data processing inequality is well documented for categorical distributions. See for instance, Theorem 2.8.1 in [1]_ and its corollary. For continuous and mixed distributions, use the Definition (8.54) in [1]_, apply the data processing inequality to the quantized distributions, and take the supremum.
+.. [*] Hint: The data processing inequality is well documented for categorical distributions. See for instance, Theorem 2.8.1 in [[1]_] and its corollary. For continuous and mixed distributions, use the Definition (8.54) in [[1]_], apply the data processing inequality to the quantized distributions, and take the supremum.
 
 .. [*] To see why, let's consider the most general form of regression models, given by the graphical model :math:`x \to z`. The random variable :math:`z` is the prediction of :math:`y` we form after observing :math:`x`. Such a model has :math:`R^2` equal to :math:`1 - e^{-2I\left(y; z\right)}` as discussed above. When :math:`z` has the same distribution as the true data generating conditional distribution :math:`y|x`, our model achieves maximum :math:`R^2`.
 

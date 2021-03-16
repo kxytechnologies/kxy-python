@@ -9,7 +9,7 @@ IV - Model-Free Estimation
 
  	We argue for the use of `the principle of maximum entropy <https://en.wikipedia.org/wiki/Principle_of_maximum_entropy>`_ to do so. We discuss formulating the maximum entropy problem in the observation space (the **primal space**), as well as in the **copula-uniform dual space** (or simply the **dual space**) defined as the image of the observation space through `the probability integral transform <https://en.wikipedia.org/wiki/Probability_integral_transform>`_. 
 
- 	We argue that, for the purpose of estimating mutual informations, unless marginals are known in advance to be Gaussian, which would rarely be the case in practice, the maximum entropy problem should be formulated and solved in the dual space.
+ 	We argue that, for the purpose of estimating mutual informations, unless marginals are known in advance to be Gaussian, which would rarely be the case in practice, the maximum entropy problem should be formulated and solved in the dual space. Our contributions to solving the maximum entropy problem in the dual space was published in `AISTATS 2021 <https://aistats.org/aistats2021/accepted.html>`_ [[0]_].
 
 For the purposes of pre-learning and post-learning, estimation ought to be performed in a model-free fashion in the sense that we should not assume that the :math:`(y, x)` is known. 
 
@@ -47,7 +47,7 @@ We implement three methods for estimating the differential entropy of a scalar r
 
 M-Spacing Estimator
 """""""""""""""""""
-Introduced in [6]_, this method locally estimates the probability density function by approximating :math:`p(x_i)d\epsilon` by the probability that the :math:`m`-th nearest neighbor of the point :math:`x_i` exists within the sphere of radius :math:`\frac{\epsilon}{2}`, that there are :math:`m-1` points strictly inside of the sphere, and exactly :math:`n-m-1` points more than :math:`\frac{\epsilon}{2}` away from the sphere, where :math:`n` is the number of i.i.d. samples.
+Introduced in [[6]_], this method locally estimates the probability density function by approximating :math:`p(x_i)d\epsilon` by the probability that the :math:`m`-th nearest neighbor of the point :math:`x_i` exists within the sphere of radius :math:`\frac{\epsilon}{2}`, that there are :math:`m-1` points strictly inside of the sphere, and exactly :math:`n-m-1` points more than :math:`\frac{\epsilon}{2}` away from the sphere, where :math:`n` is the number of i.i.d. samples.
 
 For :math:`m=1`, the estimator of the entropy of a continuous scalar random variable :math:`x` from n i.i.d samples :math:`x_1, \dots, x_n` using the standard 1-spacing estimator reads:
 
@@ -55,7 +55,7 @@ For :math:`m=1`, the estimator of the entropy of a continuous scalar random vari
 
 	\hat{h}(x) = - \gamma(1) + \frac{1}{n-1} \sum_{i=1}^{n-1} \log \left[ n \left(x_{(i+1)} - x_{(i)} \right) \right],
 
-where :math:`x_{(i)}` is the i-th smallest sample, and :math:`\gamma` is `the digamma function. <https://en.wikipedia.org/wiki/Digamma_function>`_ See [2]_ and references therein for a review of its statistical properties.
+where :math:`x_{(i)}` is the i-th smallest sample, and :math:`\gamma` is `the digamma function. <https://en.wikipedia.org/wiki/Digamma_function>`_ See [[2]_] and references therein for a review of its statistical properties.
 
 
 Gaussian Moment-Matching
@@ -76,7 +76,7 @@ Like its name suggests, this method uses `kernel density estimation <https://en.
 
 2 - Maximum Entropy Multivariate Estimation
 -------------------------------------------
-What's left for us to provide is an estimator for the mutual information between two continuous random variables. Methods have been proposed for nonparametric estimation of the mutual information between two continuous random variables. Perhaps the most notable work is the application of the :math:`m`-spacing entropy estimator of [6]_ in [7]_. 
+What's left for us to provide is an estimator for the mutual information between two continuous random variables. Methods have been proposed for nonparametric estimation of the mutual information between two continuous random variables. Perhaps the most notable work is the application of the :math:`m`-spacing entropy estimator of [[6]_] in [[7]_]. 
 
 We find these :math:`m`-spacing approaches undesirable as they are not coordinate/representation invariant, [*]_ they scale poorly with sample size, and they can result in negative mutual informations. 
 
@@ -108,7 +108,7 @@ which model is the *most uncertain about everything else*, or equivalently, whic
 
 The result is a generative model, and its associated mutual information, that make no arbitrary assumption on the data generating distribution, and only reflect properties encoded by :math:`\phi` that have been evidenced in the data through :math:`\hat{\alpha}`. As :math:`\phi` gets more and more expressive, the maximum entropy distribution converges to the true data generating distribution, but more importantly, the associated mutual information converges to the true mutual information.
 
-This modeling paradigm, known as `the principle of maximum entropy <https://en.wikipedia.org/wiki/Principle_of_maximum_entropy>`_, was first pioneered by E.T. Jaynes, one of the most celebrated authors in the probabilistic machine learning community, in his seminal works [3]_ and [4]_.
+This modeling paradigm, known as `the principle of maximum entropy <https://en.wikipedia.org/wiki/Principle_of_maximum_entropy>`_, was first pioneered by E.T. Jaynes, one of the most celebrated authors in the probabilistic machine learning community, in his seminal works [[3]_] and [[4]_].
 
 Note that, because we are always estimating our mutual information as the mutual information of a distribution, instead of estimating the three differential entropies separately as in the case of :math:`m`-spacing, our estimated mutual information can never be negative. This approach is also very efficient given that it depends on data solely through :math:`\hat{\alpha}` and, as such, is amenable to caching. The foregoing feature also makes this approach great for privacy.
 
@@ -141,7 +141,7 @@ The two primary requirements guiding the choice of the constraint function :math
 #. :math:`E\left(\phi(u_y, u_x)\right)` should be amenable to efficient and robust estimation from i.i.d. samples of :math:`(y, x)`.
 
 
-These requirements are satisfied by a plethora of concordance measures, among which Spearman's rank correlation, Kendall's tau, Gini's gamma, Blest's measures, to name but a few. Simply put, concordance measures (Definition 5.1.7 in [1]_) quantify the extent to which two random variables take large (resp. small) values at the same time. 
+These requirements are satisfied by a plethora of concordance measures, among which Spearman's rank correlation, Kendall's tau, Gini's gamma, Blest's measures, to name but a few. Simply put, concordance measures (Definition 5.1.7 in [[1]_]) quantify the extent to which two random variables take large (resp. small) values at the same time. 
 
 i) Kendall's Tau
 ^^^^^^^^^^^^^^^^
@@ -206,7 +206,7 @@ Its population version reads
 	Thus, Spearman's rho is an obvious measure of association in the copula-uniform dual space. Although Pearson's correlation only captures linear association in the copula-uniform dual space, it is worth stressing that, Spearman's rho is in fact invariant by any increasing transformation applied to :math:`x` and/or :math:`y`.
 
 
-We refer the reader to Chapter 5 in [1]_ for more details on the link between concordance measures and copulas.
+We refer the reader to Chapter 5 in [[1]_] for more details on the link between concordance measures and copulas.
 
 
 
@@ -290,6 +290,8 @@ Another way to look at this is that to properly work in the primal space, the co
 
 .. rubric:: References
 
+.. [0] Kom Samo, Y.-L., Inductive Mutual Information Estimation: A Convex Maximum-Entropy Copula Approach. Proceedings of the 24th International Conference on Artificial Intelligence and Statistics (AISTATS) 2021, San Diego, California, USA. PMLR: Volume 130.
+
 .. [1] Nelsen, R.B., 2007. An introduction to copulas. Springer Science & Business Media.
 
 .. [2] Beirlant, J., Dudewicz, E.J., Györfi, L., van der Meulen, E.C., 1997. Nonparametric entropy estimation: an overview. International Journal of Mathematical and Statistical Sciences. 6 (1): 17–40. ISSN 1055-7490. 
@@ -311,7 +313,7 @@ Another way to look at this is that to properly work in the primal space, the co
 
 .. [*] Especially when the :math:`L^\infty` is selected for the nearest neighbor search, choice often made to speed up computations through the use of k-d trees.
 
-.. [*] See [5]_ pages 60 and 61.
+.. [*] See [[5]_] pages 60 and 61.
 
 
 

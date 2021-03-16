@@ -11,7 +11,7 @@ I - Problem Formulation
 
 .. admonition:: Summary
 
-	We introduce **pre-learning** and **post-learning** problems, and discussing their importance. 
+	We introduce **pre-learning** and **post-learning** problems, and discuss their importance. 
 
 
 A supervised learning problem (i.e. regression or classification) aims at reliably learning an association between 
@@ -20,8 +20,8 @@ a vector of inputs :math:`x` and a label :math:`y` that is either categorical or
 :raw-html:`<mark class='kxy-blue'>While the adequacy of the learned association between <i>x</i> and <i>y</i> depends solely on the model used, the overall accuracy achieved is bound by how informative the inputs are about the label.</mark>` If :math:`x` and :math:`y` are unrelated, no model, no matter 
 how fancy or deep can infer :math:`y` from :math:`x`, and any attempt to do so would be futile and result in a waste of time and money. 
 
-1 - Pre-Learning, The Oil Exploration of Machine Learning
----------------------------------------------------------
+1 - Pre-Learning
+----------------
 
 What Is Pre-Learning?
 ^^^^^^^^^^^^^^^^^^^^^

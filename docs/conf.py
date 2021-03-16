@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'KXY (Lean AutoML, As A Service)'
-copyright = '2020, KXY Technologies, Inc.'
+copyright = '2021, KXY Technologies, Inc'
 author = 'Dr. Yves-Laurent Kom Samo'
 version = 'latest'
 autodoc_inherit_docstrings = False
@@ -32,7 +32,8 @@ autodoc_inherit_docstrings = False
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', \
     'sphinx.ext.todo', 'sphinx.ext.githubpages', 'sphinxcontrib.bibtex', \
     'sphinx.ext.mathjax', 'sphinx.ext.autosectionlabel', 'nbsphinx', \
-    'sphinx_copybutton', 'sphinxcontrib.googleanalytics', 'sphinx_sitemap']
+    'sphinx_copybutton', 'sphinxcontrib.googleanalytics', 'sphinx_sitemap', \
+    'sphinxcontrib.httpdomain']
 
 # imgmath_image_format = 'svg'
 # imgmath_font_size = 13

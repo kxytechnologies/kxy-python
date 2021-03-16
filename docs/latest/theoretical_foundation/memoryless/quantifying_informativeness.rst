@@ -23,7 +23,7 @@ Whether in the pre-learning or post-learning phase, a key to success is the abil
 
 As usual, we express our lack of knowledge and in-depth understanding about the dynamics of the phenomena giving rise to our inputs and/or label as randomness, and we model the inputs vector :math:`x` and the label :math:`y` as random variables. 
 
-Our approach to quantifying the information content of a random variable and how informative one random variable is about another is routed in `information theory <https://en.wikipedia.org/wiki/Information_theory>`_, of which we recall key notions below. For a more detailed exposition see [1]_ and [2]_.
+Our approach to quantifying the information content of a random variable and how informative one random variable is about another is routed in `information theory <https://en.wikipedia.org/wiki/Information_theory>`_, of which we recall key notions below. For a more detailed exposition see [[1]_] and [[2]_].
 
 1 - Quantifying Information
 ---------------------------
@@ -52,7 +52,7 @@ For a categorical random variable :math:`x` taking :math:`q` distinct values, th
 	H(x) := - \sum_{i=1}^q p_i\log p_i.
 
 
-This special case was first introduced by Claude Shannon, the father of information theory, in his seminal work [3]_, and is often referred to in the litterature as `Shannon entropy`. Some of its properties are found below.
+This special case was first introduced by Claude Shannon, the father of information theory, in his seminal work [[3]_], and is often referred to in the litterature as `Shannon entropy`. Some of its properties are found below.
 
 .. admonition:: Properties
 
@@ -113,7 +113,7 @@ then for any :math:`\epsilon>0`, no matter how small, we can always find :math:`
 
 As large enough sequences are very likely to belong to the sets :math:`\mathcal{A}_\epsilon^{(n)}`, these sets are called the **typical sets of the distribution** :math:`\mathbb{P}_x`. Moreover, the size of typical sets can be used as proxy for gauging the information content or variability of a distribution. 
 
-If we denote :math:`\text{Vol}\left( \mathcal{A}_\epsilon^{(n)}\right)` the volume (resp. cardinality) of :math:`\mathcal{A}_\epsilon^{(n)}` when :math:`\mathbb{P}_x` is continuous (resp. categorical), then it can be shown that [*]_ for any :math:`\epsilon > 0` and for any large enough :math:`n`
+If we denote :math:`\text{Vol}\left( \mathcal{A}_\epsilon^{(n)}\right)` the volume (resp. cardinality) of :math:`\mathcal{A}_\epsilon^{(n)}` when :math:`\mathbb{P}_x` is continuous (resp. categorical), then it can be shown that [[*]_] for any :math:`\epsilon > 0` and for any large enough :math:`n`
 
 .. math::
 	:label: ent_ineq
@@ -124,7 +124,7 @@ If we denote :math:`\text{Vol}\left( \mathcal{A}_\epsilon^{(n)}\right)` the volu
 
 Given that we can choose :math:`\epsilon` arbitrarily small, it follows from inequalities :eq:`ent_ineq` that the information content of a continuous (resp. categorical) distribution or random variable increases with its differential (resp. Shannon) entropy. 
 
-Consequently, the differential entropy, even when negative, measures the information content of a random variable. In fact, :math:`e^{nh\left(\mathbb{P}_x \right)}` can be interpreted as the number of nats [*]_ required to encode the sequence :math:`x^{(n)}`, whether the distribution is categorical or continuous.
+Consequently, the differential entropy, even when negative, measures the information content of a random variable. In fact, :math:`e^{nh\left(\mathbb{P}_x \right)}` can be interpreted as the number of nats [[*]_] required to encode the sequence :math:`x^{(n)}`, whether the distribution is categorical or continuous.
 
 
 d) Conditional Entropy
@@ -307,7 +307,7 @@ In plain english, the mutual information between random variables :math:`x` and 
 			&= h(y) - h(y|x).
 
 
-One of the most important properties of mutual information is that it is invariant by invertible transformations. [*]_
+One of the most important properties of mutual information is that it is invariant by invertible transformations. [[*]_]
 
 .. admonition:: Property
 
@@ -423,11 +423,11 @@ Now that we are equipped with the right tools, we can answer the question that i
 
 .. rubric:: Footnotes
 
-.. [*] See Theorem 9.2.2 in [1]_.
+.. [*] See Theorem 9.2.2 in [[1]_].
 
 .. [*] :math:`1 \text{nat} = (1/\log2) \text{bits} \approx 1.44 \text{bits}`
 
-.. [*] Hint: Use Definition (8.54) in [1]_ and note that there is a one-to-one map between partitions of the range of :math:`x` (resp. :math:`y`) and partitions of the range of :math:`f(x)` (resp. :math:`g(y)`), and that the mutual informations of the associated quantized variables are the same.
+.. [*] Hint: Use Definition (8.54) in [[1]_] and note that there is a one-to-one map between partitions of the range of :math:`x` (resp. :math:`y`) and partitions of the range of :math:`f(x)` (resp. :math:`g(y)`), and that the mutual informations of the associated quantized variables are the same.
 
 
 

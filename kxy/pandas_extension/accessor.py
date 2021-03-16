@@ -20,7 +20,7 @@ from .pre_learning_accessor import PreLearningAccessor
 
 
 @pd.api.extensions.register_dataframe_accessor("kxy")
-class Accessor(PreLearningAccessor, FinanceAccessor, LearningAccessor, PostLearningAccessor):
+class Accessor(PreLearningAccessor, LearningAccessor, PostLearningAccessor, FinanceAccessor):
 	"""
 	Extension of the pandas.DataFrame class with the full capabilities of the :code:`kxy` platform.
 	"""

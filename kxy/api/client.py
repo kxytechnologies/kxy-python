@@ -26,7 +26,7 @@ class APIClient(object):
 		v : str
 			The API stage to use.
 		"""
-		return 'v1'
+		return 'v2'
 
 	@staticmethod
 	def url(path):
@@ -45,7 +45,7 @@ class APIClient(object):
 		"""
 		path = path.strip('/')
 
-		return 'https://api.kxysolutions.com/%s/' % APIClient.stage() + path
+		return 'https://api.kxy.ai/%s/' % APIClient.stage() + path
 
 
 	@staticmethod
@@ -76,6 +76,9 @@ class APIClient(object):
 			200: 
 				The request was successful and the API returned some data accessible through
 				`response.json()`.
+			402: 
+				The request failed because your account does not have a valid payment method.
+				Check `response.json()['reason']` for more information.
 			403: 
 				The request failed because some parameter are either invalid or missing.
 				Check `response.json()['reason']` for more information.
@@ -123,6 +126,9 @@ class APIClient(object):
 			200: 
 				The request was successful and the API returned some data accessible through
 				`response.json()`.
+			402: 
+				The request failed because your account does not have a valid payment method.
+				Check `response.json()['reason']` for more information.
 			403: 
 				The request failed because some parameter are either invalid or missing.
 				Check `response.json()['reason']` for more information.
@@ -173,6 +179,9 @@ class APIClient(object):
 			200: 
 				The request was successful and the API returned some data accessible through
 				`response.json()`.
+			402: 
+				The request failed because your account does not have a valid payment method.
+				Check `response.json()['reason']` for more information.
 			403: 
 				The request failed because some parameter are either invalid or missing.
 				Check `response.json()['reason']` for more information.
