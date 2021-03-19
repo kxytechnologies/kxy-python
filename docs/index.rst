@@ -7,7 +7,7 @@
 
 A Powerful Serverless Analysis Toolkit That Takes *Trial And Error* Out of Machine Learning Projects
 ====================================================================================================
-.. image:: https://img.shields.io/badge/license-AGPLv3%2B-blue
+.. image:: https://img.shields.io/badge/license-GPLv3%2B-blue
    :alt: License
    :target: https://www.gnu.org/licenses/agpl-3.0.en.html
 .. image:: https://img.shields.io/pypi/v/kxy.svg

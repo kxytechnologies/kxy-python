@@ -133,9 +133,9 @@ def data_valuation(data_df, target_column, problem_type):
 			try:
 				response = api_response.json()
 				if 'message' in response:
-					logging.error('%s' % response['message'])
+					logging.error('\n%s' % response['message'])
 			except:
-				logging.error('Data valuation failed. Last HTTP code: %s' % api_response.status_code)
+				logging.error('\nData valuation failed. Last HTTP code: %s' % api_response.status_code)
 
 	return None
 

@@ -147,8 +147,8 @@ def variable_selection(data_df, target_column, problem_type):
 			try:
 				response = api_response.json()
 				if 'message' in response:
-					logging.error('%s' % response['message'])
+					logging.error('\n%s' % response['message'])
 			except:
-				logging.error('Variable selection failed. Last HTTP code: %s, Content: %s' % (api_response.status_code, api_response.content))
+				logging.error('\nVariable selection failed. Last HTTP code: %s, Content: %s' % (api_response.status_code, api_response.content))
 
 	return None

@@ -136,9 +136,9 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 			try:
 				response = api_response.json()
 				if 'message' in response:
-					logging.error('%s' % response['message'])
+					logging.error('\n%s' % response['message'])
 			except:
-				logging.error('Data-driven improvability failed. Last HTTP code: %s' % api_response.status_code)
+				logging.error('\nData-driven improvability failed. Last HTTP code: %s' % api_response.status_code)
 
 	return None
 
@@ -276,9 +276,9 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 			try:
 				response = api_response.json()
 				if 'message' in response:
-					logging.error('%s' % response['message'])
+					logging.error('\n%s' % response['message'])
 			except:
-				logging.error('Model-driven improvability failed. Last HTTP code: %s' % api_response.status_code)
+				logging.error('\nModel-driven improvability failed. Last HTTP code: %s' % api_response.status_code)
 
 	return None
 
