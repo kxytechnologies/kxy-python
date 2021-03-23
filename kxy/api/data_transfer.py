@@ -51,7 +51,7 @@ def generate_upload_url(identifier):
 	else:
 		api_response = api_response.json()
 		if 'message' in api_response:
-			logging.warning(api_response['message'])
+			logging.warning("\n%s" % api_response['message'])
 		return None
 
 
