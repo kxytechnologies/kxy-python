@@ -55,6 +55,7 @@ class PreLearningAccessor(BaseAccessor):
 			:ref:`kxy.pre_learning.achievable_performance.data_valuation <data-valuation>`
 			
 		"""
+		assert target_column in self._obj.columns, 'The target_column should be a column'
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
@@ -95,6 +96,7 @@ class PreLearningAccessor(BaseAccessor):
 
 			:ref:`kxy.pre_learning.variable_selection.variable_selection <variable-selection>`
 		"""
+		assert target_column in self._obj.columns, 'The target_column should be a column'
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 

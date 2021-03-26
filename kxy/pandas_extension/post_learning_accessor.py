@@ -56,6 +56,7 @@ class PostLearningAccessor(BaseAccessor):
 			:ref:`kxy.post_learning.improvability.data_driven_improvability <data-driven-improvability>`
 
 		"""
+		assert target_column in self._obj.columns, 'The target_column should be a column'
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
@@ -103,6 +104,8 @@ class PostLearningAccessor(BaseAccessor):
 			:ref:`kxy.post_learning.improvability.model_driven_improvability <model-driven-improvability>`
 
 		"""
+		assert target_column in self._obj.columns, 'The target_column should be a column'
+		assert prediction_column in self._obj.columns, 'The prediction_column should be a column'
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
@@ -122,8 +125,8 @@ class PostLearningAccessor(BaseAccessor):
 
 		Parameters
 		----------
-		target_column : str
-			The name of the column containing true labels.
+		prediction_column : str
+			The name of the column containing model predictions.
 		problem_type : None | 'classification' | 'regression'
 			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
 
@@ -149,6 +152,7 @@ class PostLearningAccessor(BaseAccessor):
 			:ref:`kxy.post_learning.model_explanation.model_explanation <variable-selection>`
 			
 		"""
+		assert prediction_column in self._obj.columns, 'The prediction_column should be a column'
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(prediction_column) else 'regression'
 

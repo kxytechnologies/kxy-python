@@ -125,7 +125,7 @@ def data_valuation(data_df, target_column, problem_type):
 						return result
 
 				except:
-					logging.exception('Data valuation failed. Last HTTP code: %s' % api_response.status_code)
+					logging.exception('\nData valuation failed. Last HTTP code: %s' % api_response.status_code)
 					return None
 
 

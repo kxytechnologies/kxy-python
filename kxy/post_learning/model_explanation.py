@@ -139,7 +139,7 @@ def model_explanation(data_df, prediction_column, problem_type):
 
 
 				except:
-					logging.exception('Model explanation failed. Last HTTP code: %s, Content: %s' % (api_response.status_code, api_response.content))
+					logging.exception('\nModel explanation failed. Last HTTP code: %s, Content: %s' % (api_response.status_code, api_response.content))
 					return None
 
 		if api_response.status_code != requests.codes.ok:

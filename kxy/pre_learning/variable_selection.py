@@ -140,7 +140,7 @@ def variable_selection(data_df, target_column, problem_type):
 
 
 				except:
-					logging.exception('Variable selection failed. Last HTTP code: %s, Content: %s' % (api_response.status_code, api_response.content))
+					logging.exception('\nVariable selection failed. Last HTTP code: %s, Content: %s' % (api_response.status_code, api_response.content))
 					return None
 
 		if api_response.status_code != requests.codes.ok:
