@@ -4,7 +4,7 @@
 
 -----------------
 
-# KxY: The Lean AutoML Platform
+# KXY: A Function-As-A-Service Backend to Make Your Machine Learning Projects Lean
 [![License](https://img.shields.io/badge/license-GPLv3%2B-blue)](https://github.com/kxytechnologies/kxy-python/blob/master/LICENSE)
 [![PyPI Latest Release](https://img.shields.io/pypi/v/kxy.svg)](https://www.kxy.ai/)
 [![Downloads](https://pepy.tech/badge/kxy)](https://www.kxy.ai/)
