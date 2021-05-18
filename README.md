@@ -4,7 +4,7 @@
 
 -----------------
 
-# KXY: A Function-As-A-Service Backend to Make Your Machine Learning Projects Lean
+# KXY: A Seemless API to 10x The Productivity of Machine Learning Engineers
 [![License](https://img.shields.io/badge/license-GPLv3%2B-blue)](https://github.com/kxytechnologies/kxy-python/blob/master/LICENSE)
 [![PyPI Latest Release](https://img.shields.io/pypi/v/kxy.svg)](https://www.kxy.ai/)
 [![Downloads](https://pepy.tech/badge/kxy)](https://www.kxy.ai/)
@@ -28,7 +28,9 @@ All heavy-duty computations are run on our serverless infrastructure and require
 ```Bash
 kxy configure
 ```
-and follow the instructions. To get an API key you need an account; you can sign up for a free trial [here](https://www.kxy.ai/signup/). You'll then be automatically given an API key which you can find [here](https://www.kxy.ai/portal/profile/identity/).
+and follow the instructions. To get an API key you need an account; you can sign up for a free trial [here](https://www.kxy.ai/signup/). You'll then be automatically given an API key which you can find [here](https://www.kxy.ai/portal/profile/identity/). 
+
+KXY is free for academic use. 
 
 
 ## Docker
@@ -46,30 +48,8 @@ docker run -i -t --mount src=</path/to/your/local/dir>,target=/opt/notebooks,typ
 ```
 where you should replace `</path/to/your/local/dir>` with the path to your local notebook folder and navigate to [http://localhost:5555](http://localhost:5555) in your browser.
 
+## Other Programming Language
+We plan to release friendly API client in more programming language. 
 
-## Applications
+In the meantime, you can directly issue requests to our [RESTFul API](https://www.kxy.ai/reference/latest/api/index.html) using your favorite programming language. 
 
-### Higher ROI Machine Learning Projects
-
-
-The `kxy` package utilizes information theory to takes *trial and error* out of machine learning projects. 
-
-From the get-go, the **data valuation** analysis of the `kxy` package tells data scientists whether their datasets are sufficiently informative to achieve a performance (e.g. <img src="https://render.githubusercontent.com/render/math?math=R^2">, RMSE, maximum log-likelihood, and classification error) to their liking in a classification or regression problem, and if so what is the best performance that can be achieved using said datasets. *No need to train tens of models to know what performance can be achieved*.
-
-The **model-free variable selection** analysis provided by the `kxy` package allows data scientists to train smaller models, faster, cheaper, and to achieve a higher performance than throwing all inputs in a big model or proceeding by trial-and-error.
-
-Once a model has been trained, the `kxy` **model-driven improvability** analysis quantifies the extent to which the trained model can be improved without resorting to additional features. This allows data scientists to focus their modeling efforts on high ROI initiatives. *No need to implement tens of fancy models on specialized hardware to see whether a trained model can be improved*.
-
-When a classification or regression model has successfully extracted all the value in using the features to predict the label, the `kxy` **data-driven improvability** allows data scientists to quickly quantify the performance increase (e.g. <img src="https://render.githubusercontent.com/render/math?math=R^2">, RMSE, maximum log-likelihood, and classification error) that a new dataset may bring about. *No need to train or retrain tens of models with the new datasets to see whether the production model can be improved*.
-
-
-
-
-### Model Audit
-
-From **understanding** the marginal contribution of each variable towards the decision made by **a black-box regression or classification model**, to **detecting bias** in your trained classification and regression model, the `kxy` toolkit allows data scientists and decision markers to fully **audit complex machine learning models**.
-
-
-### Modern Financial Machine Learning
-
-From **non-Gaussian** and **memory-robust** risk analysis, to **alternative datasets valuation** the `kxy` toolkit propels quants from the age of Gaussian distributions/linear regression/LASSO/Ridge/Random Forest into the age of modern machine learning, rigorously and cost-effectively.
