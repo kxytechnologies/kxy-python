@@ -17,7 +17,7 @@ class PreLearningAccessor(BaseAccessor):
 
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_pre_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
-	def data_valuation(self, target_column, problem_type=None):
+	def data_valuation(self, target_column, problem_type=None, anonymize=False):
 		"""
 		Estimate the highest performance metrics achievable when predicting the :code:`target_column` using all other columns.
 
@@ -30,6 +30,8 @@ class PreLearningAccessor(BaseAccessor):
 			The name of the column containing true labels.
 		problem_type : None | 'classification' | 'regression'
 			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
+		anonymize : bool
+			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
 
 
 
@@ -59,10 +61,12 @@ class PreLearningAccessor(BaseAccessor):
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
-		return dv(self._obj, target_column, problem_type)
+		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize else self._obj
+
+		return dv(_obj, target_column, problem_type)
 
 
-	def variable_selection(self, target_column, problem_type=None):
+	def variable_selection(self, target_column, problem_type=None, anonymize=False):
 		"""
 		Runs the model-free variable selection analysis.
 
@@ -75,6 +79,8 @@ class PreLearningAccessor(BaseAccessor):
 			The name of the column containing true labels.
 		problem_type : None | 'classification' | 'regression'
 			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
+		anonymize : bool
+			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
 
 		Returns
 		-------
@@ -100,7 +106,9 @@ class PreLearningAccessor(BaseAccessor):
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
-		return vs(self._obj, target_column, problem_type)
+		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize else self._obj
+
+		return vs(_obj, target_column, problem_type)
 
 
 
