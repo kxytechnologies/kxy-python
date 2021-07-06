@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-To run our analyzes, the KxY backend needs your data. The methods below are the only methods involved in sharing your data with us. The :code:`kxy` package only uploads your data `if` and `when` needed.
+To run our analyzes, the KXY backend needs your data. The methods below are the only methods involved in sharing your data with us. The :code:`kxy` package only uploads your data `if` and `when` needed.
 """
 import hashlib
 import logging
