@@ -88,7 +88,7 @@ We provide callbacks in the major Python machine learning libraries that will te
 
 	latest/variable_selection/index
 
-	.. latest/learning/index
+	latest/learning/index
 
 	latest/model_explanation/index
 
