@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import hashlib
 import numpy as np
+from scipy.stats import norm
 import pandas as pd
 
 
@@ -85,7 +86,7 @@ class BaseAccessor(object):
 
 		Any transformation on continuous variables that preserves ranks will not change our pre-learning and post-learning analyses. The same holds for any 1-to-1 transformation on categorical variables.
 
-		This implementation replaces ordinal values (i.e. any column that can be cast as a float) with their within-column ranks. For each non-ordinal column, we form the set of all possible values, we assign a unique integer index to each value in the set, and we systematically replace said value appearing in the dataframe by the hexadecimal code of its associated integer index. 
+		This implementation replaces ordinal values (i.e. any column that can be cast as a float) with their within-column Gaussian score. For each non-ordinal column, we form the set of all possible values, we assign a unique integer index to each value in the set, and we systematically replace said value appearing in the dataframe by the hexadecimal code of its associated integer index. 
 
 		For regression problems, accurate estimation of RMSE related metrics require the target column (and the prediction column for post-learning analyses) not to be anonymized.
 
@@ -111,7 +112,15 @@ class BaseAccessor(object):
 				mapping = {unique_values[i]: "0x{:03x}".format(i) for i in range(len(unique_values))}
 				df[col] = df[col].apply(lambda x: mapping.get(x))
 			else:
-				df[col] = 1+np.argsort(np.argsort(df[col].values))
+				# Note: Any monotonic transformation applied to any continuous column would work.
+				# The gaussian scoring below makes no assumption on marginals whatsoever. 
+				x = df[col].values
+				x = x - np.nanmean(x)
+				s = np.nanstd(x)
+				if s > 0.0:
+					x = x/s
+					x = norm.cdf(x)
+				df[col] = x.copy()
 
 		return df
 
