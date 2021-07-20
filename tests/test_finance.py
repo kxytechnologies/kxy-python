@@ -22,5 +22,3 @@ def test_ia_corr_nan():
 	assert iab == iab, 'Anonymized and non-anonymized results should be identical'
 
 
-
-

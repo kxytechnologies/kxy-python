@@ -19,7 +19,7 @@ def approx_opt_remaining_time(step):
 		The approximate remaining duration.
 	"""
 	elapsed_time = 12*step
-	total_time = 10 if step < 1 else 60*5 if step <= 25 else 60*10 if step <= 50 else 60*20 if step <= 80 else 60*30
+	total_time = 10 if step < 1 else 2*60 if step <= 10 else 60*5 if step <= 25 else 60*10 if step <= 50 else 60*20 if step <= 80 else 60*30
 	remaining_time = max(total_time-elapsed_time, 0)
 
 	if step == 100:
