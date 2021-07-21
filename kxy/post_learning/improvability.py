@@ -86,7 +86,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 				timestamp=int(time()))
 
 		while api_response.status_code == requests.codes.ok and k <= max_k:
-			if k%5 != 0:
+			if k%2 != 0:
 				sleep(12)
 				k += 1
 				sys.stdout.write('\r')
@@ -214,7 +214,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 				timestamp=int(time()))
 
 		while api_response.status_code == requests.codes.ok and k <= max_k:
-			if k%5 != 0:
+			if k%2 != 0:
 				sleep(12)
 				k += 1
 				sys.stdout.write('\r')

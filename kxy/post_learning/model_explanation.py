@@ -84,7 +84,7 @@ def model_explanation(data_df, prediction_column, problem_type):
 				problem_type=problem_type, timestamp=int(time()))
 
 		while api_response.status_code == requests.codes.ok and k <= max_k:
-			if k%5 != 0:
+			if k%2 != 0:
 				sleep(12)
 				k += 1
 				sys.stdout.write('\r')
