@@ -69,28 +69,41 @@ def upload_data(df):
 	d : bool
 		Whether the upload was successful.
 	"""
-	identifier = hashlib.sha256(df.to_string().encode()).hexdigest()
+	logging.info('Hashing the data to form the file name')
+	content = pd.util.hash_pandas_object(df).to_string().encode()
+	identifier = hashlib.sha256(content).hexdigest()
+	logging.info('Done hashing the data')
 
 	if UPLOADED_FILES.get(identifier, False):
 		logging.debug('The file with identifier %s was previously uplooaded' % identifier)
 		return identifier
 
+	logging.info('Requesting a signed upload URL')
 	presigned_url = generate_upload_url(identifier)
 
 	if presigned_url is None:
+		logging.warning('Failed to retrieve the signed upload URL')
 		return None
+	else:
+		logging.info('Signed upload URL retrieved')
 
 	if presigned_url == {}:
+		logging.info('This file was previously uploaded')
 		UPLOADED_FILES[identifier] = True
 		return identifier
 
+	logging.info('Preparing the data to upload')
 	file_name = identifier + '.csv'
 	files = {'file': (file_name, df.to_csv(index=False))}
 	url = presigned_url['url']
 	data = presigned_url['fields']
+	logging.info('Done preparing the data to upload')
+	
+	logging.info('Uploading the data')
 	upload_response = requests.post(url, data=data, files=files)
 
 	if upload_response.status_code in [requests.codes.ok, requests.codes.created, requests.codes.accepted, requests.codes.no_content]:
+		logging.info('Data successfully uploaded')
 		UPLOADED_FILES[identifier] = True
 		return identifier
 	else:
