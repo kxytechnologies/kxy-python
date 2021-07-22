@@ -66,6 +66,7 @@ def variable_selection(data_df, target_column, problem_type):
 	file_identifier = upload_data(data_df)
 
 	k = 0
+	kp = 0
 	max_k = 100
 	sys.stdout.write('\r')
 	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
@@ -84,10 +85,12 @@ def variable_selection(data_df, target_column, problem_type):
 				file_identifier=file_identifier, target_column=target_column, \
 				problem_type=problem_type, timestamp=int(time()))
 
+		initial_time = time()
 		while api_response.status_code == requests.codes.ok and k <= max_k:
-			if k%2 != 0:
+			if kp%2 != 0:
 				sleep(12)
-				k += 1
+				kp += 1
+				k = kp//2
 				sys.stdout.write('\r')
 				sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 				sys.stdout.flush()
@@ -99,7 +102,8 @@ def variable_selection(data_df, target_column, problem_type):
 						job_id = response['job_id']
 						VARIABLE_SELECTION_JOB_IDS[(file_identifier, target_column, problem_type)] = job_id
 						sleep(12)
-						k += 1
+						kp += 1
+						k = kp//2
 						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 						sys.stdout.flush()
 						# Note: it is important to pass the job_id to avoid being charged twice for the work.
@@ -108,7 +112,9 @@ def variable_selection(data_df, target_column, problem_type):
 							file_identifier=file_identifier, target_column=target_column, \
 							problem_type=problem_type, timestamp=int(time()), job_id=job_id)
 					else:
-						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*max_k, max_k, 100, approx_opt_remaining_time(100)))
+						duration = int(time()-initial_time)
+						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
+						sys.stdout.write("[{:{}}] {:d}% ETA: {} Duration: {}".format("="*max_k, max_k, 100, approx_opt_remaining_time(100), duration))
 						sys.stdout.write('\n')
 						sys.stdout.flush()
 						result = {}

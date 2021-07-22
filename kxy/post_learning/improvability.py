@@ -63,6 +63,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 		assert np.can_cast(data_df[target_column], float), 'The target column should be numeric'
 
 	k = 0
+	kp = 0
 	max_k = 100
 	sys.stdout.write('\r')
 	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
@@ -85,10 +86,12 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 				problem_type=problem_type, new_variables=json.dumps(new_variables), \
 				timestamp=int(time()))
 
+		initial_time = time()
 		while api_response.status_code == requests.codes.ok and k <= max_k:
-			if k%2 != 0:
-				sleep(12)
-				k += 1
+			if kp%2 != 0:
+				sleep(10)
+				kp += 1
+				k = kp//2
 				sys.stdout.write('\r')
 				sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 				sys.stdout.flush()
@@ -99,8 +102,9 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 					if 'job_id' in response:
 						job_id = response['job_id']
 						DD_IMPROVABILITY_JOB_IDS[(file_identifier, target_column, str(new_variables), problem_type)] = job_id
-						sleep(12)
-						k += 1
+						sleep(10)
+						kp += 1
+						k = kp//2
 						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 						sys.stdout.flush()
 						api_response = APIClient.route(
@@ -109,7 +113,9 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 							problem_type=problem_type, new_variables=json.dumps(new_variables), \
 							timestamp=int(time()))
 					else:
-						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*max_k, max_k, max_k, approx_opt_remaining_time(max_k)))
+						duration = int(time()-initial_time)
+						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
+						sys.stdout.write("[{:{}}] {:d}% ETA: {} Duration: {}".format("="*max_k, max_k, max_k, approx_opt_remaining_time(max_k), duration))
 						sys.stdout.write('\n')
 						sys.stdout.flush()
 						result = {}

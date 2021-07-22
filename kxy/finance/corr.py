@@ -9,7 +9,7 @@ from time import time, sleep
 import numpy as np
 import pandas as pd
 
-from kxy.api import APIClient, upload_data, approx_opt_remaining_time
+from kxy.api import APIClient, upload_data, approx_beta_remaining_time
 
 # Cache old job ids to avoid being charged twice for the same job.
 IACORR_JOB_IDS = {}
@@ -43,9 +43,10 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 	assert np.can_cast(data_df[asset_column], float), 'The asset return column should be numeric'
 
 	k = 0
+	kp = 0
 	max_k = 100
 	sys.stdout.write('\r')
-	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
+	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_beta_remaining_time(k)))
 	sys.stdout.flush()
 
 	df = data_df[[market_column, asset_column]]
@@ -66,10 +67,12 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 				asset_column=asset_column, \
 				timestamp=int(time()))
 
+		initial_time = time()
 		while api_response.status_code == requests.codes.ok and k <= max_k:
-			if k%2 != 0:
-				sleep(12)
-				k += 1
+			if kp%2 != 0:
+				sleep(5)
+				kp += 4
+				k = kp//2
 				sys.stdout.write('\r')
 				sys.stdout.write("[{:{}}] {:d}%".format("="*k+">", max_k, k))
 				sys.stdout.flush()
@@ -80,9 +83,10 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 					if 'job_id' in response:
 						job_id = response['job_id']
 						IACORR_JOB_IDS[file_identifier] = job_id
-						sleep(12)
-						k += 1
-						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
+						sleep(5)
+						kp += 4
+						k = kp//2
+						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_beta_remaining_time(k)))
 						sys.stdout.flush()
 						# Note: it is important to pass the job_id to avoid being charged twice for the same work.
 						api_response = APIClient.route(
@@ -91,7 +95,9 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 							asset_column=asset_column, \
 							timestamp=int(time()), job_id=job_id)
 					else:
-						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*max_k, max_k, max_k, approx_opt_remaining_time(max_k)))
+						duration = int(time()-initial_time)
+						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
+						sys.stdout.write("[{:{}}] {:d}% ETA: {} Duration: {}".format("="*max_k, max_k, max_k, approx_beta_remaining_time(max_k), duration))
 						sys.stdout.write('\n')
 						sys.stdout.flush()
 

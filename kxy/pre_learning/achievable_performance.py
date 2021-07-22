@@ -58,6 +58,7 @@ def data_valuation(data_df, target_column, problem_type):
 		assert np.can_cast(data_df[target_column], float), 'The target column should be numeric'
 
 	k = 0
+	kp = 0
 	max_k = 100
 	sys.stdout.write('\r')
 	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
@@ -79,10 +80,12 @@ def data_valuation(data_df, target_column, problem_type):
 				file_identifier=file_identifier, target_column=target_column, \
 				problem_type=problem_type, timestamp=int(time()))
 
+		initial_time = time()
 		while api_response.status_code == requests.codes.ok and k <= max_k:
-			if k%2 != 0:
-				sleep(12)
-				k += 1
+			if kp%2 != 0:
+				sleep(10)
+				kp += 1
+				k = kp//2
 				sys.stdout.write('\r')
 				sys.stdout.write("[{:{}}] {:d}%".format("="*k+">", max_k, k))
 				sys.stdout.flush()
@@ -93,8 +96,9 @@ def data_valuation(data_df, target_column, problem_type):
 					if 'job_id' in response:
 						job_id = response['job_id']
 						VALUATION_JOB_IDS[(file_identifier, target_column, problem_type)] = job_id
-						sleep(12)
-						k += 1
+						sleep(10)
+						kp += 1
+						k = kp//2
 						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 						sys.stdout.flush()
 						# Note: it is important to pass the job_id to avoid being charged twice for the same work.
@@ -104,7 +108,9 @@ def data_valuation(data_df, target_column, problem_type):
 							problem_type=problem_type, \
 							timestamp=int(time()), job_id=job_id)
 					else:
-						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*max_k, max_k, max_k, approx_opt_remaining_time(max_k)))
+						duration = int(time()-initial_time)
+						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
+						sys.stdout.write("[{:{}}] {:d}% ETA: {} Duration: {}".format("="*max_k, max_k, max_k, approx_opt_remaining_time(max_k), duration))
 						sys.stdout.write('\n')
 						sys.stdout.flush()
 						result = {}
