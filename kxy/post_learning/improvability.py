@@ -87,9 +87,9 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 				timestamp=int(time()))
 
 		initial_time = time()
-		while api_response.status_code == requests.codes.ok and k <= max_k:
+		while api_response.status_code == requests.codes.ok and k < max_k:
 			if kp%2 != 0:
-				sleep(10)
+				sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 				kp += 1
 				k = kp//2
 				sys.stdout.write('\r')
@@ -102,7 +102,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 					if 'job_id' in response:
 						job_id = response['job_id']
 						DD_IMPROVABILITY_JOB_IDS[(file_identifier, target_column, str(new_variables), problem_type)] = job_id
-						sleep(10)
+						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
 						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
@@ -221,7 +221,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 
 		while api_response.status_code == requests.codes.ok and k <= max_k:
 			if k%2 != 0:
-				sleep(12)
+				sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 				k += 1
 				sys.stdout.write('\r')
 				sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
@@ -233,7 +233,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 					if 'job_id' in response:
 						job_id = response['job_id']
 						MD_IMPROVABILITY_JOB_IDS[(file_identifier, target_column, prediction_column, problem_type)] = job_id
-						sleep(12)
+						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						k += 1
 						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 						sys.stdout.flush()

@@ -85,9 +85,9 @@ def model_explanation(data_df, prediction_column, problem_type):
 				problem_type=problem_type, timestamp=int(time()))
 
 		initial_time = time()
-		while api_response.status_code == requests.codes.ok and k <= max_k:
+		while api_response.status_code == requests.codes.ok and k < max_k:
 			if kp%2 != 0:
-				sleep(10)
+				sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 				kp += 1
 				k = kp//2
 				sys.stdout.write('\r')
@@ -100,7 +100,7 @@ def model_explanation(data_df, prediction_column, problem_type):
 					if 'job_id' in response:
 						job_id = response['job_id']
 						EXPLANATION_JOB_IDS[(file_identifier, prediction_column, problem_type)] = job_id
-						sleep(10)
+						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
 						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
