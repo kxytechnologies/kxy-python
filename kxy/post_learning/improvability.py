@@ -196,6 +196,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 		assert np.can_cast(data_df[prediction_column], float), 'The prediction column should be numeric'
 
 	k = 0
+	kp = 0
 	max_k = 100
 	sys.stdout.write('\r')
 	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
@@ -220,9 +221,10 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 				timestamp=int(time()))
 
 		while api_response.status_code == requests.codes.ok and k <= max_k:
-			if k%2 != 0:
+			if kp%2 != 0:
 				sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
-				k += 1
+				kp += 1
+				k = kp//2
 				sys.stdout.write('\r')
 				sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 				sys.stdout.flush()
@@ -234,7 +236,8 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 						job_id = response['job_id']
 						MD_IMPROVABILITY_JOB_IDS[(file_identifier, target_column, prediction_column, problem_type)] = job_id
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
-						k += 1
+						kp += 1
+						k = kp//2
 						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 						sys.stdout.flush()
 						api_response = APIClient.route(

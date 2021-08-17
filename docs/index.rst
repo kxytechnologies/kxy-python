@@ -66,9 +66,13 @@ We provide callbacks in the major Python machine learning libraries that will te
 
 .. toctree::
 	:hidden:
-	:caption: EXAMPLES
+	:caption: ILLUSTRATIONS
 
-	latest/examples/index
+	latest/applications/cheat_sheet/index
+
+	latest/applications/illustrations/index
+
+	latest/applications/case_studies/index
 
 
 .. toctree::
