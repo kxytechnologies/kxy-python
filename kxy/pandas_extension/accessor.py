@@ -13,6 +13,7 @@ package is imported alongside :code:`pandas`.
 
 import pandas as pd
 
+from .features_accessor import FeaturesAccessor
 from .finance_accessor import FinanceAccessor
 from .learning_accessor import LearningAccessor
 from .post_learning_accessor import PostLearningAccessor
@@ -20,7 +21,7 @@ from .pre_learning_accessor import PreLearningAccessor
 
 
 @pd.api.extensions.register_dataframe_accessor("kxy")
-class Accessor(PreLearningAccessor, LearningAccessor, PostLearningAccessor, FinanceAccessor):
+class Accessor(PreLearningAccessor, LearningAccessor, PostLearningAccessor, FinanceAccessor, FeaturesAccessor):
 	"""
 	Extension of the pandas.DataFrame class with the full capabilities of the :code:`kxy` platform.
 	"""
