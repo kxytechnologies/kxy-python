@@ -29,7 +29,7 @@ setup(name="kxy",
 	download_url = "https://github.com/kxytechnologies/kxy-python/archive/v%s.tar.gz" % version,
 	keywords = ["Lean ML", "AutoML", "Pre-Learning", "Post-Learning", "Model-Free ML"],
 	packages=find_packages(exclude=["tests"]),
-	install_requires=["numpy>=1.13.1", "scipy>=1.4.1", "pandas>=0.23.0", "requests==2.22.0"],
+	install_requires=["numpy>=1.13.1", "scipy>=1.4.1", "pandas>=0.23.0", "requests>=2.22.0"],
 	classifiers=[
         "Environment :: Console",
         "Intended Audience :: Developers",
