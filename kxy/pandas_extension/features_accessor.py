@@ -90,7 +90,7 @@ class FeaturesAccessor(BaseAccessor):
 		return res
 
 
-	def entity_features(self, entity, exclude=[]):
+	def entity_features(self, entity, exclude=[], name='*'):
 		"""
 		Group rows corresponding to the same entity and apply aggregation functions.
 
@@ -154,7 +154,7 @@ class FeaturesAccessor(BaseAccessor):
 			dfs += [ord_df]
 		
 		# Number of rows per entity
-		count_agg = {'COUNT(*)': (columns[0], 'count')}
+		count_agg = {'COUNT(%s)' % name: (columns[0], 'count')}
 		count_df = entity_grp.agg(**count_agg)
 		dfs += [count_df]
 
@@ -251,7 +251,7 @@ class FeaturesAccessor(BaseAccessor):
 
 
 	def generate_features(self, entity=None, encoding_method='one_hot', index=None, max_lag=None, exclude=[], \
-			means=None, quantiles=None, return_baselines=False):
+			means=None, quantiles=None, return_baselines=False, name='*'):
 		"""
 		Generate a wide range of candidate features to search from.
 
@@ -286,7 +286,7 @@ class FeaturesAccessor(BaseAccessor):
 		accessor = self
 		if entity:
 			# Entity features
-			df = accessor.entity_features(entity)
+			df = accessor.entity_features(entity, name=name)
 			accessor = FeaturesAccessor(df)
 
 		# Deviation features
