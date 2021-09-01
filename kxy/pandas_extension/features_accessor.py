@@ -163,7 +163,7 @@ class FeaturesAccessor(BaseAccessor):
 		return df
 
 
-	def deviation_features(self, exclude=[]):
+	def deviation_features(self, exclude=[], means=None, quantiles=None, return_baselines=False):
 		"""
 		Extend the dataframe with deviations of ordinal columns from row-wise aggregtes such as mean, median, 25th and 75th percentiles.
 
@@ -172,6 +172,12 @@ class FeaturesAccessor(BaseAccessor):
 		----------
 		exclude : list
 			A list of columns to exclude from feature transformations.
+		means : pandas.DataFrame | None
+			Which values, if any, to use as means.
+		quantiles : pandas.DataFrame | None
+			Which values, if any, to use as 25th, 50th, 75th percentiles.
+		return_baselines : bool
+			Whether to return which baselines have been used.
 
 
 		Returns
@@ -180,8 +186,12 @@ class FeaturesAccessor(BaseAccessor):
 			The original dataframe extended with computed features.
 		"""
 		ord_columns = [col for col in self._obj.columns if not self.is_categorical(col) and col not in exclude]
-		means = self._obj.mean(axis=0, skipna=True)
-		quantiles = self._obj.quantile(q=[0.25, 0.5, 0.75])
+
+		if means is None:
+			means = self._obj.mean(axis=0, skipna=True)
+
+		if quantiles is None:
+			quantiles = self._obj.quantile(q=[0.25, 0.5, 0.75])
 
 		df = self._obj.copy()
 		if ord_columns:
@@ -191,7 +201,10 @@ class FeaturesAccessor(BaseAccessor):
 				df['| %s - Q25(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.25][col])
 				df['| %s - Q75(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.75][col])
 
-		return df
+		if return_baselines:
+			return df, means, quantiles
+		else:
+			return df
 
 
 	def temporal_features(self, max_lag=10, exclude=[], index=None):
@@ -221,7 +234,7 @@ class FeaturesAccessor(BaseAccessor):
 		df = df.sort_index()
 		dfs = [df.copy()]
 
-		for lag in range(2, max_lag+1):
+		for lag in range(2, max_lag+2):
 			rol_grp = df.rolling(window=lag, min_periods=1)
 			lagged_mean_df = rol_grp.aggregate(nanmean).rename(columns={col: 'MEAN(%s, %d)' % (col, lag) for col in ord_columns})
 			dfs += [lagged_mean_df.copy()]
@@ -237,7 +250,8 @@ class FeaturesAccessor(BaseAccessor):
 		return df
 
 
-	def generate_features(self, entity=None, encoding_method='one_hot', index=None, max_lag=10, exclude=[]):
+	def generate_features(self, entity=None, encoding_method='one_hot', index=None, max_lag=None, exclude=[], \
+			means=None, quantiles=None, return_baselines=False):
 		"""
 		Generate a wide range of candidate features to search from.
 
@@ -256,6 +270,12 @@ class FeaturesAccessor(BaseAccessor):
 			The largest lag, if any, to consider for temporal features. Set to None to avoid temporal features.
 		index : str | None (default)
 			The column, if any, to set as index and sort before computing temporal features.
+		means : pandas.DataFrame | None
+			Which values, if any, to use as means for deviation features.
+		quantiles : pandas.DataFrame | None
+			Which values, if any, to use as 25th, 50th, 75th percentiles for deviation features.
+		return_baselines : bool
+			Whether to return which baselines have been used for deviation features.
 
 
 		Returns
@@ -270,7 +290,8 @@ class FeaturesAccessor(BaseAccessor):
 			accessor = FeaturesAccessor(df)
 
 		# Deviation features
-		df = accessor.deviation_features(exclude=exclude)
+		res = accessor.deviation_features(exclude=exclude, means=means, quantiles=quantiles, return_baselines=return_baselines)
+		df = res[0] if return_baselines else res
 		accessor = FeaturesAccessor(df)
 
 		# Ordinally encode
@@ -281,8 +302,10 @@ class FeaturesAccessor(BaseAccessor):
 			# Temporal/trend features
 			df = accessor.temporal_features(exclude=exclude, max_lag=max_lag, index=index)
 
-		return df
-
+		if return_baselines:
+			return df, res[1], res[2]
+		else:
+			return df
 
 
 
