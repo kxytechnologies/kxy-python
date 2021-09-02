@@ -17,7 +17,7 @@ class PreLearningAccessor(BaseAccessor):
 
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_pre_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
-	def data_valuation(self, target_column, problem_type=None, anonymize=False):
+	def data_valuation(self, target_column, problem_type=None, anonymize=False, snr='auto'):
 		"""
 		Estimate the highest performance metrics achievable when predicting the :code:`target_column` using all other columns.
 
@@ -63,10 +63,10 @@ class PreLearningAccessor(BaseAccessor):
 
 		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize else self._obj
 
-		return dv(_obj, target_column, problem_type)
+		return dv(_obj, target_column, problem_type, snr=snr)
 
 
-	def variable_selection(self, target_column, problem_type=None, anonymize=False):
+	def variable_selection(self, target_column, problem_type=None, anonymize=False, snr='auto'):
 		"""
 		Runs the model-free variable selection analysis.
 
@@ -108,7 +108,7 @@ class PreLearningAccessor(BaseAccessor):
 
 		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize else self._obj
 
-		return vs(_obj, target_column, problem_type)
+		return vs(_obj, target_column, problem_type, snr=snr)
 
 
 

@@ -18,7 +18,7 @@ from kxy.api import APIClient, upload_data, approx_opt_remaining_time
 # Cache old job ids to avoid being charged twice for the same job.
 VALUATION_JOB_IDS = {}
 
-def data_valuation(data_df, target_column, problem_type):
+def data_valuation(data_df, target_column, problem_type, snr='auto'):
 	"""
 	.. _data-valuation:
 	Estimate the highest performance metrics achievable when predicting the :code:`target_column` using all other columns.
@@ -73,12 +73,14 @@ def data_valuation(data_df, target_column, problem_type):
 				path='/wk/data-valuation', method='POST', 
 				file_identifier=file_identifier, target_column=target_column, \
 				problem_type=problem_type, \
-				timestamp=int(time()), job_id=job_id)
+				timestamp=int(time()), job_id=job_id, \
+				snr=snr)
 		else:
 			api_response = APIClient.route(
 				path='/wk/data-valuation', method='POST', \
 				file_identifier=file_identifier, target_column=target_column, \
-				problem_type=problem_type, timestamp=int(time()))
+				problem_type=problem_type, timestamp=int(time()), \
+				snr=snr)
 
 		initial_time = time()
 		while api_response.status_code == requests.codes.ok and k < max_k:
@@ -106,7 +108,8 @@ def data_valuation(data_df, target_column, problem_type):
 							path='/wk/data-valuation', method='POST', 
 							file_identifier=file_identifier, target_column=target_column, \
 							problem_type=problem_type, \
-							timestamp=int(time()), job_id=job_id)
+							timestamp=int(time()), job_id=job_id, \
+							snr=snr)
 					else:
 						duration = int(time()-initial_time)
 						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'

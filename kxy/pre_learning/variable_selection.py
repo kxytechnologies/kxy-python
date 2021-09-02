@@ -18,7 +18,7 @@ from kxy.api import APIClient, upload_data, approx_opt_remaining_time
 # Cache old job ids to avoid being charged twice for the same job.
 VARIABLE_SELECTION_JOB_IDS = {}
 
-def variable_selection(data_df, target_column, problem_type):
+def variable_selection(data_df, target_column, problem_type, snr='auto'):
 	"""
 	.. _variable-selection:
 	Runs the model-free variable selection analysis.
@@ -78,12 +78,14 @@ def variable_selection(data_df, target_column, problem_type):
 			api_response = APIClient.route(
 				path='/wk/variable-selection', method='POST', \
 				file_identifier=file_identifier, target_column=target_column, \
-				problem_type=problem_type, timestamp=int(time()), job_id=job_id)
+				problem_type=problem_type, timestamp=int(time()), job_id=job_id, \
+				snr=snr)
 		else:
 			api_response = APIClient.route(
 				path='/wk/variable-selection', method='POST', \
 				file_identifier=file_identifier, target_column=target_column, \
-				problem_type=problem_type, timestamp=int(time()))
+				problem_type=problem_type, timestamp=int(time()), \
+				snr=snr)
 
 		initial_time = time()
 		while api_response.status_code == requests.codes.ok and k < max_k:
@@ -110,7 +112,8 @@ def variable_selection(data_df, target_column, problem_type):
 						api_response = APIClient.route(
 							path='/wk/variable-selection', method='POST', \
 							file_identifier=file_identifier, target_column=target_column, \
-							problem_type=problem_type, timestamp=int(time()), job_id=job_id)
+							problem_type=problem_type, timestamp=int(time()), job_id=job_id, \
+							snr=snr)
 					else:
 						duration = int(time()-initial_time)
 						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'

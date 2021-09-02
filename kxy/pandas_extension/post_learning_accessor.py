@@ -19,7 +19,7 @@ class PostLearningAccessor(BaseAccessor):
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_post_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
 
-	def data_driven_improvability(self, target_column, new_variables, problem_type=None, anonymize=False):
+	def data_driven_improvability(self, target_column, new_variables, problem_type=None, anonymize=False, snr='auto'):
 		"""
 		Estimate the potential performance boost that a set of new explanatory variables can bring about.
 
@@ -64,10 +64,10 @@ class PostLearningAccessor(BaseAccessor):
 
 		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize else self._obj
 
-		return ddi(_obj, target_column, new_variables, problem_type)
+		return ddi(_obj, target_column, new_variables, problem_type, snr=snr)
 
 
-	def model_driven_improvability(self, target_column, prediction_column, problem_type=None, anonymize=False):
+	def model_driven_improvability(self, target_column, prediction_column, problem_type=None, anonymize=False, snr='auto'):
 		"""
 		Estimate the extent to which a trained supervised learner may be improved in a model-driven fashion (i.e. without resorting to additional explanatory variables).
 
@@ -116,10 +116,10 @@ class PostLearningAccessor(BaseAccessor):
 
 		_obj = self.anonymize(columns_to_exclude=[target_column, prediction_column]) if anonymize else self._obj
 
-		return mdi(_obj, target_column, prediction_column, problem_type)
+		return mdi(_obj, target_column, prediction_column, problem_type, snr=snr)
 
 
-	def model_explanation(self, prediction_column, problem_type=None, anonymize=False):
+	def model_explanation(self, prediction_column, problem_type=None, anonymize=False, snr='auto'):
 		"""
 		Analyzes the variables that a model relies on the most in a brute-force fashion.
 		
@@ -167,6 +167,6 @@ class PostLearningAccessor(BaseAccessor):
 
 		_obj = self.anonymize(columns_to_exclude=[prediction_column]) if anonymize else self._obj
 
-		return me(_obj, prediction_column, problem_type)
+		return me(_obj, prediction_column, problem_type, snr=snr)
 
 

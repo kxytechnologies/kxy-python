@@ -19,7 +19,7 @@ from kxy.api import APIClient, upload_data, approx_opt_remaining_time
 DD_IMPROVABILITY_JOB_IDS = {}
 MD_IMPROVABILITY_JOB_IDS = {}
 
-def data_driven_improvability(data_df, target_column, new_variables, problem_type):
+def data_driven_improvability(data_df, target_column, new_variables, problem_type, snr='auto'):
 	"""
 	.. data-driven-improvability:
 	Estimate the potential performance boost that a set of new explanatory variables can bring about.
@@ -78,13 +78,13 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 				path='/wk/data-driven-improvability', method='POST', \
 				file_identifier=file_identifier, target_column=target_column, \
 				problem_type=problem_type, new_variables=json.dumps(new_variables), \
-				job_id=job_id, timestamp=int(time()))
+				job_id=job_id, timestamp=int(time()), snr=snr)
 		else:
 			api_response = APIClient.route(
 				path='/wk/data-driven-improvability', method='POST', \
 				file_identifier=file_identifier, target_column=target_column, \
 				problem_type=problem_type, new_variables=json.dumps(new_variables), \
-				timestamp=int(time()))
+				timestamp=int(time()), snr=snr)
 
 		initial_time = time()
 		while api_response.status_code == requests.codes.ok and k < max_k:
@@ -111,7 +111,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 							path='/wk/data-driven-improvability', method='POST', \
 							file_identifier=file_identifier, target_column=target_column, \
 							problem_type=problem_type, new_variables=json.dumps(new_variables), \
-							timestamp=int(time()))
+							timestamp=int(time()), snr=snr)
 					else:
 						duration = int(time()-initial_time)
 						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
@@ -149,7 +149,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 	return None
 
 
-def model_driven_improvability(data_df, target_column, prediction_column, problem_type):
+def model_driven_improvability(data_df, target_column, prediction_column, problem_type, snr='auto'):
 	"""
 	.. model-driven-improvability:
 	Estimate the extent to which a trained supervised learner may be improved in a model-driven fashion (i.e. without resorting to additional explanatory variables).
@@ -212,13 +212,13 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 				path='/wk/model-driven-improvability', method='POST', \
 				file_identifier=file_identifier, target_column=target_column, \
 				problem_type=problem_type, prediction_column=prediction_column, \
-				job_id=job_id, timestamp=int(time()))
+				job_id=job_id, timestamp=int(time()), snr=snr)
 		else:
 			api_response = APIClient.route(
 				path='/wk/model-driven-improvability', method='POST', \
 				file_identifier=file_identifier, target_column=target_column, \
 				problem_type=problem_type, prediction_column=prediction_column, \
-				timestamp=int(time()))
+				timestamp=int(time()), snr=snr)
 
 		while api_response.status_code == requests.codes.ok and k <= max_k:
 			if kp%2 != 0:
@@ -244,7 +244,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 							path='/wk/model-driven-improvability', method='POST', \
 							file_identifier=file_identifier, target_column=target_column, \
 							problem_type=problem_type, prediction_column=prediction_column, \
-							job_id=job_id, timestamp=int(time()))
+							job_id=job_id, timestamp=int(time()), snr=snr)
 					else:
 						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*max_k, max_k, max_k, approx_opt_remaining_time(max_k)))
 						sys.stdout.write('\n')
