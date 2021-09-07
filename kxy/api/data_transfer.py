@@ -98,7 +98,7 @@ def upload_data(df):
 	memory_usage = df.memory_usage(index=False).sum()/(1024.0*1024.0*1024.0)
 	if memory_usage > 0.5:
 		# Truncate floats with excessive precision to save space.
-		files = {'file': (file_name, df.to_csv(index=False, float_format='%.7f'))}
+		files = {'file': (file_name, df.to_csv(index=False, float_format='%.5f'))}
 	else:
 		files = {'file': (file_name, df.to_csv(index=False))}
 	url = presigned_url['url']

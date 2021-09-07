@@ -67,9 +67,9 @@ class FeaturesAccessor(BaseAccessor):
 
 
 	def _binary_encode(self, column):
-		'''
+		"""
 		Binary-encode a specific column.
-		'''
+		"""
 		assert self.is_categorical(column), 'The column should be categorical'
 		x = self._obj[column].values
 		x_ = np.array([str(_) for _ in x]).astype(str)
@@ -149,7 +149,7 @@ class FeaturesAccessor(BaseAccessor):
 			ord_agg.update({'Q75(%s)' % col: (col, q75) for col in ord_columns})
 			ord_agg.update({'MIN(%s)' % col: (col, nanmin) for col in ord_columns})
 			ord_agg.update({'MAX(%s)' % col: (col, nanmax) for col in ord_columns})
-			ord_agg.update({'MAX-MIN(%s)' % col: (col, nanmaxmmin) for col in ord_columns})
+			ord_agg.update({'MAX(%s)-MIN(%s)' % (col, col): (col, nanmaxmmin) for col in ord_columns})
 			ord_df = entity_grp.agg(**ord_agg)
 			dfs += [ord_df]
 		
@@ -196,10 +196,10 @@ class FeaturesAccessor(BaseAccessor):
 		df = self._obj.copy()
 		if ord_columns:
 			for col in ord_columns:
-				df['| %s - MEAN(%s)|' % (col, col)] = np.abs(df[col]-means.loc[col])
-				df['| %s - MEDIAN(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.5][col])
-				df['| %s - Q25(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.25][col])
-				df['| %s - Q75(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.75][col])
+				df['|%s - MEAN(%s)|' % (col, col)] = np.abs(df[col]-means.loc[col])
+				df['|%s - MEDIAN(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.5][col])
+				df['|%s - Q25(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.25][col])
+				df['|%s - Q75(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.75][col])
 
 		if return_baselines:
 			return df, means, quantiles
@@ -242,7 +242,7 @@ class FeaturesAccessor(BaseAccessor):
 			dfs += [lagged_min_df.copy()]
 			lagged_max_df = rol_grp.aggregate(nanmax).rename(columns={col: 'MAX(%s, %d)' % (col, lag) for col in ord_columns})
 			dfs += [lagged_max_df.copy()]
-			lagged_maxmmin_df = rol_grp.aggregate(nanmaxmmin).rename(columns={col: 'MAX-MIN(%s, %d)' % (col, lag) for col in ord_columns})
+			lagged_maxmmin_df = rol_grp.aggregate(nanmaxmmin).rename(columns={col: 'MAX(%s, %d)-MIN(%s, %d)' % (col, lag, col, lag) for col in ord_columns})
 			dfs += [lagged_maxmmin_df.copy()]
 
 		df = pd.concat(dfs, axis=1)
