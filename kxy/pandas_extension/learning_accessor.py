@@ -158,43 +158,43 @@ class LearningAccessor(BaseAccessor):
 
 			self.models = models
 
-			# Compute training/validation/testing performances
-			x_columns = [_ for _ in obj.columns if _ != target_column]
+		# Compute training/validation/testing performances
+		x_columns = [_ for _ in obj.columns if _ != target_column]
 
-			x_train_df = self.train_df[x_columns]
-			y_train_df = self.train_df[target_column]
-			train_predictions = self.predict(x_train_df)
-			if self.problem_type == 'regression':
-				self.train_score = r2_score(y_train_df.values, train_predictions.values)
-			else:
-				self.train_score = accuracy_score(y_train_df.values, train_predictions.values)
+		x_train_df = self.train_df[x_columns]
+		y_train_df = self.train_df[target_column]
+		train_predictions = self.predict(x_train_df)
+		if self.problem_type == 'regression':
+			self.train_score = r2_score(y_train_df.values, train_predictions.values)
+		else:
+			self.train_score = accuracy_score(y_train_df.values, train_predictions.values)
 
-			x_val_df = self.val_df[x_columns]
-			y_val_df = self.val_df[target_column]
-			val_predictions = self.predict(x_val_df)
-			if self.problem_type == 'regression':
-				self.val_score = r2_score(y_val_df.values, val_predictions.values)
-			else:
-				self.val_score = accuracy_score(y_val_df.values, val_predictions.values)
+		x_val_df = self.val_df[x_columns]
+		y_val_df = self.val_df[target_column]
+		val_predictions = self.predict(x_val_df)
+		if self.problem_type == 'regression':
+			self.val_score = r2_score(y_val_df.values, val_predictions.values)
+		else:
+			self.val_score = accuracy_score(y_val_df.values, val_predictions.values)
 
-			x_test_df = self.test_df[x_columns]
-			y_test_df = self.test_df[target_column]
-			test_predictions = self.predict(x_test_df)
-			if self.problem_type == 'regression':
-				self.test_score = r2_score(y_test_df.values, test_predictions.values)
-			else:
-				self.test_score = accuracy_score(y_test_df.values, test_predictions.values)
+		x_test_df = self.test_df[x_columns]
+		y_test_df = self.test_df[target_column]
+		test_predictions = self.predict(x_test_df)
+		if self.problem_type == 'regression':
+			self.test_score = r2_score(y_test_df.values, test_predictions.values)
+		else:
+			self.test_score = accuracy_score(y_test_df.values, test_predictions.values)
 
-			results = {'Selected Variables': self.variables[:len(self.models)]}
-			if self.problem_type == 'regression':
-				results['Training R-Squared'] = '%.3f' % self.train_score
-				results['Validation R-Squared'] = '%.3f' % self.val_score
-				results['Testing R-Squared'] = '%.3f' % self.test_score
+		results = {'Selected Variables': self.variables[:len(self.models)]}
+		if self.problem_type == 'regression':
+			results['Training R-Squared'] = '%.3f' % self.train_score
+			results['Validation R-Squared'] = '%.3f' % self.val_score
+			results['Testing R-Squared'] = '%.3f' % self.test_score
 
-			if self.problem_type == 'classification':
-				results['Training Accuracy'] = '%.3f' % self.train_score
-				results['Validation Accuracy'] = '%.3f' % self.val_score
-				results['Testing Accuracy'] = '%.3f' % self.test_score
+		if self.problem_type == 'classification':
+			results['Training Accuracy'] = '%.3f' % self.train_score
+			results['Validation Accuracy'] = '%.3f' % self.val_score
+			results['Testing Accuracy'] = '%.3f' % self.test_score
 
 		return results
 		
