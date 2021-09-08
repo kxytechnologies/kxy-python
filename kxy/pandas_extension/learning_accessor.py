@@ -19,13 +19,13 @@ class LearningAccessor(BaseAccessor):
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
 	def fit(self, target_column, learner_cls, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
-			force_redo=False, max_n_features=None, min_n_features=None, anonymize=False):
+			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=1, anonymize=False):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
 		Specifically, training proceeds as follows. First, KXY's model-free variable selection is run (i.e. :code:`df.kxy.variable_selection`). 
 
-		Then we train a model (instance of :code:`learner_cls`) using the most important feature/variable to predict the target (defined by :code:`target_column`).
+		Then we train a model (instance of :code:`learner_cls`) using the :code:`start_n_features` most important feature/variable to predict the target (defined by :code:`target_column`).
 
 		Then we consider using the second most important variable to fix the mistakes made by the previously trained model.
 	
@@ -53,6 +53,8 @@ class LearningAccessor(BaseAccessor):
 			Boosting will not stop until at least this many features/explanatory variables are selected.
 		max_n_features : int | None
 			Boosting will stop as soon as this many features/explanatory variables are selected.
+		start_n_features : int
+			The number of most important features boosting will start with.
 		anonymize : bool
 			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
 
@@ -91,9 +93,9 @@ class LearningAccessor(BaseAccessor):
 
 			# 1. Model-free variable selection
 			vs_accessor = PreLearningAccessor(obj)
-			self.variable_selection = vs_accessor.variable_selection(self.target_column, problem_type=self.problem_type, \
+			self.variable_selection_results = vs_accessor.variable_selection(self.target_column, problem_type=self.problem_type, \
 				snr=snr, anonymize=anonymize)
-			self.variables = [_ for _ in self.variable_selection['Variable'].values if _.lower() != 'no variable']
+			self.variables = [_ for _ in self.variable_selection_results['Variable'].values if _.lower() != 'no variable']
 			n_variables = len(self.variables)
 			if max_n_features:
 				n_variables = min(n_variables, max_n_features)
@@ -110,8 +112,9 @@ class LearningAccessor(BaseAccessor):
 
 			models = []
 			score_label = 'Running Achievable R-Squared' if self.problem_type == 'regression' else 'Running Achievable Accuracy'
-			previous_score = float(self.variable_selection[score_label].loc[0])
-			for i in range(1, n_variables+1):
+			previous_score = float(self.variable_selection_results[score_label].loc[0])
+			self.start_n_features = start_n_features
+			for i in range(self.start_n_features, n_variables+1):
 				vs = self.variables[:i]
 				x_train = self.train_df[vs].values.copy()
 				x_val = self.val_df[vs].values.copy()
@@ -156,6 +159,10 @@ class LearningAccessor(BaseAccessor):
 					logging.info('Stopping training as variable %s does not increase validation performance (old: %.3f, new: %.3f)' % (self.variables[i-1], previous_score, val_score))
 					break
 
+				if max_n_features and (i==max_n_features):
+					logging.info('Stopping training as the maximum number of variables (%d) has been reached' % max_n_features)
+					break				
+
 			self.models = models
 
 			# Compute training/validation/testing performances
@@ -185,7 +192,9 @@ class LearningAccessor(BaseAccessor):
 			else:
 				self.test_score = accuracy_score(y_test_df.values, test_predictions.values)
 
-		results = {'Selected Variables': self.variables[:len(self.models)]}
+			self.selected_variables = self.variables[:self.start_n_features+len(self.models)-1]
+
+		results = {'Selected Variables': self.selected_variables}
 		if self.problem_type == 'regression':
 			results['Training R-Squared'] = '%.3f' % self.train_score
 			results['Validation R-Squared'] = '%.3f' % self.val_score
@@ -222,10 +231,10 @@ class LearningAccessor(BaseAccessor):
 
 		data = obj[self.variables]
 		y_pred = None
-		for i in range(len(self.models)):
-			vs = self.variables[:i+1]
+		for i in range(self.start_n_features, self.start_n_features+len(self.models)):
+			vs = self.variables[:i]
 			x = data[vs].copy()
-			y_error_pred = self.models[i].predict(x)
+			y_error_pred = self.models[i-self.start_n_features].predict(x)
 
 			if self.problem_type == 'regression':
 				y_pred = y_error_pred.copy() if y_pred is None else y_pred+y_error_pred

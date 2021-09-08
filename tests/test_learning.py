@@ -35,5 +35,23 @@ def test_lean_boosted_xgboost_classifier():
 	results = features_df.kxy.fit(target_column, xgboost_classifier_cls, \
 		problem_type='classification')
 
-	assert results['Testing Accuracy'] == '0.861'
+	assert results['Testing Accuracy'] == '0.854'
 	assert results['Selected Variables'] == ['Variance', '|Skewness - Q25(Skewness)|']
+
+
+def test_single_learner():
+	# Regression
+	xgboost_regressor_cls = get_sklearn_learner('xgboost.XGBRegressor')
+	dataset = Abalone()
+	target_column = dataset.y_column
+	df = dataset.df
+
+	# Features generation
+	features_df = df.kxy.generate_features(entity=None, max_lag=None, name='*', exclude=[target_column])
+
+	# Model building
+	results = features_df.kxy.fit(target_column, xgboost_regressor_cls, \
+		problem_type='regression', start_n_features=2, min_n_features=2, max_n_features=2)
+	assert results['Testing R-Squared'] == '0.493'
+	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight']
+	assert len(features_df.kxy.models) == 1
