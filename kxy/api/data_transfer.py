@@ -104,8 +104,9 @@ def upload_data(df):
 	if memory_usage > 1.:
 		numeric_cols = [col for col in df.columns if np.can_cast(df[col], float)]
 		df[numeric_cols] =  df[numeric_cols].astype(np.float32)
+		file_name = file_name.replace('.csv', '.parquet')
 		# Truncate floats with excessive precision to save space.
-		files = {'file': (file_name, df.to_csv(index=False, float_format='%.3f'))}
+		files = {'file': (file_name, df.to_parquet(index=False))}
 	elif memory_usage > 0.5:
 		numeric_cols = [col for col in df.columns if np.can_cast(df[col], float)]
 		df[numeric_cols] =  df[numeric_cols].astype(np.float32)
