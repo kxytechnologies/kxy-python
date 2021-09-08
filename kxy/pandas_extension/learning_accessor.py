@@ -75,6 +75,9 @@ class LearningAccessor(BaseAccessor):
 		for col in obj.columns:
 			assert not self.is_categorical(col), 'All columns should be numeric'
 
+		x_columns = [_ for _ in obj.columns if _ != target_column]
+		obj[x_columns] = obj[x_columns].astype(np.float32)
+
 		if self.problem_type == 'classification':
 			labels = set(list(obj[target_column].values.astype(int)))
 			binary_labels = {0, 1}
@@ -93,6 +96,9 @@ class LearningAccessor(BaseAccessor):
 
 			# 1. Model-free variable selection
 			vs_accessor = PreLearningAccessor(obj)
+			if obj.memory_usage(index=False).sum()/(1024.0*1024.0*1024.0) > 1.:
+				# The dataframe is too big to be sent as such: we need to normalize and reduce the precision before uploading the file.
+				anonymize=True
 			self.variable_selection_results = vs_accessor.variable_selection(self.target_column, problem_type=self.problem_type, \
 				snr=snr, anonymize=anonymize)
 			self.variables = [_ for _ in self.variable_selection_results['Variable'].values if _.lower() != 'no variable']
@@ -166,8 +172,6 @@ class LearningAccessor(BaseAccessor):
 			self.models = models
 
 			# Compute training/validation/testing performances
-			x_columns = [_ for _ in obj.columns if _ != target_column]
-
 			x_train_df = self.train_df[x_columns]
 			y_train_df = self.train_df[target_column]
 			train_predictions = self.predict(x_train_df)

@@ -11,6 +11,7 @@ from time import time
 import requests
 
 import pandas as pd
+import numpy as np
 
 from .client import APIClient
 
@@ -99,7 +100,15 @@ def upload_data(df):
 	logging.debug('Preparing the data to upload')
 	file_name = identifier + '.csv'
 	memory_usage = df.memory_usage(index=False).sum()/(1024.0*1024.0*1024.0)
-	if memory_usage > 0.5:
+
+	if memory_usage > 1.:
+		numeric_cols = [col for col in df.columns if np.can_cast(df[col], float)]
+		df[numeric_cols] =  df[numeric_cols].astype(np.float32)
+		# Truncate floats with excessive precision to save space.
+		files = {'file': (file_name, df.to_csv(index=False, float_format='%.3f'))}
+	elif memory_usage > 0.5:
+		numeric_cols = [col for col in df.columns if np.can_cast(df[col], float)]
+		df[numeric_cols] =  df[numeric_cols].astype(np.float32)
 		# Truncate floats with excessive precision to save space.
 		files = {'file': (file_name, df.to_csv(index=False, float_format='%.5f'))}
 	else:
