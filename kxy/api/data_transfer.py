@@ -71,8 +71,11 @@ def upload_data(df):
 	"""
 	logging.debug('')
 	logging.debug('Hashing the data to form the file name')
-	content = pd.util.hash_pandas_object(df).to_string().encode()
-	identifier = hashlib.sha256(content).hexdigest()
+	content = pd.util.hash_pandas_object(df).to_string()
+	data_identifier = hashlib.sha256(content.encode()).hexdigest()
+	columns = str(sorted([col for col in df.columns]))
+	columns_identifier = hashlib.sha256(columns.encode()).hexdigest()
+	identifier = hashlib.sha256((data_identifier+columns_identifier).encode()).hexdigest()
 	logging.debug('Done hashing the data')
 
 	if UPLOADED_FILES.get(identifier, False):

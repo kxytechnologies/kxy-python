@@ -17,7 +17,7 @@ def test_lean_boosted_xgboost_regressor():
 	results = features_df.kxy.fit(target_column, xgboost_regressor_cls, \
 		problem_type='regression')
 	assert results['Testing R-Squared'] == '0.440'
-	assert results['Selected Variables'] == ['Variance', '|Skewness - Q25(Skewness)|']
+	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight']
 
 
 def test_lean_boosted_xgboost_classifier():
@@ -37,4 +37,3 @@ def test_lean_boosted_xgboost_classifier():
 
 	assert results['Testing Accuracy'] == '0.861'
 	assert results['Selected Variables'] == ['Variance', '|Skewness - Q25(Skewness)|']
-
