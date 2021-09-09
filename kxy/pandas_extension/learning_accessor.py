@@ -4,7 +4,7 @@ import inspect
 import logging
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score, r2_score
+from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
 
 from .base_accessor import BaseAccessor
 from .pre_learning_accessor import PreLearningAccessor
@@ -177,6 +177,8 @@ class LearningAccessor(BaseAccessor):
 			train_predictions = self.predict(x_train_df)
 			if self.problem_type == 'regression':
 				self.train_score = r2_score(y_train_df.values, train_predictions.values)
+				self.train_rmse = mean_squared_error(y_train_df.values, train_predictions.values, squared=False)
+				self.train_rmspe = mean_squared_error(np.ones_like(y_train_df.values.flatten()), train_predictions.values.flatten()/y_train_df.values.flatten(), squared=False)
 			else:
 				self.train_score = accuracy_score(y_train_df.values, train_predictions.values)
 
@@ -185,6 +187,8 @@ class LearningAccessor(BaseAccessor):
 			val_predictions = self.predict(x_val_df)
 			if self.problem_type == 'regression':
 				self.val_score = r2_score(y_val_df.values, val_predictions.values)
+				self.val_rmse = mean_squared_error(y_val_df.values, val_predictions.values, squared=False)
+				self.val_rmspe = mean_squared_error(np.ones_like(y_val_df.values.flatten()), val_predictions.values.flatten()/y_val_df.values.flatten(), squared=False)
 			else:
 				self.val_score = accuracy_score(y_val_df.values, val_predictions.values)
 
@@ -193,6 +197,8 @@ class LearningAccessor(BaseAccessor):
 			test_predictions = self.predict(x_test_df)
 			if self.problem_type == 'regression':
 				self.test_score = r2_score(y_test_df.values, test_predictions.values)
+				self.test_rmse = mean_squared_error(y_test_df.values, test_predictions.values, squared=False)
+				self.test_rmspe = mean_squared_error(np.ones_like(y_test_df.values.flatten()), test_predictions.values.flatten()/y_test_df.values.flatten(), squared=False)
 			else:
 				self.test_score = accuracy_score(y_test_df.values, test_predictions.values)
 
@@ -203,6 +209,12 @@ class LearningAccessor(BaseAccessor):
 			results['Training R-Squared'] = '%.3f' % self.train_score
 			results['Validation R-Squared'] = '%.3f' % self.val_score
 			results['Testing R-Squared'] = '%.3f' % self.test_score
+			results['Training RMSE'] = '%.5f' % self.train_rmse
+			results['Validation RMSE'] = '%.5f' % self.val_rmse
+			results['Testing RMSE'] = '%.5f' % self.test_rmse
+			results['Training RMSPE'] = '%.5f' % self.train_rmspe
+			results['Validation RMSPE'] = '%.5f' % self.val_rmspe
+			results['Testing RMSPE'] = '%.5f' % self.test_rmspe
 
 		if self.problem_type == 'classification':
 			results['Training Accuracy'] = '%.3f' % self.train_score
