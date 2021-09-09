@@ -19,7 +19,8 @@ class LearningAccessor(BaseAccessor):
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
 	def fit(self, target_column, learner_cls, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
-			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=1, anonymize=False):
+			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=1, anonymize=False, \
+			benchmark_feature=None):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -57,6 +58,8 @@ class LearningAccessor(BaseAccessor):
 			The number of most important features boosting will start with.
 		anonymize : bool
 			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
+		benchmark_feature : str | None
+			When not None, 'benchmark' performance metrics using this column as predictor will be reported in the output dictionary.
 
 
 		Returns
@@ -80,6 +83,10 @@ class LearningAccessor(BaseAccessor):
 			labels = set(list(obj[target_column].values.astype(int)))
 			binary_labels = {0, 1}
 			assert labels.issubset(binary_labels), 'Classification labels should either be 0 or 1'
+
+		if benchmark_feature:
+			assert benchmark_feature in obj.columns, 'The benchmark feature should be a valid column'
+		self.benchmark_feature = benchmark_feature
 
 		if getattr(self, 'models', None) is None or force_redo:
 			# 0. Train/Validation split
@@ -177,6 +184,14 @@ class LearningAccessor(BaseAccessor):
 				self.train_score = r2_score(y_train_df.values, train_predictions.values)
 				self.train_rmse = mean_squared_error(y_train_df.values, train_predictions.values, squared=False)
 				self.train_rmspe = mean_squared_error(np.ones_like(y_train_df.values.flatten()), train_predictions.values.flatten()/y_train_df.values.flatten(), squared=False)
+
+				if self.benchmark_feature:
+					train_benchmark = self.train_df[self.benchmark_feature]
+					self.train_benchmark_score = r2_score(y_train_df.values, train_benchmark.values)
+					self.train_benchmark_rmse = mean_squared_error(y_train_df.values, train_benchmark.values, squared=False)
+					self.train_benchmark_rmspe = mean_squared_error(np.ones_like(y_train_df.values.flatten()), \
+						train_benchmark.values.flatten()/y_train_df.values.flatten(), squared=False)
+
 			else:
 				self.train_score = accuracy_score(y_train_df.values, train_predictions.values)
 
@@ -187,6 +202,14 @@ class LearningAccessor(BaseAccessor):
 				self.val_score = r2_score(y_val_df.values, val_predictions.values)
 				self.val_rmse = mean_squared_error(y_val_df.values, val_predictions.values, squared=False)
 				self.val_rmspe = mean_squared_error(np.ones_like(y_val_df.values.flatten()), val_predictions.values.flatten()/y_val_df.values.flatten(), squared=False)
+
+				if self.benchmark_feature:
+					val_benchmark = self.val_df[self.benchmark_feature]
+					self.val_benchmark_score = r2_score(y_val_df.values, val_benchmark.values)
+					self.val_benchmark_rmse = mean_squared_error(y_val_df.values, val_benchmark.values, squared=False)
+					self.val_benchmark_rmspe = mean_squared_error(np.ones_like(y_val_df.values.flatten()), \
+						val_benchmark.values.flatten()/y_val_df.values.flatten(), squared=False)
+
 			else:
 				self.val_score = accuracy_score(y_val_df.values, val_predictions.values)
 
@@ -197,6 +220,14 @@ class LearningAccessor(BaseAccessor):
 				self.test_score = r2_score(y_test_df.values, test_predictions.values)
 				self.test_rmse = mean_squared_error(y_test_df.values, test_predictions.values, squared=False)
 				self.test_rmspe = mean_squared_error(np.ones_like(y_test_df.values.flatten()), test_predictions.values.flatten()/y_test_df.values.flatten(), squared=False)
+
+				if self.benchmark_feature:
+					test_benchmark = self.test_df[self.benchmark_feature]
+					self.test_benchmark_score = r2_score(y_test_df.values, test_benchmark.values)
+					self.test_benchmark_rmse = mean_squared_error(y_test_df.values, test_benchmark.values, squared=False)
+					self.test_benchmark_rmspe = mean_squared_error(np.ones_like(y_test_df.values.flatten()), \
+						test_benchmark.values.flatten()/y_test_df.values.flatten(), squared=False)
+
 			else:
 				self.test_score = accuracy_score(y_test_df.values, test_predictions.values)
 
@@ -213,6 +244,18 @@ class LearningAccessor(BaseAccessor):
 			results['Training RMSPE'] = '%.5f' % self.train_rmspe
 			results['Validation RMSPE'] = '%.5f' % self.val_rmspe
 			results['Testing RMSPE'] = '%.5f' % self.test_rmspe
+			if self.benchmark_feature:
+				results['Benchmark Training R-Squared'] = '%.3f' % self.train_benchmark_score
+				results['Benchmark Validation R-Squared'] = '%.3f' % self.val_benchmark_score
+				results['Benchmark Testing R-Squared'] = '%.3f' % self.test_benchmark_score
+				results['Benchmark Training RMSE'] = '%.5f' % self.train_benchmark_rmse
+				results['Benchmark Validation RMSE'] = '%.5f' % self.val_benchmark_rmse
+				results['Benchmark Testing RMSE'] = '%.5f' % self.test_benchmark_rmse
+				results['Benchmark Training RMSPE'] = '%.5f' % self.train_benchmark_rmspe
+				results['Benchmark Validation RMSPE'] = '%.5f' % self.val_benchmark_rmspe
+				results['Benchmark Testing RMSPE'] = '%.5f' % self.test_benchmark_rmspe
+
+
 
 		if self.problem_type == 'classification':
 			results['Training Accuracy'] = '%.3f' % self.train_score
