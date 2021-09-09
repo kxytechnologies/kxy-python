@@ -124,7 +124,7 @@ def upload_data(df):
 	if upload_response.status_code in [requests.codes.ok, requests.codes.created, requests.codes.accepted, requests.codes.no_content]:
 		logging.debug('Data successfully uploaded')
 		UPLOADED_FILES[identifier] = True
-		return identifier
+		return file_name
 	else:
 		logging.warning('Failed to upload the file. Received status code %s.' % (upload_response.status_code))
 

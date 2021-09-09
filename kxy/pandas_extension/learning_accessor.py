@@ -76,8 +76,6 @@ class LearningAccessor(BaseAccessor):
 			assert not self.is_categorical(col), 'All columns should be numeric'
 
 		x_columns = [_ for _ in obj.columns if _ != target_column]
-		obj[x_columns] = obj[x_columns].astype(np.float32)
-
 		if self.problem_type == 'classification':
 			labels = set(list(obj[target_column].values.astype(int)))
 			binary_labels = {0, 1}
