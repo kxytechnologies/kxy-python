@@ -69,20 +69,20 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 	sys.stdout.flush()
 
-	file_identifier = upload_data(data_df)
-	if file_identifier:
-		job_id = DD_IMPROVABILITY_JOB_IDS.get((file_identifier, target_column, str(new_variables), problem_type), None)
+	file_name = upload_data(data_df)
+	if file_name:
+		job_id = DD_IMPROVABILITY_JOB_IDS.get((file_name, target_column, str(new_variables), problem_type), None)
 
 		if job_id:
 			api_response = APIClient.route(
 				path='/wk/data-driven-improvability', method='POST', \
-				file_identifier=file_identifier, target_column=target_column, \
+				file_name=file_name, target_column=target_column, \
 				problem_type=problem_type, new_variables=json.dumps(new_variables), \
 				job_id=job_id, timestamp=int(time()), snr=snr)
 		else:
 			api_response = APIClient.route(
 				path='/wk/data-driven-improvability', method='POST', \
-				file_identifier=file_identifier, target_column=target_column, \
+				file_name=file_name, target_column=target_column, \
 				problem_type=problem_type, new_variables=json.dumps(new_variables), \
 				timestamp=int(time()), snr=snr)
 
@@ -101,7 +101,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
-						DD_IMPROVABILITY_JOB_IDS[(file_identifier, target_column, str(new_variables), problem_type)] = job_id
+						DD_IMPROVABILITY_JOB_IDS[(file_name, target_column, str(new_variables), problem_type)] = job_id
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
@@ -109,7 +109,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 						sys.stdout.flush()
 						api_response = APIClient.route(
 							path='/wk/data-driven-improvability', method='POST', \
-							file_identifier=file_identifier, target_column=target_column, \
+							file_name=file_name, target_column=target_column, \
 							problem_type=problem_type, new_variables=json.dumps(new_variables), \
 							timestamp=int(time()), snr=snr)
 					else:
@@ -202,21 +202,21 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 	sys.stdout.flush()
 
-	file_identifier = upload_data(data_df)
+	file_name = upload_data(data_df)
 
-	if file_identifier:
-		job_id = MD_IMPROVABILITY_JOB_IDS.get((file_identifier, target_column, prediction_column, problem_type), None)
+	if file_name:
+		job_id = MD_IMPROVABILITY_JOB_IDS.get((file_name, target_column, prediction_column, problem_type), None)
 
 		if job_id:
 			api_response = APIClient.route(
 				path='/wk/model-driven-improvability', method='POST', \
-				file_identifier=file_identifier, target_column=target_column, \
+				file_name=file_name, target_column=target_column, \
 				problem_type=problem_type, prediction_column=prediction_column, \
 				job_id=job_id, timestamp=int(time()), snr=snr)
 		else:
 			api_response = APIClient.route(
 				path='/wk/model-driven-improvability', method='POST', \
-				file_identifier=file_identifier, target_column=target_column, \
+				file_name=file_name, target_column=target_column, \
 				problem_type=problem_type, prediction_column=prediction_column, \
 				timestamp=int(time()), snr=snr)
 
@@ -234,7 +234,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
-						MD_IMPROVABILITY_JOB_IDS[(file_identifier, target_column, prediction_column, problem_type)] = job_id
+						MD_IMPROVABILITY_JOB_IDS[(file_name, target_column, prediction_column, problem_type)] = job_id
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
@@ -242,7 +242,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 						sys.stdout.flush()
 						api_response = APIClient.route(
 							path='/wk/model-driven-improvability', method='POST', \
-							file_identifier=file_identifier, target_column=target_column, \
+							file_name=file_name, target_column=target_column, \
 							problem_type=problem_type, prediction_column=prediction_column, \
 							job_id=job_id, timestamp=int(time()), snr=snr)
 					else:

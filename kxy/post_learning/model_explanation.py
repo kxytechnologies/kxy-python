@@ -70,19 +70,19 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 	sys.stdout.flush()
 
-	file_identifier = upload_data(data_df)
-	if file_identifier:
-		job_id = EXPLANATION_JOB_IDS.get((file_identifier, prediction_column, problem_type), None)
+	file_name = upload_data(data_df)
+	if file_name:
+		job_id = EXPLANATION_JOB_IDS.get((file_name, prediction_column, problem_type), None)
 		if job_id:
 			api_response = APIClient.route(
 				path='/wk/variable-selection', method='POST', \
-				file_identifier=file_identifier, target_column=prediction_column, \
+				file_name=file_name, target_column=prediction_column, \
 				problem_type=problem_type, timestamp=int(time()), job_id=job_id, \
 				snr=snr)
 		else:
 			api_response = APIClient.route(
 				path='/wk/variable-selection', method='POST', \
-				file_identifier=file_identifier, target_column=prediction_column, \
+				file_name=file_name, target_column=prediction_column, \
 				problem_type=problem_type, timestamp=int(time()), snr=snr)
 
 		initial_time = time()
@@ -100,7 +100,7 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
-						EXPLANATION_JOB_IDS[(file_identifier, prediction_column, problem_type)] = job_id
+						EXPLANATION_JOB_IDS[(file_name, prediction_column, problem_type)] = job_id
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
@@ -109,7 +109,7 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 						# Note: it is important to pass the job_id to avoid being charged twice for the work.
 						api_response = APIClient.route(
 							path='/wk/variable-selection', method='POST', \
-							file_identifier=file_identifier, target_column=prediction_column, \
+							file_name=file_name, target_column=prediction_column, \
 							problem_type=problem_type, timestamp=int(time()), job_id=job_id, \
 							snr=snr)
 					else:

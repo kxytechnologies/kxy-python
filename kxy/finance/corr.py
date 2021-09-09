@@ -50,20 +50,20 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 	sys.stdout.flush()
 
 	df = data_df[[market_column, asset_column]]
-	file_identifier = upload_data(df)
-	if file_identifier:
-		job_id = IACORR_JOB_IDS.get(file_identifier, None)
+	file_name = upload_data(df)
+	if file_name:
+		job_id = IACORR_JOB_IDS.get(file_name, None)
 
 		if job_id:
 			api_response = APIClient.route(
 				path='/wk/ia-corr', method='POST', 
-				file_identifier=file_identifier, market_column=market_column, \
+				file_name=file_name, market_column=market_column, \
 				asset_column=asset_column, \
 				timestamp=int(time()), job_id=job_id)
 		else:
 			api_response = APIClient.route(
 				path='/wk/ia-corr', method='POST', \
-				file_identifier=file_identifier, market_column=market_column, \
+				file_name=file_name, market_column=market_column, \
 				asset_column=asset_column, \
 				timestamp=int(time()))
 
@@ -82,7 +82,7 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
-						IACORR_JOB_IDS[file_identifier] = job_id
+						IACORR_JOB_IDS[file_name] = job_id
 						sleep(2 if kp<5 else 5 if k < max_k-4 else 300)
 						kp += 4
 						k = kp//2
@@ -91,7 +91,7 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 						# Note: it is important to pass the job_id to avoid being charged twice for the same work.
 						api_response = APIClient.route(
 							path='/wk/ia-corr', method='POST', 
-							file_identifier=file_identifier, market_column=market_column, \
+							file_name=file_name, market_column=market_column, \
 							asset_column=asset_column, \
 							timestamp=int(time()), job_id=job_id)
 					else:

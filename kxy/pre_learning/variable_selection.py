@@ -63,7 +63,7 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 	if problem_type.lower() == 'regression':
 		assert np.can_cast(data_df[target_column], float), 'The target column should be numeric'
 
-	file_identifier = upload_data(data_df)
+	file_name = upload_data(data_df)
 
 	k = 0
 	kp = 0
@@ -72,18 +72,18 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
 	sys.stdout.flush()
 
-	if file_identifier:
-		job_id = VARIABLE_SELECTION_JOB_IDS.get((file_identifier, target_column, problem_type), None)
+	if file_name:
+		job_id = VARIABLE_SELECTION_JOB_IDS.get((file_name, target_column, problem_type), None)
 		if job_id:
 			api_response = APIClient.route(
 				path='/wk/variable-selection', method='POST', \
-				file_identifier=file_identifier, target_column=target_column, \
+				file_name=file_name, target_column=target_column, \
 				problem_type=problem_type, timestamp=int(time()), job_id=job_id, \
 				snr=snr)
 		else:
 			api_response = APIClient.route(
 				path='/wk/variable-selection', method='POST', \
-				file_identifier=file_identifier, target_column=target_column, \
+				file_name=file_name, target_column=target_column, \
 				problem_type=problem_type, timestamp=int(time()), \
 				snr=snr)
 
@@ -102,7 +102,7 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
-						VARIABLE_SELECTION_JOB_IDS[(file_identifier, target_column, problem_type)] = job_id
+						VARIABLE_SELECTION_JOB_IDS[(file_name, target_column, problem_type)] = job_id
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
@@ -111,7 +111,7 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 						# Note: it is important to pass the job_id to avoid being charged twice for the work.
 						api_response = APIClient.route(
 							path='/wk/variable-selection', method='POST', \
-							file_identifier=file_identifier, target_column=target_column, \
+							file_name=file_name, target_column=target_column, \
 							problem_type=problem_type, timestamp=int(time()), job_id=job_id, \
 							snr=snr)
 					else:

@@ -18,13 +18,13 @@ from .client import APIClient
 
 UPLOADED_FILES = {}
 
-def generate_upload_url(identifier):
+def generate_upload_url(file_name):
 	"""
 	Requests a pre-signed URL to upload a dataset.
 
 	Parameters
 	----------
-	identifier: str
+	file_name: str
 		A string that uniquely identifies the content of the file.
 
 	Returns
@@ -34,7 +34,7 @@ def generate_upload_url(identifier):
 	"""
 	api_response = APIClient.route(
 			path='/wk/generate-signed-upload-url', method='POST',\
-			file_identifier=identifier, timestamp=int(time()))
+			file_name=file_name, timestamp=int(time()))
 
 	if api_response.status_code == requests.codes.ok:
 		api_response = api_response.json()
@@ -77,14 +77,16 @@ def upload_data(df):
 	columns = str(sorted([col for col in df.columns]))
 	columns_identifier = hashlib.sha256(columns.encode()).hexdigest()
 	identifier = hashlib.sha256((data_identifier+columns_identifier).encode()).hexdigest()
+	memory_usage = df.memory_usage(index=False).sum()/(1024.0*1024.0*1024.0)
+	file_name = identifier + '.parquet' if memory_usage > 1. else identifier + '.csv'
 	logging.debug('Done hashing the data')
 
 	if UPLOADED_FILES.get(identifier, False):
 		logging.debug('The file with identifier %s was previously uplooaded' % identifier)
-		return identifier
+		return file_name
 
 	logging.debug('Requesting a signed upload URL')
-	presigned_url = generate_upload_url(identifier)
+	presigned_url = generate_upload_url(file_name)
 
 	if presigned_url is None:
 		logging.warning('Failed to retrieve the signed upload URL')
@@ -95,16 +97,14 @@ def upload_data(df):
 	if presigned_url == {}:
 		logging.debug('This file was previously uploaded')
 		UPLOADED_FILES[identifier] = True
-		return identifier
+		return file_name
 
 	logging.debug('Preparing the data to upload')
-	file_name = identifier + '.csv'
-	memory_usage = df.memory_usage(index=False).sum()/(1024.0*1024.0*1024.0)
+	
 
-	if memory_usage > 1.:
+	if file_name.endswith('.parquet'):
 		numeric_cols = [col for col in df.columns if np.can_cast(df[col], float)]
 		df[numeric_cols] =  df[numeric_cols].astype(np.float32)
-		file_name = file_name.replace('.csv', '.parquet')
 		# Truncate floats with excessive precision to save space.
 		files = {'file': (file_name, df.to_parquet(index=False))}
 	elif memory_usage > 0.5:
