@@ -1,11 +1,11 @@
 from kxy_datasets.regressions import Abalone
 from kxy_datasets.classifications import BankNote
-from kxy.learning import get_sklearn_learner
+from kxy.learning import get_xgboost_learner
 
 
 def test_lean_boosted_xgboost_regressor():
 	# Regression
-	xgboost_regressor_cls = get_sklearn_learner('xgboost.XGBRegressor')
+	xgboost_regressor_cls = get_xgboost_learner('xgboost.XGBRegressor')
 	dataset = Abalone()
 	target_column = dataset.y_column
 	df = dataset.df
@@ -22,7 +22,7 @@ def test_lean_boosted_xgboost_regressor():
 
 def test_lean_boosted_xgboost_classifier():
 	# Binary classification
-	xgboost_classifier_cls = get_sklearn_learner('xgboost.XGBClassifier', use_label_encoder=False, 
+	xgboost_classifier_cls = get_xgboost_learner('xgboost.XGBClassifier', use_label_encoder=False, 
 		eval_metric='logloss', learning_rate=0.1, max_depth=10)
 	dataset = BankNote()
 	target_column = dataset.y_column
@@ -41,7 +41,7 @@ def test_lean_boosted_xgboost_classifier():
 
 def test_single_learner():
 	# Regression
-	xgboost_regressor_cls = get_sklearn_learner('xgboost.XGBRegressor')
+	xgboost_regressor_cls = get_xgboost_learner('xgboost.XGBRegressor')
 	dataset = Abalone()
 	target_column = dataset.y_column
 	df = dataset.df
@@ -55,3 +55,5 @@ def test_single_learner():
 	assert results['Testing R-Squared'] == '0.493'
 	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight']
 	assert len(features_df.kxy.models) == 1
+
+
