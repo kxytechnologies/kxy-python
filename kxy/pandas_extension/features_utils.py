@@ -66,6 +66,68 @@ def q75(x):
 	''' '''
 	return x.quantile(0.75)
 
+def nanskewabs(a, axis=0, bias=True):
+	''' '''
+	return skew(np.abs(a), axis=axis, bias=bias, nan_policy='omit')
+
+def nankurtosisabs(a, axis=0, fisher=True, bias=True):
+	''' '''
+	return kurtosis(np.abs(a), axis=axis, bias=bias, nan_policy='omit')
+
+def nanminabs(a, axis=None, out=None):
+	''' '''
+	try:
+		return np.nanmin(np.abs(a), axis=axis, out=out)
+	except:
+		return np.nan
+
+def nanmaxabs(a, axis=None, out=None):
+	''' '''
+	try:
+		return np.nanmax(np.abs(a), axis=axis, out=out)
+	except:
+		return np.nan
+
+def nanmaxmminabs(a, axis=None, out=None):
+	''' '''
+	return nanmax(np.abs(a), axis=axis, out=out)-nanmin(a, axis=axis, out=out)
+
+def nanmeanabs(a, axis=None, out=None):
+	''' '''
+	try:
+		return np.nanmean(np.abs(a), axis=axis, out=out)
+	except:
+		return np.nan
+
+def nansumabs(a, axis=None, out=None):
+	''' '''
+	try:
+		return np.nansum(np.abs(a), axis=axis, out=out)
+	except:
+		return np.nan
+
+def nanstdabs(a, axis=None, dtype=None, out=None):
+	''' '''
+	try:
+		return np.nanstd(np.abs(a), axis=axis, out=out)
+	except:
+		return np.nan
+
+def nanmedianabs(a, axis=None, out=None, overwrite_input=False):
+	''' '''
+	try:
+		return np.nanmedian(np.abs(a), axis=axis, out=out, overwrite_input=overwrite_input)
+	except:
+		return np.nan
+
+def q25abs(x):
+	''' '''
+	return np.abs(x).quantile(0.25)
+
+def q75abs(x):
+	''' '''
+	return np.abs(x).quantile(0.75)
+
 def mode(x):
 	''' '''
 	vc = x.value_counts(normalize=True, sort=True, ascending=False)

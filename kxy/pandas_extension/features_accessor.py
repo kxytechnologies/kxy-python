@@ -5,7 +5,8 @@ import pandas as pd
 
 from .base_accessor import BaseAccessor
 from .features_utils import nanskew, nankurtosis, q25, q75, mode, modefreq, nextmode, nextmodefreq, lastmode, lastmodefreq, \
-	nanmin, nanmax, nanmean, nanstd, nanmedian, nanmaxmmin, nansum
+	nanmin, nanmax, nanmean, nanstd, nanmedian, nanmaxmmin, nansum, nanskewabs, nankurtosisabs, q25abs, q75abs,  \
+	nanminabs, nanmaxabs, nanmeanabs, nanstdabs, nanmedianabs, nanmaxmminabs, nansumabs
 
 
 @pd.api.extensions.register_dataframe_accessor("kxy_features")
@@ -148,6 +149,17 @@ class FeaturesAccessor(BaseAccessor):
 			agg.update({'MIN(%s)' % col: (col, nanmin) for col in ord_columns})
 			agg.update({'MAX(%s)' % col: (col, nanmax) for col in ord_columns})
 			agg.update({'MAX(%s)-MIN(%s)' % (col, col): (col, nanmaxmmin) for col in ord_columns})
+			agg.update({'SUM(ABS(%s))' % col: (col, nansumabs) for col in ord_columns})
+			agg.update({'MEAN(ABS(%s))' % col: (col, nanmeanabs) for col in ord_columns})
+			agg.update({'STD(ABS(%s))' % col: (col, nanstdabs) for col in ord_columns})
+			agg.update({'MEDIAN(ABS(%s))' % col: (col, nanmedianabs) for col in ord_columns})
+			agg.update({'SKEW(ABS(%s))' % col: (col, nanskewabs) for col in ord_columns})
+			agg.update({'KURT(ABS(%s))' % col: (col, nankurtosisabs) for col in ord_columns})
+			agg.update({'Q25(ABS(%s))' % col: (col, q25abs) for col in ord_columns})
+			agg.update({'Q75(ABS(%s))' % col: (col, q75abs) for col in ord_columns})
+			agg.update({'MIN(ABS(%s))' % col: (col, nanminabs) for col in ord_columns})
+			agg.update({'MAX(ABS(%s))' % col: (col, nanmaxabs) for col in ord_columns})
+			agg.update({'MAX(ABS(%s))-MIN(ABS(%s))' % (col, col): (col, nanmaxmminabs) for col in ord_columns})
 		
 		# Number of rows per entity
 		agg.update({'COUNT(%s)' % entity_name: (columns[0], 'count')})
