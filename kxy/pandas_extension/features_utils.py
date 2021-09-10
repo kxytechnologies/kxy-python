@@ -36,6 +36,14 @@ def nanmean(a, axis=None, out=None):
 	except:
 		return np.nan
 
+def nansum(a, axis=None, out=None):
+	''' '''
+	try:
+		return np.nansum(a, axis=axis, out=out)
+	except:
+		return np.nan
+
+
 def nanstd(a, axis=None, dtype=None, out=None):
 	''' '''
 	try:

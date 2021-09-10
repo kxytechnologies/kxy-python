@@ -5,7 +5,7 @@ import pandas as pd
 
 from .base_accessor import BaseAccessor
 from .features_utils import nanskew, nankurtosis, q25, q75, mode, modefreq, nextmode, nextmodefreq, lastmode, lastmodefreq, \
-	nanmin, nanmax, nanmean, nanstd, nanmedian, nanmaxmmin
+	nanmin, nanmax, nanmean, nanstd, nanmedian, nanmaxmmin, nansum
 
 
 @pd.api.extensions.register_dataframe_accessor("kxy_features")
@@ -90,7 +90,7 @@ class FeaturesAccessor(BaseAccessor):
 		return res
 
 
-	def entity_features(self, entity, exclude=[], name='*'):
+	def entity_features(self, entity, exclude=[], entity_name='*'):
 		"""
 		Group rows corresponding to the same entity and apply aggregation functions.
 
@@ -114,8 +114,8 @@ class FeaturesAccessor(BaseAccessor):
 		"""
 		assert entity in self._obj.columns, 'The entity %s should be valid column' % entity
 
-		cat_columns = [col for col in self._obj.columns if self.is_categorical(col) and col != entity and col not in exclude]
-		ord_columns = [col for col in self._obj.columns if not self.is_categorical(col) and col != entity and col not in exclude]
+		cat_columns = list(set([col for col in self._obj.columns if self.is_categorical(col) and col != entity and col not in exclude]))
+		ord_columns = list(set([col for col in self._obj.columns if not self.is_categorical(col) and col != entity and col not in exclude]))
 		columns = cat_columns + ord_columns
 
 		dfs = []
@@ -137,6 +137,7 @@ class FeaturesAccessor(BaseAccessor):
 
 		# Aggregation of ordinal variables
 		if ord_columns:
+			agg.update({'SUM(%s)' % col: (col, nansum) for col in ord_columns})
 			agg.update({'MEAN(%s)' % col: (col, nanmean) for col in ord_columns})
 			agg.update({'STD(%s)' % col: (col, nanstd) for col in ord_columns})
 			agg.update({'MEDIAN(%s)' % col: (col, nanmedian) for col in ord_columns})
@@ -149,7 +150,7 @@ class FeaturesAccessor(BaseAccessor):
 			agg.update({'MAX(%s)-MIN(%s)' % (col, col): (col, nanmaxmmin) for col in ord_columns})
 		
 		# Number of rows per entity
-		agg.update({'COUNT(%s)' % name: (columns[0], 'count')})
+		agg.update({'COUNT(%s)' % entity_name: (columns[0], 'count')})
 
 		# Features
 		entity_grp = self._obj.groupby(entity)
@@ -246,7 +247,7 @@ class FeaturesAccessor(BaseAccessor):
 
 
 	def generate_features(self, entity=None, encoding_method='one_hot', index=None, max_lag=None, exclude=[], \
-			means=None, quantiles=None, return_baselines=False, name='*'):
+			means=None, quantiles=None, return_baselines=False, entity_name='*'):
 		"""
 		Generate a wide range of candidate features to search from.
 
@@ -281,7 +282,7 @@ class FeaturesAccessor(BaseAccessor):
 		accessor = self
 		if entity:
 			# Entity features
-			df = accessor.entity_features(entity, name=name)
+			df = accessor.entity_features(entity, entity_name=entity_name)
 			accessor = FeaturesAccessor(df)
 
 		# Deviation features
