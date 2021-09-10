@@ -20,7 +20,7 @@ class LearningAccessor(BaseAccessor):
 	"""
 	def fit(self, target_column, learner_cls, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=1, anonymize=False, \
-			benchmark_feature=None):
+			benchmark_feature=None, missing_value_imputation=False):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -99,6 +99,12 @@ class LearningAccessor(BaseAccessor):
 			# [...] and train_frac*(1-train_frac) for validation.
 			self.val_df = self.train_val_df.drop(self.train_df.index)
 
+			if missing_value_imputation:
+				# Basic missing value imputation
+				self.train_df.fillna(self.train_df.mean(), inplace=True)
+				self.val_df.fillna(self.train_df.mean(), inplace=True)
+				self.test_df.fillna(self.train_df.mean(), inplace=True)
+
 			# 1. Model-free variable selection
 			vs_accessor = PreLearningAccessor(obj)
 			if obj.memory_usage(index=False).sum()/(1024.0*1024.0*1024.0) > 1.:
@@ -157,7 +163,7 @@ class LearningAccessor(BaseAccessor):
 					val_score = accuracy_score(y_val, y_val_pred)
 
 				if val_score > previous_score or (min_n_features and i<=min_n_features):
-					logging.info('The %d-th variable (%s) increased validation performance from %.3f to %.3f' % (i, self.variables[i-1], previous_score, val_score))
+					logging.info('Variable #%d (%s) increased validation performance from %.3f to %.3f' % (i, self.variables[i-1], previous_score, val_score))
 					previous_score = val_score
 					if self.problem_type == 'regression':
 						target_train = target_train-target_train_pred
