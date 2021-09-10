@@ -60,6 +60,8 @@ class LearningAccessor(BaseAccessor):
 			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
 		benchmark_feature : str | None
 			When not None, 'benchmark' performance metrics using this column as predictor will be reported in the output dictionary.
+		missing_value_imputation : bool
+			When set to True, replace missing values with medians.
 
 
 		Returns
@@ -101,9 +103,9 @@ class LearningAccessor(BaseAccessor):
 
 			if missing_value_imputation:
 				# Basic missing value imputation
-				self.train_df.fillna(self.train_df.mean(), inplace=True)
-				self.val_df.fillna(self.train_df.mean(), inplace=True)
-				self.test_df.fillna(self.train_df.mean(), inplace=True)
+				self.train_df.fillna(self.train_df.median(), inplace=True)
+				self.val_df.fillna(self.train_df.median(), inplace=True)
+				self.test_df.fillna(self.train_df.median(), inplace=True)
 
 			# 1. Model-free variable selection
 			vs_accessor = PreLearningAccessor(obj)

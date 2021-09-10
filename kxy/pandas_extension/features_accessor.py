@@ -113,52 +113,47 @@ class FeaturesAccessor(BaseAccessor):
 			The dataframe of features.
 		"""
 		assert entity in self._obj.columns, 'The entity %s should be valid column' % entity
-		entity_grp = self._obj.groupby(entity)
 
 		cat_columns = [col for col in self._obj.columns if self.is_categorical(col) and col != entity and col not in exclude]
 		ord_columns = [col for col in self._obj.columns if not self.is_categorical(col) and col != entity and col not in exclude]
 		columns = cat_columns + ord_columns
 
 		dfs = []
-
+		agg = {}
 		# Aggregation of categorical variables
 		if cat_columns:
 			# Most frequent value and it's frequency of occurence
-			cat_agg = {'MODE(%s)' % col: (col, mode) for col in cat_columns}
-			cat_agg.update({'MODEFREQ(%s)' % col: (col, modefreq) for col in cat_columns})
+			agg.update({'MODE(%s)' % col: (col, mode) for col in cat_columns})
+			agg.update({'MODEFREQ(%s)' % col: (col, modefreq) for col in cat_columns})
 
 			# Second most frequent value and it's frequency of occurence
-			cat_agg.update({'NEXTMODE(%s)' % col: (col, nextmode) for col in cat_columns})
-			cat_agg.update({'NEXTMODEFREQ(%s)' % col: (col, nextmodefreq) for col in cat_columns})
+			agg.update({'NEXTMODE(%s)' % col: (col, nextmode) for col in cat_columns})
+			agg.update({'NEXTMODEFREQ(%s)' % col: (col, nextmodefreq) for col in cat_columns})
 
 			# Least frequent value and it's frequency of occurence
-			cat_agg.update({'LASTMODE(%s)' % col: (col, lastmode) for col in cat_columns})
-			cat_agg.update({'LASTMODEFREQ(%s)' % col: (col, lastmodefreq) for col in cat_columns})
+			agg.update({'LASTMODE(%s)' % col: (col, lastmode) for col in cat_columns})
+			agg.update({'LASTMODEFREQ(%s)' % col: (col, lastmodefreq) for col in cat_columns})
 
-			cat_df = entity_grp.agg(**cat_agg)
-			dfs += [cat_df]
 
 		# Aggregation of ordinal variables
 		if ord_columns:
-			ord_agg = {'MEAN(%s)' % col: (col, nanmean) for col in ord_columns}
-			ord_agg.update({'STD(%s)' % col: (col, nanstd) for col in ord_columns})
-			ord_agg.update({'MEDIAN(%s)' % col: (col, nanmedian) for col in ord_columns})
-			ord_agg.update({'SKEW(%s)' % col: (col, nanskew) for col in ord_columns})
-			ord_agg.update({'KURT(%s)' % col: (col, nankurtosis) for col in ord_columns})
-			ord_agg.update({'Q25(%s)' % col: (col, q25) for col in ord_columns})
-			ord_agg.update({'Q75(%s)' % col: (col, q75) for col in ord_columns})
-			ord_agg.update({'MIN(%s)' % col: (col, nanmin) for col in ord_columns})
-			ord_agg.update({'MAX(%s)' % col: (col, nanmax) for col in ord_columns})
-			ord_agg.update({'MAX(%s)-MIN(%s)' % (col, col): (col, nanmaxmmin) for col in ord_columns})
-			ord_df = entity_grp.agg(**ord_agg)
-			dfs += [ord_df]
+			agg.update({'MEAN(%s)' % col: (col, nanmean) for col in ord_columns})
+			agg.update({'STD(%s)' % col: (col, nanstd) for col in ord_columns})
+			agg.update({'MEDIAN(%s)' % col: (col, nanmedian) for col in ord_columns})
+			agg.update({'SKEW(%s)' % col: (col, nanskew) for col in ord_columns})
+			agg.update({'KURT(%s)' % col: (col, nankurtosis) for col in ord_columns})
+			agg.update({'Q25(%s)' % col: (col, q25) for col in ord_columns})
+			agg.update({'Q75(%s)' % col: (col, q75) for col in ord_columns})
+			agg.update({'MIN(%s)' % col: (col, nanmin) for col in ord_columns})
+			agg.update({'MAX(%s)' % col: (col, nanmax) for col in ord_columns})
+			agg.update({'MAX(%s)-MIN(%s)' % (col, col): (col, nanmaxmmin) for col in ord_columns})
 		
 		# Number of rows per entity
-		count_agg = {'COUNT(%s)' % name: (columns[0], 'count')}
-		count_df = entity_grp.agg(**count_agg)
-		dfs += [count_df]
+		agg.update({'COUNT(%s)' % name: (columns[0], 'count')})
 
-		df = pd.concat(dfs, axis=1)
+		# Features
+		entity_grp = self._obj.groupby(entity)
+		df = entity_grp.agg(**agg)
 
 		return df
 
