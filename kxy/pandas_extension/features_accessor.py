@@ -204,10 +204,10 @@ class FeaturesAccessor(BaseAccessor):
 		df = self._obj.copy()
 		if ord_columns:
 			for col in ord_columns:
-				df['|%s - MEAN(%s)|' % (col, col)] = np.abs(df[col]-means.loc[col])
-				df['|%s - MEDIAN(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.5][col])
-				df['|%s - Q25(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.25][col])
-				df['|%s - Q75(%s)|' % (col, col)] = np.abs(df[col]-quantiles.loc[0.75][col])
+				df['ABS(%s - MEAN(%s))' % (col, col)] = np.abs(df[col]-means.loc[col])
+				df['ABS(%s - MEDIAN(%s))' % (col, col)] = np.abs(df[col]-quantiles.loc[0.5][col])
+				df['ABS(%s - Q25(%s))' % (col, col)] = np.abs(df[col]-quantiles.loc[0.25][col])
+				df['ABS(%s - Q75(%s))' % (col, col)] = np.abs(df[col]-quantiles.loc[0.75][col])
 
 		if return_baselines:
 			return df, means, quantiles
