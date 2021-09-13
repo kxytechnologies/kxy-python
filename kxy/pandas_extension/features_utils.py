@@ -157,3 +157,15 @@ def nextmodefreq(x):
 	''' '''
 	vc = x.value_counts(normalize=True, sort=True, ascending=False)
 	return vc.values[1] if len(vc.values) > 1 else vc.values[0] if len(vc.index) > 0 else np.nan
+
+def rmspe_score(y_true, y_pred):
+	''' '''
+	return np.sqrt(np.mean(np.square((y_true - y_pred) / y_true)))
+
+def neg_rmspe_score(y_true, y_pred):
+	''' '''
+	return -rmspe_score(y_true, y_pred)
+
+
+
+
