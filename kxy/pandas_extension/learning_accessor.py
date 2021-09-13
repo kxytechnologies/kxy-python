@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
 
 from .base_accessor import BaseAccessor
+from .features_utils import rmspe_score, neg_rmspe_score
 from .pre_learning_accessor import PreLearningAccessor
 
 @pd.api.extensions.register_dataframe_accessor("kxy_learning")
@@ -20,7 +21,7 @@ class LearningAccessor(BaseAccessor):
 	"""
 	def fit(self, target_column, learner_cls, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=1, anonymize=False, \
-			benchmark_feature=None, missing_value_imputation=False):
+			benchmark_feature=None, missing_value_imputation=False, score='auto'):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -89,6 +90,9 @@ class LearningAccessor(BaseAccessor):
 		if benchmark_feature:
 			assert benchmark_feature in obj.columns, 'The benchmark feature should be a valid column'
 		self.benchmark_feature = benchmark_feature
+		if score == 'auto':
+			score = 'r2_score' if problem_type == 'regression' else 'accuracy_score'
+		score_func = eval(score)
 
 		if getattr(self, 'models', None) is None or force_redo:
 			# 0. Train/Validation split
@@ -130,8 +134,13 @@ class LearningAccessor(BaseAccessor):
 			y_val_pred = None
 
 			models = []
-			score_label = 'Running Achievable R-Squared' if self.problem_type == 'regression' else 'Running Achievable Accuracy'
-			previous_score = float(self.variable_selection_results[score_label].loc[0])
+			if problem_type == 'regression':
+				initial_pred = np.ones_like(y_val)*y_val.mean()
+				previous_score = score_func(y_val, initial_pred)
+			else:
+				score_label = 'Running Achievable Accuracy'
+				previous_score = float(self.variable_selection_results[score_label].loc[0])
+
 			self.start_n_features = start_n_features
 			for i in range(self.start_n_features, n_variables+1):
 				vs = self.variables[:i]
@@ -159,10 +168,7 @@ class LearningAccessor(BaseAccessor):
 					y_val_pred = target_val_pred.copy() if y_val_pred is None else np.abs(y_val_pred-target_val_pred) 
 
 				# New validation score
-				if self.problem_type == 'regression':
-					val_score = r2_score(y_val, y_val_pred)
-				else:
-					val_score = accuracy_score(y_val, y_val_pred)
+				val_score = score_func(y_val, y_val_pred)
 
 				if val_score > previous_score or (min_n_features and i<=min_n_features):
 					logging.info('Variable #%d (%s) increased validation performance from %.3f to %.3f' % (i, self.variables[i-1], previous_score, val_score))
@@ -186,58 +192,49 @@ class LearningAccessor(BaseAccessor):
 
 			# Compute training/validation/testing performances
 			x_train_df = self.train_df[x_columns]
-			y_train_df = self.train_df[target_column]
+			y_train_df = self.train_df[[target_column]]
 			train_predictions = self.predict(x_train_df)
+			self.train_score = score_func(y_train_df.values, train_predictions.values)
 			if self.problem_type == 'regression':
-				self.train_score = r2_score(y_train_df.values, train_predictions.values)
 				self.train_rmse = mean_squared_error(y_train_df.values, train_predictions.values, squared=False)
-				self.train_rmspe = mean_squared_error(np.ones_like(y_train_df.values.flatten()), train_predictions.values.flatten()/y_train_df.values.flatten(), squared=False)
+				self.train_rmspe = rmspe_score(y_train_df.values, train_predictions.values)
+				self.train_r2 = r2_score(y_train_df.values.flatten(), train_predictions.values.flatten())
 
 				if self.benchmark_feature:
 					train_benchmark = self.train_df[self.benchmark_feature]
-					self.train_benchmark_score = r2_score(y_train_df.values, train_benchmark.values)
+					self.train_benchmark_score = score_func(y_train_df.values, train_benchmark.values)
 					self.train_benchmark_rmse = mean_squared_error(y_train_df.values, train_benchmark.values, squared=False)
-					self.train_benchmark_rmspe = mean_squared_error(np.ones_like(y_train_df.values.flatten()), \
-						train_benchmark.values.flatten()/y_train_df.values.flatten(), squared=False)
-
-			else:
-				self.train_score = accuracy_score(y_train_df.values, train_predictions.values)
+					self.train_benchmark_rmspe = rmspe_score(y_train_df.values, train_benchmark.values)
 
 			x_val_df = self.val_df[x_columns]
-			y_val_df = self.val_df[target_column]
+			y_val_df = self.val_df[[target_column]]
 			val_predictions = self.predict(x_val_df)
+			self.val_score = score_func(y_train_df.values, train_predictions.values)
 			if self.problem_type == 'regression':
-				self.val_score = r2_score(y_val_df.values, val_predictions.values)
 				self.val_rmse = mean_squared_error(y_val_df.values, val_predictions.values, squared=False)
-				self.val_rmspe = mean_squared_error(np.ones_like(y_val_df.values.flatten()), val_predictions.values.flatten()/y_val_df.values.flatten(), squared=False)
+				self.val_rmspe = rmspe_score(y_val_df.values, val_predictions.values)
+				self.val_r2 = r2_score(y_val_df.values.flatten(), val_predictions.values.flatten())
 
 				if self.benchmark_feature:
 					val_benchmark = self.val_df[self.benchmark_feature]
-					self.val_benchmark_score = r2_score(y_val_df.values, val_benchmark.values)
+					self.val_benchmark_score = score_func(y_val_df.values, val_benchmark.values)
 					self.val_benchmark_rmse = mean_squared_error(y_val_df.values, val_benchmark.values, squared=False)
-					self.val_benchmark_rmspe = mean_squared_error(np.ones_like(y_val_df.values.flatten()), \
-						val_benchmark.values.flatten()/y_val_df.values.flatten(), squared=False)
-
-			else:
-				self.val_score = accuracy_score(y_val_df.values, val_predictions.values)
-
+					self.val_benchmark_rmspe = rmspe_score(y_val_df.values, val_benchmark.values)
+				
 			x_test_df = self.test_df[x_columns]
-			y_test_df = self.test_df[target_column]
+			y_test_df = self.test_df[[target_column]]
 			test_predictions = self.predict(x_test_df)
+			self.test_score = score_func(y_test_df.values, test_predictions.values)
 			if self.problem_type == 'regression':
-				self.test_score = r2_score(y_test_df.values, test_predictions.values)
 				self.test_rmse = mean_squared_error(y_test_df.values, test_predictions.values, squared=False)
-				self.test_rmspe = mean_squared_error(np.ones_like(y_test_df.values.flatten()), test_predictions.values.flatten()/y_test_df.values.flatten(), squared=False)
+				self.test_rmspe = rmspe_score(y_test_df.values, test_predictions.values)
+				self.test_r2 = r2_score(y_test_df.values.flatten(), test_predictions.values.flatten())
 
 				if self.benchmark_feature:
 					test_benchmark = self.test_df[self.benchmark_feature]
-					self.test_benchmark_score = r2_score(y_test_df.values, test_benchmark.values)
+					self.test_benchmark_score = score_func(y_test_df.values, test_benchmark.values)
 					self.test_benchmark_rmse = mean_squared_error(y_test_df.values, test_benchmark.values, squared=False)
-					self.test_benchmark_rmspe = mean_squared_error(np.ones_like(y_test_df.values.flatten()), \
-						test_benchmark.values.flatten()/y_test_df.values.flatten(), squared=False)
-
-			else:
-				self.test_score = accuracy_score(y_test_df.values, test_predictions.values)
+					self.test_benchmark_rmspe = rmspe_score(y_test_df.values, test_benchmark.values)
 
 			self.selected_variables = self.variables[:self.start_n_features+len(self.models)-1]
 
