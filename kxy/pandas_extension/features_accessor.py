@@ -91,7 +91,7 @@ class FeaturesAccessor(BaseAccessor):
 		return res
 
 
-	def entity_features(self, entity, exclude=[], entity_name='*'):
+	def entity_features(self, entity, exclude=[], entity_name='*', filter_target=None, filter_target_gt=None, filter_target_lt=None):
 		"""
 		Group rows corresponding to the same entity and apply aggregation functions.
 
@@ -106,6 +106,12 @@ class FeaturesAccessor(BaseAccessor):
 			The column mapping rows to entities.
 		exclude : list
 			A list of columns to exclude from feature transformations.
+		filter_target : str | None
+			When specified, this is a column based on which we need to restrict the dataframe before generating features.
+		filter_target_gt : str | None
+			When specified, only rows with :code:`filter_target` greater than :code:`filter_target_gt` will be considered for feature generation.
+		filter_target_lt : str | None
+			When specified, only rows with :code:`filter_target` smaller than :code:`filter_target_gt` will be considered for feature generation.
 
 
 		Returns
@@ -169,8 +175,18 @@ class FeaturesAccessor(BaseAccessor):
 		# Number of rows per entity
 		agg.update({'COUNT(%s)' % entity_name: (columns[0], 'count')})
 
+		# Filter if necessary
+		obj = self._obj.copy()
+		if filter_target:
+			assert filter_target in obj.columns, 'The filter column should be a valid column'
+			if filter_target_gt:
+				obj = obj[obj[filter_target] > filter_target_gt]
+
+			if filter_target_lt:
+				obj = obj[obj[filter_target] < filter_target_lt]
+
 		# Features
-		entity_grp = self._obj.groupby(entity)
+		entity_grp = obj.groupby(entity)
 		df = entity_grp.agg(**agg)
 
 		return df
@@ -264,7 +280,8 @@ class FeaturesAccessor(BaseAccessor):
 
 
 	def generate_features(self, entity=None, encoding_method='one_hot', index=None, max_lag=None, exclude=[], \
-			means=None, quantiles=None, return_baselines=False, entity_name='*'):
+			means=None, quantiles=None, return_baselines=False, entity_name='*', filter_target=None, \
+			filter_target_gt=None, filter_target_lt=None):
 		"""
 		Generate a wide range of candidate features to search from.
 
@@ -275,6 +292,13 @@ class FeaturesAccessor(BaseAccessor):
 		----------
 		entity : str
 			The column mapping rows to entities.
+
+		filter_target : str | None
+			When specified, this is a column based on which we need to restrict the dataframe before generating entity features.
+		filter_target_gt : str | None
+			When specified, only rows with :code:`filter_target` greater than :code:`filter_target_gt` will be considered for entity feature generation.
+		filter_target_lt : str | None
+			When specified, only rows with :code:`filter_target` smaller than :code:`filter_target_gt` will be considered for entity feature generation.
 		encoding_method : 'one_hot' (default) | 'binary'
 			The encoding method to use for categorical variables.
 		exclude : list
@@ -291,6 +315,7 @@ class FeaturesAccessor(BaseAccessor):
 			Whether to return which baselines have been used for deviation features.
 
 
+
 		Returns
 		-------
 		result : pandas.DataFrame
@@ -299,7 +324,8 @@ class FeaturesAccessor(BaseAccessor):
 		accessor = self
 		if entity:
 			# Entity features
-			df = accessor.entity_features(entity, entity_name=entity_name)
+			df = accessor.entity_features(entity, entity_name=entity_name, filter_target=filter_target, \
+				filter_target_gt=filter_target_gt, filter_target_lt=filter_target_lt)
 			accessor = FeaturesAccessor(df)
 
 		# Deviation features
