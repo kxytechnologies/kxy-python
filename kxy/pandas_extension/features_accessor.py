@@ -91,7 +91,8 @@ class FeaturesAccessor(BaseAccessor):
 		return res
 
 
-	def entity_features(self, entity, exclude=[], entity_name='*', filter_target=None, filter_target_gt=None, filter_target_lt=None):
+	def entity_features(self, entity, exclude=[], entity_name='*', filter_target=None, filter_target_gt=None, filter_target_lt=None, \
+			include_filter_target=False):
 		"""
 		Group rows corresponding to the same entity and apply aggregation functions.
 
@@ -112,6 +113,8 @@ class FeaturesAccessor(BaseAccessor):
 			When specified, only rows with :code:`filter_target` greater than :code:`filter_target_gt` will be considered for feature generation.
 		filter_target_lt : str | None
 			When specified, only rows with :code:`filter_target` smaller than :code:`filter_target_gt` will be considered for feature generation.
+		include_filter_target : bool
+			Whether to use :code:`filter_target` for features generation.
 
 
 		Returns
@@ -120,9 +123,12 @@ class FeaturesAccessor(BaseAccessor):
 			The dataframe of features.
 		"""
 		assert entity in self._obj.columns, 'The entity %s should be valid column' % entity
+		_columns = self._obj.columns
+		if filter_target and not include_filter_target:
+			_columns = [_ for _ in _columns if _ != filter_target]
 
-		cat_columns = list(set([col for col in self._obj.columns if self.is_categorical(col) and col != entity and col not in exclude]))
-		ord_columns = list(set([col for col in self._obj.columns if not self.is_categorical(col) and col != entity and col not in exclude]))
+		cat_columns = list(set([col for col in _columns if self.is_categorical(col) and col != entity and col not in exclude]))
+		ord_columns = list(set([col for col in _columns if not self.is_categorical(col) and col != entity and col not in exclude]))
 		if ord_columns:
 			mix_sgn_columns = [col for col in ord_columns if self._obj[col].lt(0).any() and self._obj[col].gt(0).any()]
 
@@ -281,7 +287,7 @@ class FeaturesAccessor(BaseAccessor):
 
 	def generate_features(self, entity=None, encoding_method='one_hot', index=None, max_lag=None, exclude=[], \
 			means=None, quantiles=None, return_baselines=False, entity_name='*', filter_target=None, \
-			filter_target_gt=None, filter_target_lt=None):
+			filter_target_gt=None, filter_target_lt=None, include_filter_target=False):
 		"""
 		Generate a wide range of candidate features to search from.
 
@@ -299,6 +305,8 @@ class FeaturesAccessor(BaseAccessor):
 			When specified, only rows with :code:`filter_target` greater than :code:`filter_target_gt` will be considered for entity feature generation.
 		filter_target_lt : str | None
 			When specified, only rows with :code:`filter_target` smaller than :code:`filter_target_gt` will be considered for entity feature generation.
+		include_filter_target : bool
+			Whether to use :code:`filter_target` for features generation.
 		encoding_method : 'one_hot' (default) | 'binary'
 			The encoding method to use for categorical variables.
 		exclude : list
@@ -325,7 +333,8 @@ class FeaturesAccessor(BaseAccessor):
 		if entity:
 			# Entity features
 			df = accessor.entity_features(entity, entity_name=entity_name, filter_target=filter_target, \
-				filter_target_gt=filter_target_gt, filter_target_lt=filter_target_lt)
+				filter_target_gt=filter_target_gt, filter_target_lt=filter_target_lt, \
+				include_filter_target=include_filter_target)
 			accessor = FeaturesAccessor(df)
 
 		# Deviation features

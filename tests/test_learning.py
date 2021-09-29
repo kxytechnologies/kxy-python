@@ -11,7 +11,7 @@ def test_lean_boosted_xgboost_regressor():
 	df = dataset.df
 
 	# Features generation
-	features_df = df.kxy.generate_features(entity=None, max_lag=None, name='*', exclude=[target_column])
+	features_df = df.kxy.generate_features(entity=None, max_lag=None, entity_name='*', exclude=[target_column])
 
 	# Model building
 	results = features_df.kxy.fit(target_column, xgboost_regressor_cls, \
@@ -29,7 +29,7 @@ def test_lean_boosted_xgboost_classifier():
 	df = dataset.df
 
 	# Features generation
-	features_df = df.kxy.generate_features(entity=None, max_lag=None, name='*', exclude=[target_column])
+	features_df = df.kxy.generate_features(entity=None, max_lag=None, entity_name='*', exclude=[target_column])
 
 	# Model building
 	results = features_df.kxy.fit(target_column, xgboost_classifier_cls, \
@@ -47,7 +47,7 @@ def test_single_learner():
 	df = dataset.df
 
 	# Features generation
-	features_df = df.kxy.generate_features(entity=None, max_lag=None, name='*', exclude=[target_column])
+	features_df = df.kxy.generate_features(entity=None, max_lag=None, entity_name='*', exclude=[target_column])
 
 	# Model building
 	results = features_df.kxy.fit(target_column, xgboost_regressor_cls, \

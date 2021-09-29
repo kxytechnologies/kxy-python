@@ -21,7 +21,7 @@ class LearningAccessor(BaseAccessor):
 	"""
 	def fit(self, target_column, learner_cls, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=1, anonymize=False, \
-			benchmark_feature=None, missing_value_imputation=False, score='auto'):
+			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=1):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -31,7 +31,7 @@ class LearningAccessor(BaseAccessor):
 
 		Then we consider using the second most important variable to fix the mistakes made by the previously trained model.
 	
-		If doing so improves performance on the validation set, we keep going until either performance no longer improves on the validation set, or we've selected :code:`max_n_features` features.
+		If doing so improves performance on the validation set, we keep going until either performance no longer improves on the validation set :code:`n_down_perf_before_stop` consecutive times, or we've selected :code:`max_n_features` features.
 
 
 
@@ -63,6 +63,8 @@ class LearningAccessor(BaseAccessor):
 			When not None, 'benchmark' performance metrics using this column as predictor will be reported in the output dictionary.
 		missing_value_imputation : bool
 			When set to True, replace missing values with medians.
+		n_down_perf_before_stop : int
+			Number of consecutive down performances to observe before boosting stops.
 
 
 		Returns
@@ -142,6 +144,7 @@ class LearningAccessor(BaseAccessor):
 				previous_score = float(self.variable_selection_results[score_label].loc[0])
 
 			self.start_n_features = start_n_features
+			n_down_perf = 0
 			for i in range(self.start_n_features, n_variables+1):
 				vs = self.variables[:i]
 				x_train = self.train_df[vs].values.copy()
@@ -169,8 +172,11 @@ class LearningAccessor(BaseAccessor):
 
 				# New validation score
 				val_score = score_func(y_val, y_val_pred)
-
+				temp_models = []
 				if val_score > previous_score or (min_n_features and i<=min_n_features):
+					n_down_perf = 0
+					models += temp_models
+					temp_models = []
 					logging.info('Variable #%d (%s) increased validation performance from %.3f to %.3f' % (i, self.variables[i-1], previous_score, val_score))
 					previous_score = val_score
 					if self.problem_type == 'regression':
@@ -180,9 +186,22 @@ class LearningAccessor(BaseAccessor):
 						target_train = np.logical_not(target_train == target_train_pred).astype(int)
 						target_val = np.logical_not(target_val == target_train_pred).astype(int)
 					models += [m]
+
 				else:
-					logging.info('Stopping training as variable %s does not increase validation performance (old: %.3f, new: %.3f)' % (self.variables[i-1], previous_score, val_score))
-					break
+					n_down_perf += 1
+					if n_down_perf >= n_down_perf_before_stop:
+						# Only stop after a certain number of consecutive down performance
+						logging.info('Stopping training as variable %s does not increase validation performance (old: %.3f, new: %.3f)' % (self.variables[i-1], previous_score, val_score))
+						break
+					else:
+						previous_score = val_score
+						if self.problem_type == 'regression':
+							target_train = target_train-target_train_pred
+							target_val = target_val-target_val_pred
+						else:
+							target_train = np.logical_not(target_train == target_train_pred).astype(int)
+							target_val = np.logical_not(target_val == target_train_pred).astype(int)
+						temp_models += [m]
 
 				if max_n_features and (i==max_n_features):
 					logging.info('Stopping training as the maximum number of variables (%d) has been reached' % max_n_features)
