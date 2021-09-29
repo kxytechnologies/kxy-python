@@ -57,3 +57,20 @@ def test_single_learner():
 	assert len(features_df.kxy.models) == 1
 
 
+
+def test_n_down_perf_before_stop():
+	# Regression
+	xgboost_regressor_cls = get_xgboost_learner('xgboost.XGBRegressor')
+	dataset = Abalone()
+	target_column = dataset.y_column
+	df = dataset.df
+
+	# Features generation
+	features_df = df.kxy.generate_features(entity=None, max_lag=None, entity_name='*', exclude=[target_column])
+
+	# Model building
+	results = features_df.kxy.fit(target_column, xgboost_regressor_cls, \
+		problem_type='regression', n_down_perf_before_stop=3)
+	assert results['Testing R-Squared'] == '0.440'
+	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight']
+

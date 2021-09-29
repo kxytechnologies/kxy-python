@@ -189,12 +189,12 @@ class LearningAccessor(BaseAccessor):
 
 				else:
 					n_down_perf += 1
+					logging.info('Validation performance did not increase for the %d-th consecutive time. Old: %.3f, New: %.3f, Variable: %s' % (n_down_perf, previous_score, val_score, self.variables[i-1]))
 					if n_down_perf >= n_down_perf_before_stop:
 						# Only stop after a certain number of consecutive down performance
-						logging.info('Stopping training as variable %s does not increase validation performance (old: %.3f, new: %.3f)' % (self.variables[i-1], previous_score, val_score))
+						logging.info('Stopping training as validation performance did not increase %d consecutive times.' % n_down_perf_before_stop)
 						break
 					else:
-						previous_score = val_score
 						if self.problem_type == 'regression':
 							target_train = target_train-target_train_pred
 							target_val = target_val-target_val_pred
