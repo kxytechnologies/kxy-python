@@ -287,7 +287,7 @@ class FeaturesAccessor(BaseAccessor):
 
 	def generate_features(self, entity=None, encoding_method='one_hot', index=None, max_lag=None, exclude=[], \
 			means=None, quantiles=None, return_baselines=False, entity_name='*', filter_target=None, \
-			filter_target_gt=None, filter_target_lt=None, include_filter_target=False):
+			filter_target_gt=None, filter_target_lt=None, include_filter_target=False, fill_na=False):
 		"""
 		Generate a wide range of candidate features to search from.
 
@@ -349,6 +349,9 @@ class FeaturesAccessor(BaseAccessor):
 		if max_lag:
 			# Temporal/trend features
 			df = accessor.temporal_features(exclude=exclude, max_lag=max_lag, index=index)
+
+		if fill_na:
+			df = df.fillna(df.median(skipna=True))
 
 		if return_baselines:
 			return df, res[1], res[2]

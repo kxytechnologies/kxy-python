@@ -134,6 +134,7 @@ lambdas/
 learners/
 
 .DS_Store
+UCIBankMarketing/
 
 *.csv
 *.pkl

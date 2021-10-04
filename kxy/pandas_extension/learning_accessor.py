@@ -10,6 +10,47 @@ from .base_accessor import BaseAccessor
 from .features_utils import rmspe_score, neg_rmspe_score
 from .pre_learning_accessor import PreLearningAccessor
 
+
+class BaselineClassifier(object):
+	"""
+	Classifier following the scikit-learn API and always predicting the most frequent class in-sample.
+	"""
+	def fit(self, x, y):
+		values, counts = np.unique(y, return_counts=True)
+		ind = np.argmax(counts)
+		self.training_mode = values[ind]
+
+	def predict(self, x):
+		try:
+			n = x.shape[0]
+			return np.array([self.training_mode]*n)[:, None]
+
+		except AttributeError:
+			logging.error('The model should be fitted first')
+
+
+
+class BaselineRegressor(object):
+	"""
+	Regressor following the scikit-learn API and always predicting the in-sample mean.
+	"""
+	def __init__(self, baseline='mean'):
+		assert baseline in ['mean', 'median']
+		self._baseline = np.nanmean if baseline == 'mean' else np.nanmedian
+
+
+	def fit(self, x, y):
+		self.training_baseline = self._baseline(y)
+
+	def predict(self, x):
+		try:
+			n = x.shape[0]
+			return np.ones((n, 1))*self.training_baseline
+
+		except AttributeError:
+			logging.error('The model should be fitted first')
+
+
 @pd.api.extensions.register_dataframe_accessor("kxy_learning")
 class LearningAccessor(BaseAccessor):
 	"""
@@ -19,15 +60,16 @@ class LearningAccessor(BaseAccessor):
 
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
-	def fit(self, target_column, learner_cls, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
+	def fit(self, target_column, learner_func, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=1, anonymize=False, \
-			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=1):
+			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=1, \
+			regression_baseline='mean'):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
 		Specifically, training proceeds as follows. First, KXY's model-free variable selection is run (i.e. :code:`df.kxy.variable_selection`). 
 
-		Then we train a model (instance of :code:`learner_cls`) using the :code:`start_n_features` most important feature/variable to predict the target (defined by :code:`target_column`).
+		Then we train a model (instance returned by :code:`learner_func`) using the :code:`start_n_features` most important feature/variable to predict the target (defined by :code:`target_column`).
 
 		Then we consider using the second most important variable to fix the mistakes made by the previously trained model.
 	
@@ -39,8 +81,8 @@ class LearningAccessor(BaseAccessor):
 		----------
 		target_column : str
 			The name of the column containing true labels.
-		learner_cls : str
-			The class base learners should be instances of. They should define a :code:`fit(x, y)` method and a :code:`predict(x)` method.
+		learner_func : function
+			A function returning an instance of a base learner. They should define a :code:`fit(x, y)` method and a :code:`predict(x)` method.
 		problem_type : None | 'classification' | 'regression'
 			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
 		snr : 'auto' | 'low' | 'high'
@@ -65,6 +107,9 @@ class LearningAccessor(BaseAccessor):
 			When set to True, replace missing values with medians.
 		n_down_perf_before_stop : int
 			Number of consecutive down performances to observe before boosting stops.
+		regression_baseline : str (:code:`mean` | :code:`median`)
+			Whether to use the unconditional mean or median as the best predictor in the absence of explanatory variables.
+			Choosing the mean corresponds to minimizing the L2 norm, whereas choosing the median corresponds to minimizing the L1 norm.
 
 
 		Returns
@@ -73,7 +118,7 @@ class LearningAccessor(BaseAccessor):
 			Dictionary containing selected variables, as well as training, validation and testing performance.
 		"""
 		obj = self._obj
-		assert inspect.isclass(learner_cls), 'learner_cls should be a class'
+		assert inspect.isfunction(learner_func), 'learner_func should be a class'
 		assert target_column in obj.columns, 'The target column should be a valid column'
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
@@ -136,12 +181,24 @@ class LearningAccessor(BaseAccessor):
 			y_val_pred = None
 
 			models = []
-			if problem_type == 'regression':
-				initial_pred = np.ones_like(y_val)*y_val.mean()
-				previous_score = score_func(y_val, initial_pred)
+			m = BaselineRegressor(baseline=regression_baseline) if problem_type == 'regression' else BaselineClassifier()
+			x_train = self.train_df[self.variables[:1]].values.copy()
+			x_val = self.val_df[self.variables[:1]].values.copy()
+			m.fit(x_train, y_train)
+			target_train_pred = m.predict(x_train)
+			target_train_pred = target_train_pred if len(target_train_pred.shape) > 1 else target_train_pred[:, None]
+			target_val_pred = m.predict(x_val)
+			target_val_pred = target_val_pred if len(target_val_pred.shape) > 1 else target_val_pred[:, None]
+			previous_score = score_func(y_val, target_val_pred)
+			if self.problem_type == 'regression':
+				target_train = target_train-target_train_pred
+				target_val = target_val-target_val_pred
+				y_val_pred = target_val_pred.copy()
 			else:
-				score_label = 'Running Achievable Accuracy'
-				previous_score = float(self.variable_selection_results[score_label].loc[0])
+				target_train = np.logical_not(target_train == target_train_pred).astype(int)
+				target_val = np.logical_not(target_val == target_train_pred).astype(int)
+				y_val_pred = target_val_pred.copy()
+			models += [m]
 
 			self.start_n_features = start_n_features
 			n_down_perf = 0
@@ -149,9 +206,10 @@ class LearningAccessor(BaseAccessor):
 				vs = self.variables[:i]
 				x_train = self.train_df[vs].values.copy()
 				x_val = self.val_df[vs].values.copy()
+				n_vars = x_train.shape[1] if len(x_train.shape) > 1 else 1
 
 				# Create the new model
-				m = learner_cls()
+				m = learner_func(n_vars=n_vars)
 
 				# Fit the new model
 				m.fit(x_train, target_train)
@@ -175,7 +233,7 @@ class LearningAccessor(BaseAccessor):
 				temp_models = []
 				if val_score > previous_score or (min_n_features and i<=min_n_features):
 					n_down_perf = 0
-					models += temp_models
+					models += list(temp_models)
 					temp_models = []
 					logging.info('Variable #%d (%s) increased validation performance from %.3f to %.3f' % (i, self.variables[i-1], previous_score, val_score))
 					previous_score = val_score
@@ -255,7 +313,7 @@ class LearningAccessor(BaseAccessor):
 					self.test_benchmark_rmse = mean_squared_error(y_test_df.values, test_benchmark.values, squared=False)
 					self.test_benchmark_rmspe = rmspe_score(y_test_df.values, test_benchmark.values)
 
-			self.selected_variables = self.variables[:self.start_n_features+len(self.models)-1]
+			self.selected_variables = self.variables[:self.start_n_features+len(self.models)-2]
 
 		results = {'Selected Variables': self.selected_variables}
 		if self.problem_type == 'regression':
@@ -278,8 +336,6 @@ class LearningAccessor(BaseAccessor):
 				results['Benchmark Training RMSPE'] = '%.5f' % self.train_benchmark_rmspe
 				results['Benchmark Validation RMSPE'] = '%.5f' % self.val_benchmark_rmspe
 				results['Benchmark Testing RMSPE'] = '%.5f' % self.test_benchmark_rmspe
-
-
 
 		if self.problem_type == 'classification':
 			results['Training Accuracy'] = '%.3f' % self.train_score
@@ -311,16 +367,22 @@ class LearningAccessor(BaseAccessor):
 			assert not obj.kxy.is_categorical(col), 'All columns should be numeric'
 
 		data = obj[self.variables]
-		y_pred = None
-		for i in range(self.start_n_features, self.start_n_features+len(self.models)):
+
+		x = data[self.variables[:1]].values.copy()
+		y_error_pred = self.models[0].predict(x)
+		y_error_pred = y_error_pred if len(y_error_pred.shape) > 1 else y_error_pred[:, None]
+		y_pred = y_error_pred
+
+		for i in range(self.start_n_features, self.start_n_features+len(self.models)-1):
 			vs = self.variables[:i]
-			x = data[vs].copy()
-			y_error_pred = self.models[i-self.start_n_features].predict(x)
+			x = data[vs].values.copy()
+			y_error_pred = self.models[i-self.start_n_features+1].predict(x)
+			y_error_pred = y_error_pred if len(y_error_pred.shape) > 1 else y_error_pred[:, None]
 
 			if self.problem_type == 'regression':
-				y_pred = y_error_pred.copy() if y_pred is None else y_pred+y_error_pred
+				y_pred = y_pred+y_error_pred
 			else:
-				y_pred = y_error_pred.copy() if y_pred is None else np.abs(y_pred-y_error_pred) 
+				y_pred = np.abs(y_pred-y_error_pred) 
 
 		predictions = pd.DataFrame(y_pred, columns=[self.target_column], index=data.index)
 
