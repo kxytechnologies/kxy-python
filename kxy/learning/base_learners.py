@@ -8,7 +8,7 @@ MODELS_TAKING_FLAT_OUTPUTS = [\
 	'lightgbm.LGBMRegressor'
 ]
 
-def get_sklearn_learner(class_name, *args, **kwargs):
+def get_sklearn_learner(class_name, *args, fit_kwargs={}, predict_kwargs={}, **kwargs):
 	'''
 	Generate base learner class as a subclass of an sklearn learner class, but one whose hyper-parameters are frozen to user-specified values.
 
@@ -27,10 +27,12 @@ def get_sklearn_learner(class_name, *args, **kwargs):
 		def __init__(self):
 			super(Learner, self).__init__(*args, **kwargs)
 
-		def fit(self, *args, **kwargs):
-			args_ = list(args)
-			args_[1] = args_[1].flatten() if class_name in MODELS_TAKING_FLAT_OUTPUTS else args_[1]
-			return super(Learner, self).fit(*args_, **kwargs)
+		def fit(self, x, y):
+			y_ = y.flatten() if class_name in MODELS_TAKING_FLAT_OUTPUTS else y
+			return super(Learner, self).fit(x, y_, **fit_kwargs)
+
+		def predict(self, x):
+			return super(Learner, self).predict(x, **predict_kwargs)	
 
 	def create_instance(n_vars=None):
 		return Learner()
@@ -39,7 +41,7 @@ def get_sklearn_learner(class_name, *args, **kwargs):
 
 
 
-def get_xgboost_learner(class_name, *args, **kwargs):
+def get_xgboost_learner(class_name, *args, fit_kwargs={}, predict_kwargs={}, **kwargs):
 	'''
 	Generate a base learner class as a subclass of an xgboost learner class, but one whose hyper-parameters are frozen to user-specified values.
 
@@ -51,6 +53,12 @@ def get_xgboost_learner(class_name, *args, **kwargs):
 		def __init__(self):
 			super(Learner, self).__init__(*args, **kwargs)
 
+		def fit(self, x, y):
+			return super(Learner, self).fit(x, y, **fit_kwargs)
+
+		def predict(self, x):
+			return super(Learner, self).predict(x, **predict_kwargs)
+
 	def create_instance(n_vars=None):
 		return Learner()
 
@@ -58,12 +66,12 @@ def get_xgboost_learner(class_name, *args, **kwargs):
 
 
 
-def get_lightgbm_learner(class_name, boosting_type='gbdt', num_leaves=31, max_depth=- 1, learning_rate=0.1, n_estimators=100, \
+def get_lightgbm_learner_sklearn_api(class_name, boosting_type='gbdt', num_leaves=31, max_depth=- 1, learning_rate=0.1, n_estimators=100, \
 		subsample_for_bin=200000, objective=None, class_weight=None, min_split_gain=0.0, min_child_weight=0.001, min_child_samples=20, \
 		subsample=1.0, subsample_freq=0, colsample_bytree=1.0, reg_alpha=0.0, reg_lambda=0.0, random_state=None, n_jobs=-1, \
-		silent='warn', importance_type='split', **kwargs):
+		silent='warn', importance_type='split', fit_kwargs={}, predict_kwargs={}, **kwargs):
 	'''
-	Generate a base learner class as a subclass of an lightgbm learner class, but one whose hyper-parameters are frozen to user-specified values.
+	Generate a base learner class as a subclass of an lightgbm learner class (using the sklearn api), but one whose hyper-parameters are frozen to user-specified values.
 
 	The class name should be full (e.g. lightgbm.LGBMRegressor).
 	'''
@@ -82,10 +90,12 @@ def get_lightgbm_learner(class_name, boosting_type='gbdt', num_leaves=31, max_de
 				subsample_freq=subsample_freq, colsample_bytree=colsample_bytree, reg_alpha=reg_alpha, reg_lambda=reg_lambda, \
 				random_state=random_state, n_jobs=n_jobs, silent=silent, importance_type=importance_type, **kwargs)
 
-		def fit(self, *args, **kwargs):
-			args_ = list(args)
-			args_[1] = args_[1].flatten() if class_name in MODELS_TAKING_FLAT_OUTPUTS else args_[1]
-			return super(Learner, self).fit(*args_, **kwargs)
+		def fit(self, x, y):
+			y_ = y.flatten() if class_name in MODELS_TAKING_FLAT_OUTPUTS else y
+			return super(Learner, self).fit(x, y_, **fit_kwargs)
+
+		def predict(self, x):
+			return super(Learner, self).predict(x, **predict_kwargs)	
 
 	def create_instance(n_vars=None):
 		return Learner()
@@ -94,7 +104,75 @@ def get_lightgbm_learner(class_name, boosting_type='gbdt', num_leaves=31, max_de
 
 
 
-def get_tensorflow_dense_learner(class_name, layers, loss, optimizer='adam', sk_params={}, fit_kwargs={}, predict_kwargs={}):
+def get_lightgbm_learner_learning_api(params, num_boost_round=100, fobj=None, feval=None, init_model=None, feature_name='auto', \
+		categorical_feature='auto', early_stopping_rounds=None, verbose_eval='warn', learning_rates=None, \
+		keep_training_booster=False, callbacks=None, split_random_seed=None, weight_func=None):
+	'''
+	Generate a base learner class as a subclass of an lightgbm learner class (using the regular training api), but one whose hyper-parameters are frozen to user-specified values.
+
+	All parameters are the same as :code:`lightgbm.train` parameters with the same name.
+	'''
+	import lightgbm
+	from sklearn.model_selection import train_test_split
+
+	class Learner(object):
+		def __init__(self,):
+			self.params = params
+			self.num_boost_round = num_boost_round
+			self.fobj = fobj
+			self.feval = feval
+			self.init_model = init_model
+			self.feature_name = feature_name
+			self.categorical_feature = categorical_feature
+			self.early_stopping_rounds = early_stopping_rounds
+			self.evals_result = {}
+			self.verbose_eval = verbose_eval
+			self.learning_rates = learning_rates
+			self.keep_training_booster = keep_training_booster
+			self.callbacks = callbacks
+			self.weight_func = weight_func
+
+		def fit(self, x, y):
+			x_train, x_val, y_train,  y_val = train_test_split(x, y, test_size=0.2, random_state=split_random_seed)
+			if self.weight_func:
+				train_weights = self.weight_func(x_train, y_train)
+				val_weights   = self.weight_func(x_val, y_val)
+				train_dataset = lightgbm.Dataset(x_train, y_train, weight=train_weights)
+				val_dataset = lightgbm.Dataset(x_val, y_val, weight=val_weights)
+			else:
+				train_dataset = lightgbm.Dataset(x_train, y_train)
+				val_dataset = lightgbm.Dataset(x_val, y_val)
+				
+			self._model = lightgbm.train(\
+				self.params, train_dataset, num_boost_round=self.num_boost_round, \
+				valid_sets=[train_dataset, val_dataset], valid_names=['training', 'validation'], fobj=self.fobj, \
+				feval=self.feval, init_model=self.init_model, feature_name=self.feature_name, \
+				categorical_feature=self.categorical_feature, early_stopping_rounds=self.early_stopping_rounds, \
+				evals_result=self.evals_result, verbose_eval=self.verbose_eval, learning_rates=self.learning_rates, \
+				keep_training_booster=self.keep_training_booster, callbacks=self.callbacks)
+
+		def predict(self, x):
+			'''
+			'''
+			assert hasattr(self, '_model'), 'The model has not been fitted yet'
+			y_pred = self._model.predict(x)
+
+			if self.params.get('objective', '') == 'binary':
+				y_pred = (y_pred > 0.5).astype(int)
+
+			if self.params.get('objective', '') == 'multiclass':
+				y_pred = np.argmax(y_pred, axis=1).astype(int)
+
+			return y_pred
+
+	def create_instance(n_vars=None):
+		return Learner()
+
+	return create_instance
+
+
+
+def get_tensorflow_dense_learner(class_name, layers, loss, optimizer='adam', fit_kwargs={}, predict_kwargs={}, **kwargs):
 	'''
 	Generate a base learner class as a subclass of a tensorflow learner class, but one whose hyper-parameters are frozen to user-specified values.
 
@@ -110,12 +188,15 @@ def get_tensorflow_dense_learner(class_name, layers, loss, optimizer='adam', sk_
 		The tensorflow loss (e.g. 'mean_absolute_error')
 	optimizer : str
 		Which tensorflow optimizer to use to fit the model.
-	sk_params : dict
-		E.g.: :code:`{'epochs': 10, 'batch_size': 100}`. See https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor and https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasClassifier
+	kwargs : dict
+		Other named parameters to use in the constructor of the base class.
 	fit_kwargs : dict
 		Arguments to be used to fit the model. See https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit for legal arguments.
 	predict_kwargs : dict
 		Arguments to be used to make predictions. See https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict for legal arguments.
+	kwargs : dict
+		Other named parameters to use in the constructor of the base class. E.g. :code:`epochs`, :code:`batch_size`.
+		See https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor and https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasClassifier
 
 	'''
 	import tensorflow as tf
@@ -135,7 +216,7 @@ def get_tensorflow_dense_learner(class_name, layers, loss, optimizer='adam', sk_
 				model.compile(loss=loss, optimizer=optimizer)
 				return model
 
-			super(Learner, self).__init__(build_fn=build_fn, **sk_params)
+			super(Learner, self).__init__(build_fn=build_fn, **kwargs)
 
 		def fit(self, x, y):
 			return super(Learner, self).fit(x, y, **fit_kwargs)
@@ -150,7 +231,7 @@ def get_tensorflow_dense_learner(class_name, layers, loss, optimizer='adam', sk_
 
 
 
-def get_pytorch_dense_learner(class_name, layers, optimizer='Adam', sk_params={}, fit_kwargs={}, predict_kwargs={}):
+def get_pytorch_dense_learner(class_name, layers, optimizer='Adam', fit_kwargs={}, predict_kwargs={}, **kwargs):
 	'''
 	Generate a base learner class as a subclass of a pytorch learner class, but one whose hyper-parameters are frozen to user-specified values.
 
@@ -167,12 +248,12 @@ def get_pytorch_dense_learner(class_name, layers, optimizer='Adam', sk_params={}
 		List of tuples of the form (n_neurons, activation)
 	optimizer : str
 		Name of the class in :code:`torch.optim` to use as optimizer to train the model.
-	sk_params : dict
-		E.g.: :code:`{'epochs': 10, 'batch_size': 100}`. See https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor and https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasClassifier
+	kwargs : dict
+		Other named parameters to use in the constructor of the base class.
 	fit_kwargs : dict
-		Arguments to be used to fit the model. See https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit for legal arguments.
+		Arguments to be used to fit the model.
 	predict_kwargs : dict
-		Arguments to be used to make predictions. See https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict for legal arguments.
+		Arguments to be used to make predictions.
 
 	'''
 	import numpy as np
@@ -208,7 +289,7 @@ def get_pytorch_dense_learner(class_name, layers, optimizer='Adam', sk_params={}
 							X = self.activations[i](self.linear_transformations[i](X))
 					return X
 
-			super(Learner, self).__init__(Module, optimizer=optimizer, device=device, **sk_params)
+			super(Learner, self).__init__(Module, optimizer=optimizer, device=device, **kwargs)
 
 
 		def fit(self, x, y):

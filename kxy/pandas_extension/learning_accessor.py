@@ -63,7 +63,7 @@ class LearningAccessor(BaseAccessor):
 	def fit(self, target_column, learner_func, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=1, anonymize=False, \
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=1, \
-			regression_baseline='mean'):
+			regression_baseline='mean', additive_learning=True):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -124,6 +124,7 @@ class LearningAccessor(BaseAccessor):
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 		assert problem_type in ('classification', 'regression')
 		self.problem_type = problem_type
+		self.additive_learning = additive_learning
 
 		for col in obj.columns:
 			assert not self.is_categorical(col), 'All columns should be numeric'
@@ -181,24 +182,34 @@ class LearningAccessor(BaseAccessor):
 			y_val_pred = None
 
 			models = []
+			max_var_ixs = []
 			m = BaselineRegressor(baseline=regression_baseline) if problem_type == 'regression' else BaselineClassifier()
 			x_train = self.train_df[self.variables[:1]].values.copy()
 			x_val = self.val_df[self.variables[:1]].values.copy()
 			m.fit(x_train, y_train)
 			target_train_pred = m.predict(x_train)
 			target_train_pred = target_train_pred if len(target_train_pred.shape) > 1 else target_train_pred[:, None]
+			y_train_pred = target_train_pred.copy()
 			target_val_pred = m.predict(x_val)
 			target_val_pred = target_val_pred if len(target_val_pred.shape) > 1 else target_val_pred[:, None]
 			previous_score = score_func(y_val, target_val_pred)
-			if self.problem_type == 'regression':
-				target_train = target_train-target_train_pred
-				target_val = target_val-target_val_pred
+			logging.info('Baseline score (%s): %.3f' % (score, previous_score))
+
+			if self.additive_learning:
+				if self.problem_type == 'regression':
+					target_train = target_train-target_train_pred
+					target_val = target_val-target_val_pred
+				else:
+					target_train = np.logical_not(target_train == target_train_pred).astype(int)
+					target_val = np.logical_not(target_val == target_train_pred).astype(int)
+
 				y_val_pred = target_val_pred.copy()
+				models += [m]
+				max_var_ixs += [0]
+
 			else:
-				target_train = np.logical_not(target_train == target_train_pred).astype(int)
-				target_val = np.logical_not(target_val == target_train_pred).astype(int)
-				y_val_pred = target_val_pred.copy()
-			models += [m]
+				models = [m]
+				max_var_ixs = [0]
 
 			self.start_n_features = start_n_features
 			n_down_perf = 0
@@ -222,29 +233,33 @@ class LearningAccessor(BaseAccessor):
 
 				# Target predictions updates
 				if self.problem_type == 'regression':
-					y_train_pred = target_train_pred.copy() if y_train_pred is None else y_train_pred+target_train_pred
-					y_val_pred = target_val_pred.copy() if y_val_pred is None else y_val_pred+target_val_pred
+					y_train_pred_ = target_train_pred.copy() if not self.additive_learning else y_train_pred+target_train_pred
+					y_val_pred_ = target_val_pred.copy() if not self.additive_learning else y_val_pred+target_val_pred
 				else:
-					y_train_pred = target_train_pred.copy() if y_train_pred is None else np.abs(y_train_pred-target_train_pred)
-					y_val_pred = target_val_pred.copy() if y_val_pred is None else np.abs(y_val_pred-target_val_pred) 
+					y_train_pred_ = target_train_pred.copy() if not self.additive_learning else np.abs(y_train_pred-target_train_pred)
+					y_val_pred_ = target_val_pred.copy() if not self.additive_learning else np.abs(y_val_pred-target_val_pred) 
 
 				# New validation score
-				val_score = score_func(y_val, y_val_pred)
-				temp_models = []
+				val_score = score_func(y_val, y_val_pred_)
 				if val_score > previous_score or (min_n_features and i<=min_n_features):
+					y_train_pred = y_train_pred_.copy()
+					y_val_pred = y_val_pred_.copy()
 					n_down_perf = 0
-					models += list(temp_models)
-					temp_models = []
 					logging.info('Variable #%d (%s) increased validation performance from %.3f to %.3f' % (i, self.variables[i-1], previous_score, val_score))
 					previous_score = val_score
-					if self.problem_type == 'regression':
-						target_train = target_train-target_train_pred
-						target_val = target_val-target_val_pred
-					else:
-						target_train = np.logical_not(target_train == target_train_pred).astype(int)
-						target_val = np.logical_not(target_val == target_train_pred).astype(int)
-					models += [m]
+					if self.additive_learning:
+						if self.problem_type == 'regression':
+							target_train = target_train-target_train_pred
+							target_val = target_val-target_val_pred
+						else:
+							target_train = np.logical_not(target_train == target_train_pred).astype(int)
+							target_val = np.logical_not(target_val == target_train_pred).astype(int)
+						models += [m]
+						max_var_ixs += [i]
 
+					else:
+						models = [m]
+						max_var_ixs = [i]
 				else:
 					n_down_perf += 1
 					logging.info('Validation performance did not increase for the %d-th consecutive time. Old: %.3f, New: %.3f, Variable: %s' % (n_down_perf, previous_score, val_score, self.variables[i-1]))
@@ -252,20 +267,14 @@ class LearningAccessor(BaseAccessor):
 						# Only stop after a certain number of consecutive down performance
 						logging.info('Stopping training as validation performance did not increase %d consecutive times.' % n_down_perf_before_stop)
 						break
-					else:
-						if self.problem_type == 'regression':
-							target_train = target_train-target_train_pred
-							target_val = target_val-target_val_pred
-						else:
-							target_train = np.logical_not(target_train == target_train_pred).astype(int)
-							target_val = np.logical_not(target_val == target_train_pred).astype(int)
-						temp_models += [m]
 
 				if max_n_features and (i==max_n_features):
 					logging.info('Stopping training as the maximum number of variables (%d) has been reached' % max_n_features)
 					break				
 
 			self.models = models
+			self.max_var_ixs = max_var_ixs
+			self.selected_variables = self.variables[:self.max_var_ixs[-1]]
 
 			# Compute training/validation/testing performances
 			x_train_df = self.train_df[x_columns]
@@ -273,8 +282,8 @@ class LearningAccessor(BaseAccessor):
 			train_predictions = self.predict(x_train_df)
 			self.train_score = score_func(y_train_df.values, train_predictions.values)
 			if self.problem_type == 'regression':
-				self.train_rmse = mean_squared_error(y_train_df.values, train_predictions.values, squared=False)
-				self.train_rmspe = rmspe_score(y_train_df.values, train_predictions.values)
+				self.train_rmse = mean_squared_error(y_train_df.values.flatten(), train_predictions.values.flatten(), squared=False)
+				self.train_rmspe = rmspe_score(y_train_df.values.flatten(), train_predictions.values.flatten())
 				self.train_r2 = r2_score(y_train_df.values.flatten(), train_predictions.values.flatten())
 
 				if self.benchmark_feature:
@@ -282,14 +291,15 @@ class LearningAccessor(BaseAccessor):
 					self.train_benchmark_score = score_func(y_train_df.values, train_benchmark.values)
 					self.train_benchmark_rmse = mean_squared_error(y_train_df.values, train_benchmark.values, squared=False)
 					self.train_benchmark_rmspe = rmspe_score(y_train_df.values, train_benchmark.values)
+					self.train_benchmark_r2 = r2_score(y_train_df.values.flatten(), train_benchmark.values.flatten())
 
 			x_val_df = self.val_df[x_columns]
 			y_val_df = self.val_df[[target_column]]
 			val_predictions = self.predict(x_val_df)
 			self.val_score = score_func(y_train_df.values, train_predictions.values)
 			if self.problem_type == 'regression':
-				self.val_rmse = mean_squared_error(y_val_df.values, val_predictions.values, squared=False)
-				self.val_rmspe = rmspe_score(y_val_df.values, val_predictions.values)
+				self.val_rmse = mean_squared_error(y_val_df.values.flatten(), val_predictions.values.flatten(), squared=False)
+				self.val_rmspe = rmspe_score(y_val_df.values.flatten(), val_predictions.values.flatten())
 				self.val_r2 = r2_score(y_val_df.values.flatten(), val_predictions.values.flatten())
 
 				if self.benchmark_feature:
@@ -297,14 +307,15 @@ class LearningAccessor(BaseAccessor):
 					self.val_benchmark_score = score_func(y_val_df.values, val_benchmark.values)
 					self.val_benchmark_rmse = mean_squared_error(y_val_df.values, val_benchmark.values, squared=False)
 					self.val_benchmark_rmspe = rmspe_score(y_val_df.values, val_benchmark.values)
+					self.val_benchmark_r2 = r2_score(y_val_df.values.flatten(), val_benchmark.values.flatten())
 				
 			x_test_df = self.test_df[x_columns]
 			y_test_df = self.test_df[[target_column]]
 			test_predictions = self.predict(x_test_df)
 			self.test_score = score_func(y_test_df.values, test_predictions.values)
 			if self.problem_type == 'regression':
-				self.test_rmse = mean_squared_error(y_test_df.values, test_predictions.values, squared=False)
-				self.test_rmspe = rmspe_score(y_test_df.values, test_predictions.values)
+				self.test_rmse = mean_squared_error(y_test_df.values.flatten(), test_predictions.values.flatten(), squared=False)
+				self.test_rmspe = rmspe_score(y_test_df.values.flatten(), test_predictions.values.flatten())
 				self.test_r2 = r2_score(y_test_df.values.flatten(), test_predictions.values.flatten())
 
 				if self.benchmark_feature:
@@ -312,14 +323,14 @@ class LearningAccessor(BaseAccessor):
 					self.test_benchmark_score = score_func(y_test_df.values, test_benchmark.values)
 					self.test_benchmark_rmse = mean_squared_error(y_test_df.values, test_benchmark.values, squared=False)
 					self.test_benchmark_rmspe = rmspe_score(y_test_df.values, test_benchmark.values)
+					self.test_benchmark_r2 = r2_score(y_test_df.values.flatten(), test_benchmark.values.flatten())
 
-			self.selected_variables = self.variables[:self.start_n_features+len(self.models)-2]
 
 		results = {'Selected Variables': self.selected_variables}
 		if self.problem_type == 'regression':
-			results['Training R-Squared'] = '%.3f' % self.train_score
-			results['Validation R-Squared'] = '%.3f' % self.val_score
-			results['Testing R-Squared'] = '%.3f' % self.test_score
+			results['Training R-Squared'] = '%.3f' % self.train_r2
+			results['Validation R-Squared'] = '%.3f' % self.val_r2
+			results['Testing R-Squared'] = '%.3f' % self.test_r2
 			results['Training RMSE'] = '%.5f' % self.train_rmse
 			results['Validation RMSE'] = '%.5f' % self.val_rmse
 			results['Testing RMSE'] = '%.5f' % self.test_rmse
@@ -327,9 +338,9 @@ class LearningAccessor(BaseAccessor):
 			results['Validation RMSPE'] = '%.5f' % self.val_rmspe
 			results['Testing RMSPE'] = '%.5f' % self.test_rmspe
 			if self.benchmark_feature:
-				results['Benchmark Training R-Squared'] = '%.3f' % self.train_benchmark_score
-				results['Benchmark Validation R-Squared'] = '%.3f' % self.val_benchmark_score
-				results['Benchmark Testing R-Squared'] = '%.3f' % self.test_benchmark_score
+				results['Benchmark Training R-Squared'] = '%.3f' % self.train_benchmark_r2
+				results['Benchmark Validation R-Squared'] = '%.3f' % self.val_benchmark_r2
+				results['Benchmark Testing R-Squared'] = '%.3f' % self.test_benchmark_r2
 				results['Benchmark Training RMSE'] = '%.5f' % self.train_benchmark_rmse
 				results['Benchmark Validation RMSE'] = '%.5f' % self.val_benchmark_rmse
 				results['Benchmark Testing RMSE'] = '%.5f' % self.test_benchmark_rmse
@@ -368,21 +379,27 @@ class LearningAccessor(BaseAccessor):
 
 		data = obj[self.variables]
 
-		x = data[self.variables[:1]].values.copy()
-		y_error_pred = self.models[0].predict(x)
-		y_error_pred = y_error_pred if len(y_error_pred.shape) > 1 else y_error_pred[:, None]
-		y_pred = y_error_pred
-
-		for i in range(self.start_n_features, self.start_n_features+len(self.models)-1):
-			vs = self.variables[:i]
-			x = data[vs].values.copy()
-			y_error_pred = self.models[i-self.start_n_features+1].predict(x)
+		if self.additive_learning:
+			x = data[self.variables[:1]].values.copy()
+			y_error_pred = self.models[0].predict(x)
 			y_error_pred = y_error_pred if len(y_error_pred.shape) > 1 else y_error_pred[:, None]
+			y_pred = y_error_pred
 
-			if self.problem_type == 'regression':
-				y_pred = y_pred+y_error_pred
-			else:
-				y_pred = np.abs(y_pred-y_error_pred) 
+			for i in range(1, len(self.models)):
+				vs = self.variables[:self.max_var_ixs[i]]
+				x = data[vs].values.copy()
+				y_error_pred = self.models[i].predict(x)
+				y_error_pred = y_error_pred if len(y_error_pred.shape) > 1 else y_error_pred[:, None]
+
+				if self.problem_type == 'regression':
+					y_pred = y_pred+y_error_pred
+				else:
+					y_pred = np.abs(y_pred-y_error_pred)
+
+		else:
+			x = data[self.selected_variables].values.copy()
+			y_pred = self.models[0].predict(x)
+			y_pred = y_pred if len(y_pred.shape) > 1 else y_pred[:, None]
 
 		predictions = pd.DataFrame(y_pred, columns=[self.target_column], index=data.index)
 

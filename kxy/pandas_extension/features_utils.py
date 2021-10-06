@@ -160,7 +160,7 @@ def nextmodefreq(x):
 
 def rmspe_score(y_true, y_pred):
 	''' '''
-	return np.sqrt(np.mean(np.square((y_true - y_pred) / y_true)))
+	return np.sqrt(np.mean(np.square((y_true.flatten() - y_pred.flatten()) / y_true.flatten())))
 
 def neg_rmspe_score(y_true, y_pred):
 	''' '''
