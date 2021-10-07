@@ -44,6 +44,11 @@ class BaseAccessor(object):
 		return ret
 
 
+	@property
+	def is_too_large(self):
+		return self._obj.memory_usage(index=False).sum()/(1024.0*1024.0*1024.0) > 1.5
+
+
 	def describe(self,):
 		for col in sorted(self._obj.columns):
 			print('         ')
@@ -120,7 +125,8 @@ class BaseAccessor(object):
 				if s > 0.0:
 					x = x/s
 					x = norm.cdf(x)
-				df[col] = x.copy()
+				df[col] = np.around(x.copy(), 3)
+
 
 		return df
 

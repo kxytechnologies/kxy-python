@@ -161,9 +161,6 @@ class LearningAccessor(BaseAccessor):
 
 			# 1. Model-free variable selection
 			vs_accessor = PreLearningAccessor(obj)
-			if obj.memory_usage(index=False).sum()/(1024.0*1024.0*1024.0) > 1.:
-				# The dataframe is too big to be sent as such: we need to normalize and reduce the precision before uploading the file.
-				anonymize=True
 			self.variable_selection_results = vs_accessor.variable_selection(self.target_column, problem_type=self.problem_type, \
 				snr=snr, anonymize=anonymize)
 			self.variables = [_ for _ in self.variable_selection_results['Variable'].values if _.lower() != 'no variable']

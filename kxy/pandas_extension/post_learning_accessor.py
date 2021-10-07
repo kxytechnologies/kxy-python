@@ -62,7 +62,7 @@ class PostLearningAccessor(BaseAccessor):
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
-		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize else self._obj
+		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize or self.is_too_large else self._obj
 
 		return ddi(_obj, target_column, new_variables, problem_type, snr=snr)
 
@@ -114,7 +114,7 @@ class PostLearningAccessor(BaseAccessor):
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
-		_obj = self.anonymize(columns_to_exclude=[target_column, prediction_column]) if anonymize else self._obj
+		_obj = self.anonymize(columns_to_exclude=[target_column, prediction_column]) if anonymize or self.is_too_large else self._obj
 
 		return mdi(_obj, target_column, prediction_column, problem_type, snr=snr)
 
@@ -165,7 +165,7 @@ class PostLearningAccessor(BaseAccessor):
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(prediction_column) else 'regression'
 
-		_obj = self.anonymize(columns_to_exclude=[prediction_column]) if anonymize else self._obj
+		_obj = self.anonymize(columns_to_exclude=[prediction_column]) if anonymize or self.is_too_large else self._obj
 
 		return me(_obj, prediction_column, problem_type, snr=snr)
 
