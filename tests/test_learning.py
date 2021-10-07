@@ -16,7 +16,7 @@ def test_lean_boosted_xgboost_regressor():
 
 	# Model building
 	results = features_df.kxy.fit(target_column, xgboost_regressor_cls, \
-		problem_type='regression')
+		problem_type='regression', additive_learning=True)
 	assert results['Testing R-Squared'] == '0.430'
 	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight']
 
@@ -33,7 +33,7 @@ def test_lean_boosted_lightgbm_regressor():
 
 	# Model building
 	results = features_df.kxy.fit(target_column, lightgbm_regressor_cls, \
-		problem_type='regression')
+		problem_type='regression', additive_learning=True)
 	assert results['Testing R-Squared'] == '0.516'
 	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight']
 
@@ -61,7 +61,7 @@ def test_lean_boosted_lightgbm_learning_api_regressor():
 
 	# Model building
 	results = features_df.kxy.fit(target_column, lightgbm_regressor_cls, \
-		problem_type='regression')
+		problem_type='regression', additive_learning=True)
 	assert results['Testing R-Squared'] == '0.518'
 	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', \
 		'ABS(Shell weight - Q25(Shell weight))', 'ABS(Viscera weight - MEDIAN(Viscera weight))', \
@@ -86,7 +86,7 @@ def test_lean_boosted_tensorflow_regressor():
 
 	# Model building
 	results = features_df.kxy.fit(target_column, tf_regressor_cls, \
-		problem_type='regression')
+		problem_type='regression', additive_learning=True)
 	assert results['Testing R-Squared'] == '0.450'
 	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', 'ABS(Shell weight - Q25(Shell weight))', \
 		'ABS(Viscera weight - MEDIAN(Viscera weight))', 'ABS(Viscera weight - MEAN(Viscera weight))', 'Height', 'Length', 'Diameter', \
@@ -109,7 +109,7 @@ def test_lean_boosted_pytorch_regressor():
 
 	# Model building
 	results = features_df.kxy.fit(target_column, pt_regressor_cls, \
-		problem_type='regression')
+		problem_type='regression', additive_learning=True)
 	assert results['Testing R-Squared'] == '0.556'
 	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', 'ABS(Shell weight - Q25(Shell weight))',\
 		'ABS(Viscera weight - MEDIAN(Viscera weight))', 'ABS(Viscera weight - MEAN(Viscera weight))', 'Height', 'Length', 'Diameter', \
@@ -132,7 +132,7 @@ def test_lean_boosted_xgboost_classifier():
 
 	# Model building
 	results = features_df.kxy.fit(target_column, xgboost_classifier_cls, \
-		problem_type='classification')
+		problem_type='classification', additive_learning=True)
 
 	assert results['Testing Accuracy'] == '0.854'
 	assert results['Selected Variables'] == ['Variance', 'ABS(Skewness - Q25(Skewness))']
@@ -150,7 +150,7 @@ def test_lean_boosted_lightgbm_classifier():
 
 	# Model building
 	results = features_df.kxy.fit(target_column, lightgbm_classifier_cls, \
-		problem_type='classification')
+		problem_type='classification', additive_learning=True)
 
 	assert results['Testing Accuracy'] == '0.894'
 	assert results['Selected Variables'] == ['Variance', 'ABS(Skewness - Q25(Skewness))']
@@ -175,7 +175,7 @@ def test_lean_boosted_lightgbm_learning_api_classifier():
 
 	# Model building
 	results = features_df.kxy.fit(target_column, lightgbm_classifier_cls, \
-		problem_type='classification')
+		problem_type='classification', additive_learning=True)
 
 	assert results['Testing Accuracy'] == '0.836'
 	assert results['Selected Variables'] == ['Variance', 'ABS(Skewness - Q25(Skewness))', 'Kurtosis']
@@ -201,7 +201,8 @@ def test_lean_boosted_tensorflow_classifier():
 	# target_column = 'y_yes'
 
 	# Model building
-	results = features_df.kxy.fit(target_column, tf_classifier_cls, problem_type='classification')
+	results = features_df.kxy.fit(target_column, tf_classifier_cls, problem_type='classification', \
+		additive_learning=True)
 	assert results['Testing Accuracy'] == '0.949'
 	assert results['Selected Variables'] == ['Variance', 'ABS(Skewness - Q25(Skewness))', 'Kurtosis']
 
@@ -222,7 +223,8 @@ def test_lean_boosted_pytorch_classifier():
 	features_df = df.kxy.generate_features(entity=None, max_lag=None, entity_name='*', exclude=[target_column], fill_na=True)
 
 	# Model building
-	results = features_df.kxy.fit(target_column, pt_classifier_cls, problem_type='classification')
+	results = features_df.kxy.fit(target_column, pt_classifier_cls, problem_type='classification', \
+		additive_learning=True)
 	assert results['Testing Accuracy'] == '0.573'
 	assert results['Selected Variables'] == []
 
@@ -239,7 +241,8 @@ def test_single_learner():
 
 	# Model building
 	results = features_df.kxy.fit(target_column, xgboost_regressor_cls, \
-		problem_type='regression', start_n_features=2, min_n_features=2, max_n_features=2)
+		problem_type='regression', start_n_features=2, min_n_features=2, max_n_features=2, \
+		additive_learning=True)
 	assert results['Testing R-Squared'] == '0.476'
 	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight']
 	assert len(features_df.kxy.models) == 2
@@ -257,7 +260,8 @@ def test_n_down_perf_before_stop():
 
 	# Model building
 	results = features_df.kxy.fit(target_column, xgboost_regressor_cls, \
-		problem_type='regression', n_down_perf_before_stop=3)
+		problem_type='regression', n_down_perf_before_stop=3, \
+		additive_learning=True)
 	assert results['Testing R-Squared'] == '0.430'
 	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight']
 
