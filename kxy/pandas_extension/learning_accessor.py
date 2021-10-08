@@ -60,10 +60,38 @@ class LearningAccessor(BaseAccessor):
 
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
+
+	def _update_target(self, target, predictions):
+		'''
+		'''
+		if self.additive_learning:
+			if self.problem_type == 'regression':
+				return target-predictions if self.regression_error_type == 'additive' else target/predictions
+
+			if self.problem_type == 'classification':
+				return np.logical_not(target == predictions).astype(int)
+
+		else:
+			return target
+
+	def _compound_predictions(self, previous_predictions, new_predictions):
+		'''
+		'''
+		if self.additive_learning:
+			if self.problem_type == 'regression':
+				return previous_predictions+new_predictions if self.regression_error_type == 'additive' else \
+					previous_predictions*new_predictions
+
+			if self.problem_type == 'classification':
+				return np.abs(previous_predictions-new_predictions)
+
+		else:
+			return new_predictions
+
 	def fit(self, target_column, learner_func, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=1, anonymize=False, \
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=1, \
-			regression_baseline='mean', additive_learning=False):
+			regression_baseline='mean', additive_learning=False, regression_error_type='additive'):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -110,6 +138,10 @@ class LearningAccessor(BaseAccessor):
 		regression_baseline : str (:code:`mean` | :code:`median`)
 			Whether to use the unconditional mean or median as the best predictor in the absence of explanatory variables.
 			Choosing the mean corresponds to minimizing the L2 norm, whereas choosing the median corresponds to minimizing the L1 norm.
+		additive_learning : bool
+			When a new variable is added, whether errors/residuals should be fixed or a new model should be learned from scratch.
+		regression_error_type : str ('additive' | 'multiplicative')
+			For regression problems with additive learning, this determines whether the final model should be additive (pruning tries to reduce regressor residuals) or multiplicative (i.e. pruning tries to bring the ratio between true and predicted labels as closed to 1 as possible).
 
 
 		Returns
@@ -125,6 +157,8 @@ class LearningAccessor(BaseAccessor):
 		assert problem_type in ('classification', 'regression')
 		self.problem_type = problem_type
 		self.additive_learning = additive_learning
+		assert regression_error_type in ('additive', 'multiplicative')
+		self.regression_error_type = regression_error_type
 
 		for col in obj.columns:
 			assert not self.is_categorical(col), 'All columns should be numeric'
@@ -189,24 +223,14 @@ class LearningAccessor(BaseAccessor):
 			y_train_pred = target_train_pred.copy()
 			target_val_pred = m.predict(x_val)
 			target_val_pred = target_val_pred if len(target_val_pred.shape) > 1 else target_val_pred[:, None]
+			y_val_pred = target_val_pred.copy()
 			previous_score = score_func(y_val, target_val_pred)
 			logging.info('Baseline score (%s): %.3f' % (score, previous_score))
 
-			if self.additive_learning:
-				if self.problem_type == 'regression':
-					target_train = target_train-target_train_pred
-					target_val = target_val-target_val_pred
-				else:
-					target_train = np.logical_not(target_train == target_train_pred).astype(int)
-					target_val = np.logical_not(target_val == target_train_pred).astype(int)
-
-				y_val_pred = target_val_pred.copy()
-				models += [m]
-				max_var_ixs += [0]
-
-			else:
-				models = [m]
-				max_var_ixs = [0]
+			target_train = self._update_target(target_train, target_train_pred)
+			target_val = self._update_target(target_val, target_val_pred)
+			models = models+[m] if self.additive_learning else [m]
+			max_var_ixs = max_var_ixs+[0] if self.additive_learning else [0]	
 
 			self.start_n_features = start_n_features
 			n_down_perf = 0
@@ -229,12 +253,8 @@ class LearningAccessor(BaseAccessor):
 				target_val_pred = target_val_pred if len(target_val_pred.shape) > 1 else target_val_pred[:, None]
 
 				# Target predictions updates
-				if self.problem_type == 'regression':
-					y_train_pred_ = target_train_pred.copy() if not self.additive_learning else y_train_pred+target_train_pred
-					y_val_pred_ = target_val_pred.copy() if not self.additive_learning else y_val_pred+target_val_pred
-				else:
-					y_train_pred_ = target_train_pred.copy() if not self.additive_learning else np.abs(y_train_pred-target_train_pred)
-					y_val_pred_ = target_val_pred.copy() if not self.additive_learning else np.abs(y_val_pred-target_val_pred) 
+				y_train_pred_ = self._compound_predictions(y_train_pred, target_train_pred)
+				y_val_pred_ = self._compound_predictions(y_val_pred, target_val_pred)
 
 				# New validation score
 				val_score = score_func(y_val, y_val_pred_)
@@ -244,19 +264,12 @@ class LearningAccessor(BaseAccessor):
 					n_down_perf = 0
 					logging.info('Variable #%d (%s) increased validation performance from %.3f to %.3f' % (i, self.variables[i-1], previous_score, val_score))
 					previous_score = val_score
-					if self.additive_learning:
-						if self.problem_type == 'regression':
-							target_train = target_train-target_train_pred
-							target_val = target_val-target_val_pred
-						else:
-							target_train = np.logical_not(target_train == target_train_pred).astype(int)
-							target_val = np.logical_not(target_val == target_train_pred).astype(int)
-						models += [m]
-						max_var_ixs += [i]
 
-					else:
-						models = [m]
-						max_var_ixs = [i]
+					target_train = self._update_target(target_train, target_train_pred)
+					target_val = self._update_target(target_val, target_val_pred)
+					models = models+[m] if self.additive_learning else [m]
+					max_var_ixs = max_var_ixs+[i] if self.additive_learning else [i]					
+
 				else:
 					n_down_perf += 1
 					logging.info('Validation performance did not increase for the %d-th consecutive time. Old: %.3f, New: %.3f, Variable: %s' % (n_down_perf, previous_score, val_score, self.variables[i-1]))
@@ -387,11 +400,7 @@ class LearningAccessor(BaseAccessor):
 				x = data[vs].values.copy()
 				y_error_pred = self.models[i].predict(x)
 				y_error_pred = y_error_pred if len(y_error_pred.shape) > 1 else y_error_pred[:, None]
-
-				if self.problem_type == 'regression':
-					y_pred = y_pred+y_error_pred
-				else:
-					y_pred = np.abs(y_pred-y_error_pred)
+				y_pred = self._compound_predictions(y_pred, y_error_pred)
 
 		else:
 			x = data[self.selected_variables].values.copy()
