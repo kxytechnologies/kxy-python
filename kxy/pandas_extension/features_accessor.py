@@ -139,47 +139,47 @@ class FeaturesAccessor(BaseAccessor):
 		# Aggregation of categorical variables
 		if cat_columns:
 			# Most frequent value and it's frequency of occurence
-			agg.update({'MODE(%s)' % (entity, col): (col, mode) for col in cat_columns})
-			agg.update({'MODEFREQ(%s)' % col: (col, modefreq) for col in cat_columns})
+			agg.update({'%s__%s.MODE()' % (entity, col): (col, mode) for col in cat_columns})
+			agg.update({'%s__%s.MODEFREQ()' % (entity, col): (col, modefreq) for col in cat_columns})
 
 			# Second most frequent value and it's frequency of occurence
-			agg.update({'NEXTMODE(%s)' % col: (col, nextmode) for col in cat_columns})
-			agg.update({'NEXTMODEFREQ(%s)' % col: (col, nextmodefreq) for col in cat_columns})
+			agg.update({'%s__%s.NEXTMODE()' % (entity, col): (col, nextmode) for col in cat_columns})
+			agg.update({'%s__%s.NEXTMODEFREQ()' % (entity, col): (col, nextmodefreq) for col in cat_columns})
 
 			# Least frequent value and it's frequency of occurence
-			agg.update({'LASTMODE(%s)' % col: (col, lastmode) for col in cat_columns})
-			agg.update({'LASTMODEFREQ(%s)' % col: (col, lastmodefreq) for col in cat_columns})
+			agg.update({'%s__%s.LASTMODE()' % (entity, col): (col, lastmode) for col in cat_columns})
+			agg.update({'%s__%s.LASTMODEFREQ()' % (entity, col): (col, lastmodefreq) for col in cat_columns})
 
 			# Number of unique values
-			agg.update({'NUM_UNIQUE(%s)' % col: (col, n_unique) for col in cat_columns})
+			agg.update({'%s__%s.NUM_UNIQUE()' % (entity, col): (col, n_unique) for col in cat_columns})
 
 
 		# Aggregation of ordinal variables
 		if ord_columns:
-			agg.update({'SUM(%s)' % col: (col, nansum) for col in ord_columns})
-			agg.update({'MEAN(%s)' % col: (col, nanmean) for col in ord_columns})
-			agg.update({'STD(%s)' % col: (col, nanstd) for col in ord_columns})
-			agg.update({'MEDIAN(%s)' % col: (col, nanmedian) for col in ord_columns})
-			agg.update({'SKEW(%s)' % col: (col, nanskew) for col in ord_columns})
-			agg.update({'KURT(%s)' % col: (col, nankurtosis) for col in ord_columns})
-			agg.update({'Q25(%s)' % col: (col, q25) for col in ord_columns})
-			agg.update({'Q75(%s)' % col: (col, q75) for col in ord_columns})
-			agg.update({'MIN(%s)' % col: (col, nanmin) for col in ord_columns})
-			agg.update({'MAX(%s)' % col: (col, nanmax) for col in ord_columns})
-			agg.update({'MAX(%s)-MIN(%s)' % (col, col): (col, nanmaxmmin) for col in ord_columns})
+			agg.update({'%s__%s.SUM()' % (entity, col): (col, nansum) for col in ord_columns})
+			agg.update({'%s__%s.MEAN()' % (entity, col): (col, nanmean) for col in ord_columns})
+			agg.update({'%s__%s.STD()' % (entity, col): (col, nanstd) for col in ord_columns})
+			agg.update({'%s__%s.MEDIAN()' % (entity, col): (col, nanmedian) for col in ord_columns})
+			agg.update({'%s__%s.SKEW()' % (entity, col): (col, nanskew) for col in ord_columns})
+			agg.update({'%s__%s.KURT()' % (entity, col): (col, nankurtosis) for col in ord_columns})
+			agg.update({'%s__%s.Q25()' % (entity, col): (col, q25) for col in ord_columns})
+			agg.update({'%s__%s.Q75()' % (entity, col): (col, q75) for col in ord_columns})
+			agg.update({'%s__%s.MIN()' % (entity, col): (col, nanmin) for col in ord_columns})
+			agg.update({'%s__%s.MAX()' % (entity, col): (col, nanmax) for col in ord_columns})
+			agg.update({'%s__%s.MAX-MIN()' % (entity, col): (col, nanmaxmmin) for col in ord_columns})
 
 			if mix_sgn_columns:
-				agg.update({'SUM(ABS(%s))' % col: (col, nansumabs) for col in mix_sgn_columns})
-				agg.update({'MEAN(ABS(%s))' % col: (col, nanmeanabs) for col in mix_sgn_columns})
-				agg.update({'STD(ABS(%s))' % col: (col, nanstdabs) for col in mix_sgn_columns})
-				agg.update({'MEDIAN(ABS(%s))' % col: (col, nanmedianabs) for col in mix_sgn_columns})
-				agg.update({'SKEW(ABS(%s))' % col: (col, nanskewabs) for col in mix_sgn_columns})
-				agg.update({'KURT(ABS(%s))' % col: (col, nankurtosisabs) for col in mix_sgn_columns})
-				agg.update({'Q25(ABS(%s))' % col: (col, q25abs) for col in mix_sgn_columns})
-				agg.update({'Q75(ABS(%s))' % col: (col, q75abs) for col in mix_sgn_columns})
-				agg.update({'MIN(ABS(%s))' % col: (col, nanminabs) for col in mix_sgn_columns})
-				agg.update({'MAX(ABS(%s))' % col: (col, nanmaxabs) for col in mix_sgn_columns})
-				agg.update({'MAX(ABS(%s))-MIN(ABS(%s))' % (col, col): (col, nanmaxmminabs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().SUM()' % (entity, col): (col, nansumabs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().MEAN()' % (entity, col): (col, nanmeanabs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().STD()' % (entity, col): (col, nanstdabs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().MEDIAN()' % (entity, col): (col, nanmedianabs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().SKEW()' % (entity, col): (col, nanskewabs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().KURT()' % (entity, col): (col, nankurtosisabs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().Q25()' % (entity, col): (col, q25abs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().Q75()' % (entity, col): (col, q75abs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().MIN()' % (entity, col): (col, nanminabs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().MAX()' % (entity, col): (col, nanmaxabs) for col in mix_sgn_columns})
+				agg.update({'%s__%s.ABS().MAX-MIN()' % (entity, col): (col, nanmaxmminabs) for col in mix_sgn_columns})
 		
 		# Number of rows per entity
 		agg.update({'COUNT(%s)' % entity_name: (columns[0], 'count')})
@@ -234,10 +234,10 @@ class FeaturesAccessor(BaseAccessor):
 		df = self._obj.copy()
 		if ord_columns:
 			for col in ord_columns:
-				df['ABS(%s - MEAN(%s))' % (col, col)] = np.abs(df[col]-means.loc[col])
-				df['ABS(%s - MEDIAN(%s))' % (col, col)] = np.abs(df[col]-quantiles.loc[0.5][col])
-				df['ABS(%s - Q25(%s))' % (col, col)] = np.abs(df[col]-quantiles.loc[0.25][col])
-				df['ABS(%s - Q75(%s))' % (col, col)] = np.abs(df[col]-quantiles.loc[0.75][col])
+				df['%s.ABS(* - MEAN(*))' % col] = np.abs(df[col]-means.loc[col])
+				df['%s.ABS(* - MEDIAN(*))' % col] = np.abs(df[col]-quantiles.loc[0.5][col])
+				df['%s.ABS(* - Q25(*))' % col] = np.abs(df[col]-quantiles.loc[0.25][col])
+				df['%s.ABS(* - Q75(*))' % col] = np.abs(df[col]-quantiles.loc[0.75][col])
 
 		if return_baselines:
 			return df, means, quantiles
@@ -245,7 +245,7 @@ class FeaturesAccessor(BaseAccessor):
 			return df
 
 
-	def temporal_features(self, max_lag=10, exclude=[], index=None, groupby=None, sort_index=True):
+	def temporal_features(self, max_lag=10, exclude=[], index=None, groupby=None, sort_by=None):
 		"""
 		Extend the dataframe with some rolling statistics (e.g. rolling average, rolling min, rolling max, rolling max-rolling min, etc.) for all lags from 2 to the configured maximum lag.
 
@@ -260,6 +260,8 @@ class FeaturesAccessor(BaseAccessor):
 			The column, if any, to set as index and sort before computing rolling statistics.
 		groupby : str | None
 			If provided, we will use this column to perform a groupby before temporal aggregation.
+		sort_by : str | list | None
+			Columns, if any, we need to sort the dataframe by, prior to rolling.
 
 
 		Returns
@@ -277,8 +279,10 @@ class FeaturesAccessor(BaseAccessor):
 		df = self._obj.copy()
 		if index and (df.index.name != index):
 			df = df.set_index(index)
-		if sort_index:
-			df = df.sort_index()
+
+		if sort_by:
+			df = df.sort_values(by=sort_by)
+
 		dfs = [df.copy()]
 
 		if groupby:
@@ -287,11 +291,11 @@ class FeaturesAccessor(BaseAccessor):
 				res = []
 				for lag in range(2, max_lag+2):
 					col_map = {}
-					col_map.update({'%s_nanmean' % col: 'MEAN(%s, %d)' % (col, lag) for col in ord_columns})
-					col_map.update({'%s_nanmin' % col: 'MIN(%s, %d)' % (col, lag) for col in ord_columns})
-					col_map.update({'%s_nanmax' % col: 'MAX(%s, %d)' % (col, lag) for col in ord_columns})
-					col_map.update({'%s_nanmaxmmin' % col: 'MAX(%s, %d)-MIN(%s, %d)' % (col, lag, col, lag) for col in ord_columns})
-					col_map.update({'%s_nansum' % col: 'SUM(%s, %d)' % (col, lag) for col in ord_columns})
+					col_map.update({'%s_nanmean' % col: '%s.GROUPBY(%s).LAST(%d).MEAN()' % (col, groupby, lag) for col in ord_columns})
+					col_map.update({'%s_nanmin' % col: '%s.GROUPBY(%s).LAST(%d).MIN()' % (col, groupby, lag) for col in ord_columns})
+					col_map.update({'%s_nanmax' % col: '%s.GROUPBY(%s).LAST(%d).MAX()' % (col, groupby, lag) for col in ord_columns})
+					col_map.update({'%s_nanmaxmmin' % col: '%s.GROUPBY(%s).LAST(%d).MAX-MIN()' % (col, groupby, lag) for col in ord_columns})
+					col_map.update({'%s_nansum' % col: '%s.GROUPBY(%s).LAST(%d).SUM()' % (col, groupby, lag) for col in ord_columns})
 					cols = [_ for _ in col_map.values()]
 					r = s.rolling(lag, min_periods=1).aggregate([nanmean, nanmin, nanmax, nanmaxmmin, nansum])
 					r.columns = r.columns.map('_'.join).to_series().map(col_map)
@@ -310,15 +314,14 @@ class FeaturesAccessor(BaseAccessor):
 
 			dfs += [feat_df]
 			df = pd.concat(dfs, axis=1)
-
 		else:
 			for lag in range(2, max_lag+2):
 				col_map = {}
-				col_map.update({'%s_nanmean' % col: 'MEAN(%s, %d)' % (col, lag) for col in ord_columns})
-				col_map.update({'%s_nanmin' % col: 'MIN(%s, %d)' % (col, lag) for col in ord_columns})
-				col_map.update({'%s_nanmax' % col: 'MAX(%s, %d)' % (col, lag) for col in ord_columns})
-				col_map.update({'%s_nanmaxmmin' % col: 'MAX(%s, %d)-MIN(%s, %d)' % (col, lag, col, lag) for col in ord_columns})
-				col_map.update({'%s_nansum' % col: 'SUM(%s, %d)' % (col, lag) for col in ord_columns})
+				col_map.update({'%s_nanmean' % col: '%s.LAST(%d).MEAN()' % (col, lag) for col in ord_columns})
+				col_map.update({'%s_nanmin' % col: '%s.LAST(%d).MIN()' % (col, lag) for col in ord_columns})
+				col_map.update({'%s_nanmax' % col: '%s.LAST(%d).MAX()' % (col, lag) for col in ord_columns})
+				col_map.update({'%s_nanmaxmmin' % col: '%s.LAST(%d).MAX-MIN()' % (col, lag) for col in ord_columns})
+				col_map.update({'%s_nansum' % col: '%s.LAST(%d).SUM()' % (col, lag) for col in ord_columns})
 				cols = [_ for _ in col_map.values()]
 				r = s.rolling(lag, min_periods=1).aggregate([nanmean, nanmin, nanmax, nanmaxmmin, nansum])
 				r.columns = r.columns.map('_'.join).to_series().map(col_map)
@@ -335,14 +338,17 @@ class FeaturesAccessor(BaseAccessor):
 		"""
 		Generate a wide range of candidate features to search from.
 
-		We first compute entity features if needed. Then we extend the resulting dataframe with deviations of ordinal columns from row-wise aggregtes such as mean, median, 25th and 75th percentiles. Finally, we ordinally-encode the resulting dataframe and apply temporal transformations if required.
+		We first compute entity features if needed. 
+
+		Then we extend the resulting dataframe with deviations of ordinal columns from row-wise aggregtes such as mean, median, 25th and 75th percentiles. 
+
+		Finally, we ordinally-encode the resulting dataframe and apply temporal transformations if required.
 
 
 		Parameters
 		----------
 		entity : str
 			The column mapping rows to entities.
-
 		filter_target : str | None
 			When specified, this is a column based on which we need to restrict the dataframe before generating entity features.
 		filter_target_gt : str | None
