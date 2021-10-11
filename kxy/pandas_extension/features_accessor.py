@@ -6,7 +6,7 @@ import pandas as pd
 from .base_accessor import BaseAccessor
 from .features_utils import nanskew, nankurtosis, q25, q75, mode, modefreq, nextmode, nextmodefreq, lastmode, lastmodefreq, \
 	nanmin, nanmax, nanmean, nanstd, nanmedian, nanmaxmmin, nansum, nanskewabs, nankurtosisabs, q25abs, q75abs,  \
-	nanminabs, nanmaxabs, nanmeanabs, nanstdabs, nanmedianabs, nanmaxmminabs, nansumabs
+	nanminabs, nanmaxabs, nanmeanabs, nanstdabs, nanmedianabs, nanmaxmminabs, nansumabs, n_unique
 
 
 @pd.api.extensions.register_dataframe_accessor("kxy_features")
@@ -139,7 +139,7 @@ class FeaturesAccessor(BaseAccessor):
 		# Aggregation of categorical variables
 		if cat_columns:
 			# Most frequent value and it's frequency of occurence
-			agg.update({'MODE(%s)' % col: (col, mode) for col in cat_columns})
+			agg.update({'MODE(%s)' % (entity, col): (col, mode) for col in cat_columns})
 			agg.update({'MODEFREQ(%s)' % col: (col, modefreq) for col in cat_columns})
 
 			# Second most frequent value and it's frequency of occurence
@@ -149,6 +149,9 @@ class FeaturesAccessor(BaseAccessor):
 			# Least frequent value and it's frequency of occurence
 			agg.update({'LASTMODE(%s)' % col: (col, lastmode) for col in cat_columns})
 			agg.update({'LASTMODEFREQ(%s)' % col: (col, lastmodefreq) for col in cat_columns})
+
+			# Number of unique values
+			agg.update({'NUM_UNIQUE(%s)' % col: (col, n_unique) for col in cat_columns})
 
 
 		# Aggregation of ordinal variables
@@ -242,7 +245,7 @@ class FeaturesAccessor(BaseAccessor):
 			return df
 
 
-	def temporal_features(self, max_lag=10, exclude=[], index=None):
+	def temporal_features(self, max_lag=10, exclude=[], index=None, groupby=None, sort_index=True):
 		"""
 		Extend the dataframe with some rolling statistics (e.g. rolling average, rolling min, rolling max, rolling max-rolling min, etc.) for all lags from 2 to the configured maximum lag.
 
@@ -255,6 +258,8 @@ class FeaturesAccessor(BaseAccessor):
 			The largest lag to consider.
 		index : str | None (default)
 			The column, if any, to set as index and sort before computing rolling statistics.
+		groupby : str | None
+			If provided, we will use this column to perform a groupby before temporal aggregation.
 
 
 		Returns
@@ -262,32 +267,71 @@ class FeaturesAccessor(BaseAccessor):
 		result : pandas.DataFrame
 			The original dataframe extended with computed temporal features.
 		"""
+		if index:
+			exclude += [index]
+
+		if groupby:
+			exclude += [groupby]
+
 		ord_columns = [col for col in self._obj.columns if not self.is_categorical(col) and col not in exclude]
 		df = self._obj.copy()
-		if index:
+		if index and (df.index.name != index):
 			df = df.set_index(index)
-		df = df.sort_index()
+		if sort_index:
+			df = df.sort_index()
 		dfs = [df.copy()]
 
-		for lag in range(2, max_lag+2):
-			rol_grp = df.rolling(window=lag, min_periods=1)
-			lagged_mean_df = rol_grp.aggregate(nanmean).rename(columns={col: 'MEAN(%s, %d)' % (col, lag) for col in ord_columns})
-			dfs += [lagged_mean_df.copy()]
-			lagged_min_df = rol_grp.aggregate(nanmin).rename(columns={col: 'MIN(%s, %d)' % (col, lag) for col in ord_columns})
-			dfs += [lagged_min_df.copy()]
-			lagged_max_df = rol_grp.aggregate(nanmax).rename(columns={col: 'MAX(%s, %d)' % (col, lag) for col in ord_columns})
-			dfs += [lagged_max_df.copy()]
-			lagged_maxmmin_df = rol_grp.aggregate(nanmaxmmin).rename(columns={col: 'MAX(%s, %d)-MIN(%s, %d)' % (col, lag, col, lag) for col in ord_columns})
-			dfs += [lagged_maxmmin_df.copy()]
+		if groupby:
+			def apply_func(s):
+				''' '''
+				res = []
+				for lag in range(2, max_lag+2):
+					col_map = {}
+					col_map.update({'%s_nanmean' % col: 'MEAN(%s, %d)' % (col, lag) for col in ord_columns})
+					col_map.update({'%s_nanmin' % col: 'MIN(%s, %d)' % (col, lag) for col in ord_columns})
+					col_map.update({'%s_nanmax' % col: 'MAX(%s, %d)' % (col, lag) for col in ord_columns})
+					col_map.update({'%s_nanmaxmmin' % col: 'MAX(%s, %d)-MIN(%s, %d)' % (col, lag, col, lag) for col in ord_columns})
+					col_map.update({'%s_nansum' % col: 'SUM(%s, %d)' % (col, lag) for col in ord_columns})
+					cols = [_ for _ in col_map.values()]
+					r = s.rolling(lag, min_periods=1).aggregate([nanmean, nanmin, nanmax, nanmaxmmin, nansum])
+					r.columns = r.columns.map('_'.join).to_series().map(col_map)
+					res += [r[cols].copy()]
+				res = pd.concat(res, axis=1)
+				return res
 
-		df = pd.concat(dfs, axis=1)
+			feat_df = df.groupby(groupby, sort=False).apply(apply_func)
+			feat_df.reset_index(inplace=True)
+			if df.index.name:
+				feat_df.set_index(df.index.name, inplace=True)
+			else:
+				feat_df.set_index('level_1', inplace=True)
+				feat_df.index.name = df.index.name
+			feat_df = feat_df.drop(groupby, axis=1)
+
+			dfs += [feat_df]
+			df = pd.concat(dfs, axis=1)
+
+		else:
+			for lag in range(2, max_lag+2):
+				col_map = {}
+				col_map.update({'%s_nanmean' % col: 'MEAN(%s, %d)' % (col, lag) for col in ord_columns})
+				col_map.update({'%s_nanmin' % col: 'MIN(%s, %d)' % (col, lag) for col in ord_columns})
+				col_map.update({'%s_nanmax' % col: 'MAX(%s, %d)' % (col, lag) for col in ord_columns})
+				col_map.update({'%s_nanmaxmmin' % col: 'MAX(%s, %d)-MIN(%s, %d)' % (col, lag, col, lag) for col in ord_columns})
+				col_map.update({'%s_nansum' % col: 'SUM(%s, %d)' % (col, lag) for col in ord_columns})
+				cols = [_ for _ in col_map.values()]
+				r = s.rolling(lag, min_periods=1).aggregate([nanmean, nanmin, nanmax, nanmaxmmin, nansum])
+				r.columns = r.columns.map('_'.join).to_series().map(col_map)
+				dfs += [r[cols].copy()]
+			df = pd.concat(dfs, axis=1)
 
 		return df
 
 
 	def generate_features(self, entity=None, encoding_method='one_hot', index=None, max_lag=None, exclude=[], \
 			means=None, quantiles=None, return_baselines=False, entity_name='*', filter_target=None, \
-			filter_target_gt=None, filter_target_lt=None, include_filter_target=False, fill_na=False):
+			filter_target_gt=None, filter_target_lt=None, include_filter_target=False, fill_na=False, \
+			temporal_groupby=None):
 		"""
 		Generate a wide range of candidate features to search from.
 
@@ -321,6 +365,8 @@ class FeaturesAccessor(BaseAccessor):
 			Which values, if any, to use as 25th, 50th, 75th percentiles for deviation features.
 		return_baselines : bool
 			Whether to return which baselines have been used for deviation features.
+		temporal_groupby : str | None
+			If provided, we will use this column to perform a groupby before temporal aggregation.
 
 
 
@@ -348,7 +394,7 @@ class FeaturesAccessor(BaseAccessor):
 
 		if max_lag:
 			# Temporal/trend features
-			df = accessor.temporal_features(exclude=exclude, max_lag=max_lag, index=index)
+			df = accessor.temporal_features(exclude=exclude, max_lag=max_lag, index=index, groupby=temporal_groupby)
 
 		if fill_na:
 			df = df.fillna(df.median(skipna=True))

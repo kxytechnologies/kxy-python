@@ -128,6 +128,11 @@ def q75abs(x):
 	''' '''
 	return np.abs(x).quantile(0.75)
 
+def n_unique(x):
+	''' '''
+	vc = x.value_counts(normalize=True, sort=True, ascending=False)
+	return len(vc.index)
+
 def mode(x):
 	''' '''
 	vc = x.value_counts(normalize=True, sort=True, ascending=False)
