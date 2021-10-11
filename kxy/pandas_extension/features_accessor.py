@@ -334,7 +334,7 @@ class FeaturesAccessor(BaseAccessor):
 	def generate_features(self, entity=None, encoding_method='one_hot', index=None, max_lag=None, exclude=[], \
 			means=None, quantiles=None, return_baselines=False, entity_name='*', filter_target=None, \
 			filter_target_gt=None, filter_target_lt=None, include_filter_target=False, fill_na=False, \
-			temporal_groupby=None):
+			temporal_groupby=None, temporal_sort_by=None):
 		"""
 		Generate a wide range of candidate features to search from.
 
@@ -373,7 +373,8 @@ class FeaturesAccessor(BaseAccessor):
 			Whether to return which baselines have been used for deviation features.
 		temporal_groupby : str | None
 			If provided, we will use this column to perform a groupby before temporal aggregation.
-
+		temporal_sort_by : str | None
+			If provided, we will use this column to sort the dataframe before rolling when computing temporal features.
 
 
 		Returns
@@ -400,7 +401,7 @@ class FeaturesAccessor(BaseAccessor):
 
 		if max_lag:
 			# Temporal/trend features
-			df = accessor.temporal_features(exclude=exclude, max_lag=max_lag, index=index, groupby=temporal_groupby)
+			df = accessor.temporal_features(exclude=exclude, max_lag=max_lag, index=index, groupby=temporal_groupby, sort_by=temporal_sort_by)
 
 		if fill_na:
 			df = df.fillna(df.median(skipna=True))
