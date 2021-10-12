@@ -390,6 +390,12 @@ class FeaturesAccessor(BaseAccessor):
 				include_filter_target=include_filter_target)
 			accessor = FeaturesAccessor(df)
 
+		if index:
+			exclude += [index]
+			
+		if temporal_groupby:
+			exclude += [temporal_groupby]
+
 		# Deviation features
 		res = accessor.deviation_features(exclude=exclude, means=means, quantiles=quantiles, return_baselines=return_baselines)
 		df = res[0] if return_baselines else res
