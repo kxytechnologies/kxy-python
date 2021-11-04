@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
 
 from .base_accessor import BaseAccessor
-from .features_utils import rmspe_score, neg_rmspe_score
+from .features_utils import rmspe_score, neg_rmspe_score, neg_mae_score, neg_rmse_score
 from .pre_learning_accessor import PreLearningAccessor
 
 

@@ -102,12 +102,12 @@ def upload_data(df):
 	logging.debug('Preparing the data to upload')
 	if file_name.endswith('.parquet.gzip'):
 		# Truncate floats with excessive precision to save space.
-		files = {'file': (file_name, df.to_parquet(file_name, index=False, compression='gzip'))}
+		files = {'file': (file_name, df.to_parquet(index=False, compression='gzip'))}
 	elif file_name.endswith('.parquet'):
 		# Truncate floats with excessive precision to save space.
-		files = {'file': (file_name, df.to_parquet(file_name, index=False))}
+		files = {'file': (file_name, df.to_parquet(index=False))}
 	else:
-		files = {'file': (file_name, df.to_csv(file_name, index=False))}
+		files = {'file': (file_name, df.to_csv(index=False))}
 	url = presigned_url['url']
 	data = presigned_url['fields']
 	logging.debug('Done preparing the data to upload')

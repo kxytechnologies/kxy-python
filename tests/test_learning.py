@@ -1,7 +1,24 @@
 from kxy_datasets.regressions import Abalone
 from kxy_datasets.classifications import BankNote, BankMarketing
 from kxy.learning import get_xgboost_learner, get_tensorflow_dense_learner, get_pytorch_dense_learner, \
-	get_lightgbm_learner_sklearn_api, get_lightgbm_learner_learning_api
+	get_lightgbm_learner_sklearn_api, get_lightgbm_learner_learning_api, get_sklearn_learner
+
+
+def test_lean_boosted_sklearn_regressor():
+	# Regression
+	sklearn_regressor_cls = get_sklearn_learner('sklearn.neighbors.KNeighborsRegressor')
+	dataset = Abalone()
+	target_column = dataset.y_column
+	df = dataset.df
+
+	# Features generation
+	features_df = df.kxy.generate_features(entity=None, max_lag=None, entity_name='*', exclude=[target_column])
+
+	# Model building
+	results = features_df.kxy.fit(target_column, sklearn_regressor_cls, \
+		problem_type='regression', additive_learning=True)
+	assert results['Testing R-Squared'] == '0.395'
+	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight']
 
 
 def test_lean_boosted_xgboost_regressor():
@@ -317,6 +334,5 @@ def test_non_additive_lean_boosted_classifier():
 
 	assert results['Testing Accuracy'] == '0.964'
 	assert results['Selected Variables'] == ['Variance', 'ABS(Skewness - Q25(Skewness))', 'Kurtosis', 'Skewness', 'Entropy']
-
 
 

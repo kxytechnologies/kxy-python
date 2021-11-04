@@ -21,6 +21,7 @@ def get_sklearn_learner(class_name, *args, fit_kwargs={}, predict_kwargs={}, **k
 	import sklearn.neural_network
 	import sklearn.svm
 	import sklearn.tree
+	import sklearn.neighbors
 
 	BaseLearner = eval(class_name)
 	class Learner(BaseLearner):
