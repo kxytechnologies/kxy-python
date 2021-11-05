@@ -71,7 +71,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 
 	file_name = upload_data(data_df)
 	if file_name:
-		job_id = DD_IMPROVABILITY_JOB_IDS.get((file_name, target_column, str(new_variables), problem_type), None)
+		job_id = DD_IMPROVABILITY_JOB_IDS.get((file_name, target_column, str(new_variables), problem_type, snr), None)
 
 		if job_id:
 			api_response = APIClient.route(
@@ -101,7 +101,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
-						DD_IMPROVABILITY_JOB_IDS[(file_name, target_column, str(new_variables), problem_type)] = job_id
+						DD_IMPROVABILITY_JOB_IDS[(file_name, target_column, str(new_variables), problem_type, snr)] = job_id
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
@@ -205,7 +205,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 	file_name = upload_data(data_df)
 
 	if file_name:
-		job_id = MD_IMPROVABILITY_JOB_IDS.get((file_name, target_column, prediction_column, problem_type), None)
+		job_id = MD_IMPROVABILITY_JOB_IDS.get((file_name, target_column, prediction_column, problem_type, snr), None)
 
 		if job_id:
 			api_response = APIClient.route(
@@ -234,7 +234,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
-						MD_IMPROVABILITY_JOB_IDS[(file_name, target_column, prediction_column, problem_type)] = job_id
+						MD_IMPROVABILITY_JOB_IDS[(file_name, target_column, prediction_column, problem_type, snr)] = job_id
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2

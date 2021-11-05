@@ -73,7 +73,7 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 	sys.stdout.flush()
 
 	if file_name:
-		job_id = VARIABLE_SELECTION_JOB_IDS.get((file_name, target_column, problem_type), None)
+		job_id = VARIABLE_SELECTION_JOB_IDS.get((file_name, target_column, problem_type, snr), None)
 		if job_id:
 			api_response = APIClient.route(
 				path='/wk/variable-selection', method='POST', \
@@ -102,7 +102,7 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
-						VARIABLE_SELECTION_JOB_IDS[(file_name, target_column, problem_type)] = job_id
+						VARIABLE_SELECTION_JOB_IDS[(file_name, target_column, problem_type, snr)] = job_id
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
