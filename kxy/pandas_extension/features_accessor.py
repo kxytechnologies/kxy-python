@@ -288,20 +288,16 @@ class FeaturesAccessor(BaseAccessor):
 		if groupby:
 			def apply_func(s):
 				''' '''
-				res = []
-				for lag in range(2, max_lag+2):
-					col_map = {}
-					col_map.update({'%s_nanmean' % col: '%s.GROUPBY(%s).LAST(%d).MEAN()' % (col, groupby, lag) for col in ord_columns})
-					col_map.update({'%s_nanmin' % col: '%s.GROUPBY(%s).LAST(%d).MIN()' % (col, groupby, lag) for col in ord_columns})
-					col_map.update({'%s_nanmax' % col: '%s.GROUPBY(%s).LAST(%d).MAX()' % (col, groupby, lag) for col in ord_columns})
-					col_map.update({'%s_nanmaxmmin' % col: '%s.GROUPBY(%s).LAST(%d).MAX-MIN()' % (col, groupby, lag) for col in ord_columns})
-					col_map.update({'%s_nansum' % col: '%s.GROUPBY(%s).LAST(%d).SUM()' % (col, groupby, lag) for col in ord_columns})
-					cols = [_ for _ in col_map.values()]
-					r = s.rolling(lag, min_periods=1).aggregate([nanmean, nanmin, nanmax, nanmaxmmin, nansum])
-					r.columns = r.columns.map('_'.join).to_series().map(col_map)
-					res += [r[cols].copy()]
-				res = pd.concat(res, axis=1)
-				return res
+				lag = max_lag+1
+				col_map = {}
+				col_map.update({'%s_nanmean' % col: '%s.GROUPBY(%s).LAST(%d).MEAN()' % (col, groupby, lag) for col in ord_columns})
+				col_map.update({'%s_nanmin' % col: '%s.GROUPBY(%s).LAST(%d).MIN()' % (col, groupby, lag) for col in ord_columns})
+				col_map.update({'%s_nanmax' % col: '%s.GROUPBY(%s).LAST(%d).MAX()' % (col, groupby, lag) for col in ord_columns})
+				col_map.update({'%s_nanmaxmmin' % col: '%s.GROUPBY(%s).LAST(%d).MAX-MIN()' % (col, groupby, lag) for col in ord_columns})
+				cols = [_ for _ in col_map.values()]
+				res = s.rolling(lag, min_periods=1).aggregate([nanmean, nanmin, nanmax, nanmaxmmin])
+				res.columns = res.columns.map('_'.join).to_series().map(col_map)
+				return res[cols]
 
 			feat_df = df.groupby(groupby, sort=False).apply(apply_func)
 			feat_df.reset_index(inplace=True)
@@ -311,30 +307,56 @@ class FeaturesAccessor(BaseAccessor):
 				feat_df.set_index('level_1', inplace=True)
 				feat_df.index.name = df.index.name
 			feat_df = feat_df.drop(groupby, axis=1)
-
 			dfs += [feat_df]
 			df = pd.concat(dfs, axis=1)
+
 		else:
-			for lag in range(2, max_lag+2):
-				col_map = {}
-				col_map.update({'%s_nanmean' % col: '%s.LAST(%d).MEAN()' % (col, lag) for col in ord_columns})
-				col_map.update({'%s_nanmin' % col: '%s.LAST(%d).MIN()' % (col, lag) for col in ord_columns})
-				col_map.update({'%s_nanmax' % col: '%s.LAST(%d).MAX()' % (col, lag) for col in ord_columns})
-				col_map.update({'%s_nanmaxmmin' % col: '%s.LAST(%d).MAX-MIN()' % (col, lag) for col in ord_columns})
-				col_map.update({'%s_nansum' % col: '%s.LAST(%d).SUM()' % (col, lag) for col in ord_columns})
-				cols = [_ for _ in col_map.values()]
-				r = s.rolling(lag, min_periods=1).aggregate([nanmean, nanmin, nanmax, nanmaxmmin, nansum])
-				r.columns = r.columns.map('_'.join).to_series().map(col_map)
-				dfs += [r[cols].copy()]
+			lag = max_lag+1
+			col_map = {}
+			col_map.update({'%s_nanmean' % col: '%s.LAST(%d).MEAN()' % (col, lag) for col in ord_columns})
+			col_map.update({'%s_nanmin' % col: '%s.LAST(%d).MIN()' % (col, lag) for col in ord_columns})
+			col_map.update({'%s_nanmax' % col: '%s.LAST(%d).MAX()' % (col, lag) for col in ord_columns})
+			col_map.update({'%s_nanmaxmmin' % col: '%s.LAST(%d).MAX-MIN()' % (col, lag) for col in ord_columns})
+			cols = [_ for _ in col_map.values()]
+			feat_df = df.rolling(lag, min_periods=1).aggregate([nanmean, nanmin, nanmax, nanmaxmmin])
+			feat_df.columns = feat_df.columns.map('_'.join).to_series().map(col_map)
+			dfs += [feat_df[cols]]
 			df = pd.concat(dfs, axis=1)
 
 		return df
 
 
+	def process_time_columns(self, columns):
+		"""
+		Extract features from timestamp columns such as: Month, Day, Day of Week, Hour, AM/PM.
+
+
+		Parameters
+		----------
+		columns : list
+			The list of columns that should be interprated as UTC epoch timestamps.
+
+
+		Returns
+		-------
+		result : pandas.DataFrame
+			The features dataframe (does not include the original dataframe)
+		"""
+		res = pd.DataFrame(index=self._obj.index)
+		for col in columns:
+			times = pd.to_datetime(self._obj[col], unit="s", infer_datetime_format=True)
+			res['%s.HOUR()' % col] = times.dt.hour
+			res['%s.DAYOFWEEK()' % col] = times.dt.dayofweek
+			res['%s.DAY()' % col] = times.dt.day
+			res['%s.MONTH()' % col] = times.dt.month
+
+		return res
+
+
 	def generate_features(self, entity=None, encoding_method='one_hot', index=None, max_lag=None, exclude=[], \
 			means=None, quantiles=None, return_baselines=False, entity_name='*', filter_target=None, \
 			filter_target_gt=None, filter_target_lt=None, include_filter_target=False, fill_na=False, \
-			temporal_groupby=None, temporal_sort_by=None):
+			temporal_groupby=None, temporal_sort_by=None, time_columns=None):
 		"""
 		Generate a wide range of candidate features to search from.
 
@@ -375,6 +397,8 @@ class FeaturesAccessor(BaseAccessor):
 			If provided, we will use this column to perform a groupby before temporal aggregation.
 		temporal_sort_by : str | None
 			If provided, we will use this column to sort the dataframe before rolling when computing temporal features.
+		time_columns : list | None
+			The list of columns that correspond to times and from which we should extract features such as hour, day of week etc.
 
 
 		Returns
@@ -395,6 +419,11 @@ class FeaturesAccessor(BaseAccessor):
 			
 		if temporal_groupby:
 			exclude += [temporal_groupby]
+
+		if time_columns:
+			# Extract information from time columns such as hour, day of week etc.
+			df = accessor.process_time_columns(time_columns)
+			accessor = FeaturesAccessor(df)
 
 		# Deviation features
 		res = accessor.deviation_features(exclude=exclude, means=means, quantiles=quantiles, return_baselines=return_baselines)

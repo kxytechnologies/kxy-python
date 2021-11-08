@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 with open('README.md') as f:
 	long_description = f.read()
 	
-version = "1.2.38"
+version = "1.2.42"
 setup(name="kxy",
 	version=version,
 	zip_safe=False,
