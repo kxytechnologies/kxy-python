@@ -13,6 +13,12 @@ from time import time, sleep
 import numpy as np
 import pandas as pd
 
+try:
+	get_ipython().__class__.__name__
+	from halo import HaloNotebook as Halo
+except:
+	from halo import Halo
+
 from kxy.api import APIClient, upload_data, approx_opt_remaining_time
 
 # Cache old job ids to avoid being charged twice for the same job.
@@ -66,9 +72,9 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 	k = 0
 	kp = 0
 	max_k = 100
-	sys.stdout.write('\r')
-	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
-	sys.stdout.flush()
+	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
+	spinner.start()
+
 
 	file_name = upload_data(data_df)
 	if file_name:
@@ -91,12 +97,9 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 				sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 				kp += 1
 				k = kp//2
-				sys.stdout.write('\r')
-				sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
-				sys.stdout.flush()
+
 			else:
 				try:
-					sys.stdout.write('\r')
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
@@ -104,20 +107,25 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
-						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
-						sys.stdout.flush()
+
 						# Note: it is important to pass the job_id to avoid being charged twice for the work.
 						api_response = APIClient.route(
 							path='/wk/variable-selection', method='POST', \
 							file_name=file_name, target_column=prediction_column, \
 							problem_type=problem_type, timestamp=int(time()), job_id=job_id, \
 							snr=snr)
-					else:
+
+						try:
+							response = api_response.json()
+							if 'ETA' in response:
+								spinner.text = 'Waiting for results from the backend. ETA: %s' % response['ETA']
+						except:
+							pass
+
+					if 'job_id' not in response:
 						duration = int(time()-initial_time)
 						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
-						sys.stdout.write("[{:{}}] {:d}% ETA: {} Duration: {}".format("="*max_k, max_k, max_k, approx_opt_remaining_time(max_k), duration))
-						sys.stdout.write('\n')
-						sys.stdout.flush()
+
 						result = {}
 
 						if 'selection_order' in response:
@@ -143,14 +151,20 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 						if 'selection_order' in response:
 							result.set_index('Selection Order', inplace=True)
 
+						spinner.text = 'Received results from the backend after %s.' % duration
+						spinner.succeed()
 						return result
 
 
 				except:
 					logging.exception('\nModel explanation failed. Last HTTP code: %s, Content: %s' % (api_response.status_code, api_response.content))
+					spinner.text = 'The backend encountered an unexpected error we are looking into. Please try again later.'
+					spinner.fail()
 					return None
 
 		if api_response.status_code != requests.codes.ok:
+			spinner.text = 'The backend is taking longer than expected. Please try again later'
+			spinner.fail()
 			try:
 				response = api_response.json()
 				if 'message' in response:

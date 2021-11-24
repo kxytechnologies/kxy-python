@@ -9,6 +9,12 @@ from time import time, sleep
 import numpy as np
 import pandas as pd
 
+try:
+	get_ipython().__class__.__name__
+	from halo import HaloNotebook as Halo
+except:
+	from halo import Halo
+
 from kxy.api import APIClient, upload_data, approx_beta_remaining_time
 
 # Cache old job ids to avoid being charged twice for the same job.
@@ -45,9 +51,8 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 	k = 0
 	kp = 0
 	max_k = 100
-	sys.stdout.write('\r')
-	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_beta_remaining_time(k)))
-	sys.stdout.flush()
+	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
+	spinner.start()
 
 	df = data_df[[market_column, asset_column]]
 	file_name = upload_data(df)
@@ -73,12 +78,8 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 				sleep(2 if kp<5 else 5 if k < max_k-4 else 300)
 				kp += 4
 				k = kp//2
-				sys.stdout.write('\r')
-				sys.stdout.write("[{:{}}] {:d}%".format("="*k+">", max_k, k))
-				sys.stdout.flush()
 			else:
 				try:
-					sys.stdout.write('\r')
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
@@ -86,20 +87,26 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 						sleep(2 if kp<5 else 5 if k < max_k-4 else 300)
 						kp += 4
 						k = kp//2
-						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_beta_remaining_time(k)))
-						sys.stdout.flush()
+
 						# Note: it is important to pass the job_id to avoid being charged twice for the same work.
 						api_response = APIClient.route(
 							path='/wk/ia-corr', method='POST', 
 							file_name=file_name, market_column=market_column, \
 							asset_column=asset_column, \
 							timestamp=int(time()), job_id=job_id)
-					else:
+
+						try:
+							response = api_response.json()
+							if 'ETA' in response:
+								spinner.text = 'Waiting for results from the backend. ETA: %s' % response['ETA']
+						except:
+							pass
+
+					if 'job_id' not in response:
 						duration = int(time()-initial_time)
 						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
-						sys.stdout.write("[{:{}}] {:d}% ETA: {} Duration: {}".format("="*max_k, max_k, max_k, approx_beta_remaining_time(max_k), duration))
-						sys.stdout.write('\n')
-						sys.stdout.flush()
+						spinner.text = 'Received results from the backend in %s' % duration
+						spinner.succeed()
 
 						if 'ia-corr' in response:
 							return response['ia-corr']
@@ -107,11 +114,15 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 							return np.nan
 
 				except:
+					spinner.text = 'The backend encountered an unexpected error we are looking into. Please try again later.'
+					spinner.fail()
 					logging.exception('\nInformation-adjusted correlation failed. Last HTTP code: %s' % api_response.status_code)
 					return None
 
 
 		if api_response.status_code != requests.codes.ok:
+			spinner.text = 'The backend is taking longer than expected. Please try again later.'
+			spinner.fail()
 			try:
 				response = api_response.json()
 				if 'message' in response:

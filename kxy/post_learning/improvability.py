@@ -13,6 +13,12 @@ from time import time, sleep
 import numpy as np
 import pandas as pd
 
+try:
+	get_ipython().__class__.__name__
+	from halo import HaloNotebook as Halo
+except:
+	from halo import Halo
+
 from kxy.api import APIClient, upload_data, approx_opt_remaining_time
 
 # Cache old job ids to avoid being charged twice for the same job.
@@ -65,9 +71,8 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 	k = 0
 	kp = 0
 	max_k = 100
-	sys.stdout.write('\r')
-	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
-	sys.stdout.flush()
+	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
+	spinner.start()
 
 	file_name = upload_data(data_df)
 	if file_name:
@@ -92,12 +97,9 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 				sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 				kp += 1
 				k = kp//2
-				sys.stdout.write('\r')
-				sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
-				sys.stdout.flush()
+
 			else:
 				try:
-					sys.stdout.write('\r')
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
@@ -105,19 +107,22 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
-						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
-						sys.stdout.flush()
 						api_response = APIClient.route(
 							path='/wk/data-driven-improvability', method='POST', \
 							file_name=file_name, target_column=target_column, \
 							problem_type=problem_type, new_variables=json.dumps(new_variables), \
 							timestamp=int(time()), snr=snr)
-					else:
+
+						try:
+							response = api_response.json()
+							if 'ETA' in response:
+								spinner.text = 'Waiting for results from the backend. ETA: %s' % response['ETA']
+						except:
+							pass
+
+					if 'job_id' not in response:
 						duration = int(time()-initial_time)
 						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
-						sys.stdout.write("[{:{}}] {:d}% ETA: {} Duration: {}".format("="*max_k, max_k, max_k, approx_opt_remaining_time(max_k), duration))
-						sys.stdout.write('\n')
-						sys.stdout.flush()
 						result = {}
 						if 'r-squared-boost' in response:
 							result['R-Squared Boost'] = [response['r-squared-boost']]
@@ -132,13 +137,18 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 							result['Accuracy Boost'] = [response['accuracy-boost']]
 
 						result = pd.DataFrame.from_dict(result)
-
+						spinner.text = 'Received results from the backend after %s' % duration
+						spinner.succeed()
 						return result
 
 				except:
+					spinner.text = 'The backend encountered an unexpected error we are looking into. Please try again later.'
+					spinner.fail()
 					return None
 
 		if api_response.status_code != requests.codes.ok:
+			spinner.text = 'The backend is taking longer than expected. Try again later.'
+			spinner.fail()
 			try:
 				response = api_response.json()
 				if 'message' in response:
@@ -198,9 +208,8 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 	k = 0
 	kp = 0
 	max_k = 100
-	sys.stdout.write('\r')
-	sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
-	sys.stdout.flush()
+	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
+	spinner.start()
 
 	file_name = upload_data(data_df)
 
@@ -225,12 +234,9 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 				sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 				kp += 1
 				k = kp//2
-				sys.stdout.write('\r')
-				sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
-				sys.stdout.flush()
+
 			else:
 				try:
-					sys.stdout.write('\r')
 					response = api_response.json()
 					if 'job_id' in response:
 						job_id = response['job_id']
@@ -238,17 +244,20 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
 						kp += 1
 						k = kp//2
-						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*k+">", max_k, k, approx_opt_remaining_time(k)))
-						sys.stdout.flush()
 						api_response = APIClient.route(
 							path='/wk/model-driven-improvability', method='POST', \
 							file_name=file_name, target_column=target_column, \
 							problem_type=problem_type, prediction_column=prediction_column, \
 							job_id=job_id, timestamp=int(time()), snr=snr)
-					else:
-						sys.stdout.write("[{:{}}] {:d}% ETA: {}".format("="*max_k, max_k, max_k, approx_opt_remaining_time(max_k)))
-						sys.stdout.write('\n')
-						sys.stdout.flush()
+
+						try:
+							response = api_response.json()
+							if 'ETA' in response:
+								spinner.text = 'Waiting for results from the backend. ETA: %s' % response['ETA']
+						except:
+							pass
+
+					if 'job_id' not in response:
 						result = {}
 
 						if 'lost-r-squared' in response:
@@ -275,13 +284,18 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 								result['Residual RMSE'] = [response['residual-rmse']]
 
 						result = pd.DataFrame.from_dict(result)
-
+						spinner.text = 'Received results from the backend after %s' % duration
+						spinner.succeed()
 						return result
 
 				except:
+					spinner.text = 'The backend encountered an unexpected error we are looking into. Please try again later.'
+					spinner.fail()
 					return None
 
 		if api_response.status_code != requests.codes.ok:
+			spinner.text = 'The backend is taking longer than expected. Please try again later.'
+			spinner.fail()
 			try:
 				response = api_response.json()
 				if 'message' in response:

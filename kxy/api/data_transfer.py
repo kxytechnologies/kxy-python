@@ -128,7 +128,6 @@ def upload_data(df):
 	spinner.start('Uploading data')
 	upload_response = requests.post(url, data=data, files=files)
 	spinner.succeed()
-	spinner.start()
 
 	if upload_response.status_code in [requests.codes.ok, requests.codes.created, requests.codes.accepted, requests.codes.no_content]:
 		logging.debug('Data successfully uploaded')

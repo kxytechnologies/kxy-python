@@ -80,9 +80,8 @@ def test_lean_boosted_lightgbm_learning_api_regressor():
 	results = features_df.kxy.fit(target_column, lightgbm_regressor_cls, \
 		problem_type='regression', additive_learning=True)
 	assert results['Testing R-Squared'] == '0.518'
-	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', \
-		'ABS(Shell weight - Q25(Shell weight))', 'ABS(Viscera weight - MEDIAN(Viscera weight))', \
-		'ABS(Viscera weight - MEAN(Viscera weight))', 'Height']
+	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', 'Shell weight.ABS(* - Q25(*))', \
+		'Viscera weight.ABS(* - MEDIAN(*))', 'Viscera weight.ABS(* - MEAN(*))', 'Height']
 
 
 def test_lean_boosted_tensorflow_regressor():
@@ -105,10 +104,10 @@ def test_lean_boosted_tensorflow_regressor():
 	results = features_df.kxy.fit(target_column, tf_regressor_cls, \
 		problem_type='regression', additive_learning=True)
 	assert results['Testing R-Squared'] == '0.450'
-	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', 'ABS(Shell weight - Q25(Shell weight))', \
-		'ABS(Viscera weight - MEDIAN(Viscera weight))', 'ABS(Viscera weight - MEAN(Viscera weight))', 'Height', 'Length', 'Diameter', \
-		'Sex_I', 'ABS(Shucked weight - MEDIAN(Shucked weight))', 'ABS(Diameter - MEDIAN(Diameter))', 'ABS(Viscera weight - Q75(Viscera weight))', \
-		'ABS(Viscera weight - Q25(Viscera weight))', 'ABS(Diameter - Q25(Diameter))']
+	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', 'Shell weight.ABS(* - Q25(*))', \
+		'Viscera weight.ABS(* - MEDIAN(*))', 'Viscera weight.ABS(* - MEAN(*))', 'Height', 'Length', 'Diameter', 'Sex_I', \
+		'Shucked weight.ABS(* - MEDIAN(*))', 'Diameter.ABS(* - MEDIAN(*))', 'Viscera weight.ABS(* - Q75(*))', \
+		'Viscera weight.ABS(* - Q25(*))', 'Diameter.ABS(* - Q25(*))']
 
 
 def test_lean_boosted_pytorch_regressor():
@@ -128,12 +127,12 @@ def test_lean_boosted_pytorch_regressor():
 	results = features_df.kxy.fit(target_column, pt_regressor_cls, \
 		problem_type='regression', additive_learning=True)
 	assert results['Testing R-Squared'] == '0.556'
-	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', 'ABS(Shell weight - Q25(Shell weight))',\
-		'ABS(Viscera weight - MEDIAN(Viscera weight))', 'ABS(Viscera weight - MEAN(Viscera weight))', 'Height', 'Length', 'Diameter', \
-		'Sex_I', 'ABS(Shucked weight - MEDIAN(Shucked weight))', 'ABS(Diameter - MEDIAN(Diameter))', 'ABS(Viscera weight - Q75(Viscera weight))', \
-		'ABS(Viscera weight - Q25(Viscera weight))', 'ABS(Diameter - Q25(Diameter))', 'Sex_M', 'Sex_F', 'ABS(Shucked weight - Q75(Shucked weight))', \
-		'ABS(Shucked weight - Q25(Shucked weight))', 'ABS(Diameter - Q75(Diameter))', 'ABS(Length - Q75(Length))', 'ABS(Length - Q25(Length))', \
-		'ABS(Height - MEDIAN(Height))']
+	assert results['Selected Variables'] ==['Shell weight', 'Shucked weight', 'Whole weight', 'Shell weight.ABS(* - Q25(*))', \
+		'Viscera weight.ABS(* - MEDIAN(*))', 'Viscera weight.ABS(* - MEAN(*))', 'Height', 'Length', 'Diameter', 'Sex_I', \
+		'Shucked weight.ABS(* - MEDIAN(*))', 'Diameter.ABS(* - MEDIAN(*))', 'Viscera weight.ABS(* - Q75(*))', \
+		'Viscera weight.ABS(* - Q25(*))', 'Diameter.ABS(* - Q25(*))', 'Sex_M', 'Sex_F', 'Shucked weight.ABS(* - Q75(*))', \
+		'Shucked weight.ABS(* - Q25(*))', 'Diameter.ABS(* - Q75(*))', 'Length.ABS(* - Q75(*))', 'Length.ABS(* - Q25(*))', \
+		'Height.ABS(* - MEDIAN(*))']
 
 
 def test_lean_boosted_xgboost_classifier():
@@ -152,7 +151,7 @@ def test_lean_boosted_xgboost_classifier():
 		problem_type='classification', additive_learning=True)
 
 	assert results['Testing Accuracy'] == '0.854'
-	assert results['Selected Variables'] == ['Variance', 'ABS(Skewness - Q25(Skewness))']
+	assert results['Selected Variables'] == ['Variance', 'Skewness.ABS(* - Q25(*))']
 
 
 def test_lean_boosted_lightgbm_classifier():
@@ -170,7 +169,7 @@ def test_lean_boosted_lightgbm_classifier():
 		problem_type='classification', additive_learning=True)
 
 	assert results['Testing Accuracy'] == '0.894'
-	assert results['Selected Variables'] == ['Variance', 'ABS(Skewness - Q25(Skewness))']
+	assert results['Selected Variables'] == ['Variance', 'Skewness.ABS(* - Q25(*))']
 
 
 def test_lean_boosted_lightgbm_learning_api_classifier():
@@ -195,7 +194,7 @@ def test_lean_boosted_lightgbm_learning_api_classifier():
 		problem_type='classification', additive_learning=True)
 
 	assert results['Testing Accuracy'] == '0.836'
-	assert results['Selected Variables'] == ['Variance', 'ABS(Skewness - Q25(Skewness))', 'Kurtosis']
+	assert results['Selected Variables'] == ['Variance', 'Skewness.ABS(* - Q25(*))', 'Kurtosis']
 
 
 
@@ -221,7 +220,7 @@ def test_lean_boosted_tensorflow_classifier():
 	results = features_df.kxy.fit(target_column, tf_classifier_cls, problem_type='classification', \
 		additive_learning=True)
 	assert results['Testing Accuracy'] == '0.949'
-	assert results['Selected Variables'] == ['Variance', 'ABS(Skewness - Q25(Skewness))', 'Kurtosis']
+	assert results['Selected Variables'] == ['Variance', 'Skewness.ABS(* - Q25(*))', 'Kurtosis']
 
 
 def test_lean_boosted_pytorch_classifier():
@@ -333,6 +332,7 @@ def test_non_additive_lean_boosted_classifier():
 		problem_type='classification', additive_learning=False)
 
 	assert results['Testing Accuracy'] == '0.964'
-	assert results['Selected Variables'] == ['Variance', 'ABS(Skewness - Q25(Skewness))', 'Kurtosis', 'Skewness', 'Entropy']
+	assert results['Selected Variables'] == ['Variance', 'Skewness.ABS(* - Q25(*))', 'Kurtosis', 'Skewness', 'Entropy']
+
 
 
