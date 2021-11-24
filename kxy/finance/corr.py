@@ -15,7 +15,7 @@ try:
 except:
 	from halo import Halo
 
-from kxy.api import APIClient, upload_data, approx_beta_remaining_time
+from kxy.api import APIClient, upload_data
 
 # Cache old job ids to avoid being charged twice for the same job.
 IACORR_JOB_IDS = {}
