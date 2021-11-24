@@ -12,6 +12,11 @@ import requests
 
 import pandas as pd
 import numpy as np
+try:
+	get_ipython().__class__.__name__
+	from halo import HaloNotebook as Halo
+except:
+	from halo import Halo
 
 from .client import APIClient
 
@@ -99,21 +104,31 @@ def upload_data(df):
 		UPLOADED_FILES[identifier] = True
 		return file_name
 
-	logging.debug('Preparing the data to upload')
+
+	logging.debug('Preparing data for upload')
+	spinner = Halo(text='Preparing data upload', spinner='dots')
+	spinner.start()
 	if file_name.endswith('.parquet.gzip'):
 		# Truncate floats with excessive precision to save space.
-		files = {'file': (file_name, df.to_parquet(index=False, compression='gzip'))}
+		df.columns = df.columns.astype(str)
+		_bytes = df.to_parquet(index=False, compression='gzip')
 	elif file_name.endswith('.parquet'):
 		# Truncate floats with excessive precision to save space.
-		files = {'file': (file_name, df.to_parquet(index=False))}
+		df.columns = df.columns.astype(str)
+		_bytes = df.to_parquet(index=False)
 	else:
-		files = {'file': (file_name, df.to_csv(index=False))}
+		_bytes = df.to_csv(index=False)
+	spinner.succeed()
+
+	files = {'file': _bytes}
 	url = presigned_url['url']
 	data = presigned_url['fields']
-	logging.debug('Done preparing the data to upload')
-	
+	logging.debug('Done preparing the data to upload')	
 	logging.debug('Uploading the data')
+	spinner.start('Uploading data')
 	upload_response = requests.post(url, data=data, files=files)
+	spinner.succeed()
+	spinner.start()
 
 	if upload_response.status_code in [requests.codes.ok, requests.codes.created, requests.codes.accepted, requests.codes.no_content]:
 		logging.debug('Data successfully uploaded')

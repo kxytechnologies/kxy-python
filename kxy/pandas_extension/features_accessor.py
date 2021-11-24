@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
+from pandarallel import pandarallel
 
 from .base_accessor import BaseAccessor
 from .features_utils import nanskew, nankurtosis, q25, q75, mode, modefreq, nextmode, nextmodefreq, lastmode, lastmodefreq, \
@@ -286,6 +287,7 @@ class FeaturesAccessor(BaseAccessor):
 		dfs = [df.copy()]
 
 		if groupby:
+			pandarallel.initialize()
 			def apply_func(s):
 				''' '''
 				lag = max_lag+1
@@ -299,14 +301,13 @@ class FeaturesAccessor(BaseAccessor):
 				res.columns = res.columns.map('_'.join).to_series().map(col_map)
 				return res[cols]
 
-			feat_df = df.groupby(groupby, sort=False).apply(apply_func)
+			feat_df = df.groupby(groupby, sort=False).parallel_apply(apply_func)
 			feat_df.reset_index(inplace=True)
 			if df.index.name:
 				feat_df.set_index(df.index.name, inplace=True)
 			else:
-				feat_df.set_index('level_1', inplace=True)
+				feat_df.set_index('index', inplace=True)
 				feat_df.index.name = df.index.name
-			feat_df = feat_df.drop(groupby, axis=1)
 			dfs += [feat_df]
 			df = pd.concat(dfs, axis=1)
 
@@ -349,6 +350,7 @@ class FeaturesAccessor(BaseAccessor):
 			res['%s.DAYOFWEEK()' % col] = times.dt.dayofweek
 			res['%s.DAY()' % col] = times.dt.day
 			res['%s.MONTH()' % col] = times.dt.month
+			res['%s.YEAR()' % col] = times.dt.year
 
 		return res
 
