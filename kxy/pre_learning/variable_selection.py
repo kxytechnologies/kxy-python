@@ -70,12 +70,11 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 		assert np.can_cast(data_df[target_column], float), 'The target column should be numeric'
 
 	file_name = upload_data(data_df)
-
-	k = 0
-	kp = 0
-	max_k = 100
 	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
 	spinner.start()
+
+	k = 0
+	max_k = 100
 
 	if file_name:
 		job_id = VARIABLE_SELECTION_JOB_IDS.get((file_name, target_column, problem_type, snr), None)
@@ -94,74 +93,71 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 
 		initial_time = time()
 		while api_response.status_code == requests.codes.ok and k < max_k:
-			if kp%2 != 0:
-				sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
-				kp += 1
-				k = kp//2
+			try:
+				response = api_response.json()
+				if 'eta' in response:
+					progress_text = '%s%% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
+					spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
+					
+				if 'job_id' in response:
+					job_id = response['job_id']
+					VARIABLE_SELECTION_JOB_IDS[(file_name, target_column, problem_type, snr)] = job_id
+					k += 1
+					sleep(15.)
 
-			else:
-				try:
-					response = api_response.json()
-					if 'job_id' in response:
-						job_id = response['job_id']
-						VARIABLE_SELECTION_JOB_IDS[(file_name, target_column, problem_type, snr)] = job_id
-						sleep(2 if kp<5 else 10 if k < max_k-4 else 300)
-						kp += 1
-						k = kp//2
+					# Note: it is important to pass the job_id to avoid being charged twice for the work.
+					api_response = APIClient.route(
+						path='/wk/variable-selection', method='POST', \
+						file_name=file_name, target_column=target_column, \
+						problem_type=problem_type, timestamp=int(time()), job_id=job_id, \
+						snr=snr)
 
-						# Note: it is important to pass the job_id to avoid being charged twice for the work.
-						api_response = APIClient.route(
-							path='/wk/variable-selection', method='POST', \
-							file_name=file_name, target_column=target_column, \
-							problem_type=problem_type, timestamp=int(time()), job_id=job_id, \
-							snr=snr)
+					try:
+						response = api_response.json()
+						if 'eta' in response:
+							progress_text = '%s%% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
+							spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
+					except:
+						pass
 
-						try:
-							response = api_response.json()
-							if 'eta' in response:
-								progress_text = '%s% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
-								spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
-						except:
-							pass
+				if 'job_id' not in response:
+					duration = int(time()-initial_time)
+					duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
 
-					if 'job_id' not in response:
-						duration = int(time()-initial_time)
-						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
+					result = {}
+					if 'selection_order' in response:
+						result['Selection Order'] = response['selection_order']				
 
-						result = {}
-						if 'selection_order' in response:
-							result['Selection Order'] = response['selection_order']				
+					if 'variable' in response:
+						result['Variable'] = response['variable']	
 
-						if 'variable' in response:
-							result['Variable'] = response['variable']	
+					if 'r-squared' in response:
+						result['Running Achievable R-Squared'] = response['r-squared']
 
-						if 'r-squared' in response:
-							result['Running Achievable R-Squared'] = response['r-squared']
+					if 'log-likelihood' in response:
+						result['Running Achievable Log-Likelihood Per Sample'] = response['log-likelihood']
 
-						if 'log-likelihood' in response:
-							result['Running Achievable Log-Likelihood Per Sample'] = response['log-likelihood']
+					if 'rmse' in response and problem_type.lower() == 'regression':
+						result['Running Achievable RMSE'] = response['rmse']
 
-						if 'rmse' in response and problem_type.lower() == 'regression':
-							result['Running Achievable RMSE'] = response['rmse']
+					if 'accuracy' in response and problem_type.lower() == 'classification':
+						result['Running Achievable Accuracy'] = response['accuracy']
 
-						if 'accuracy' in response and problem_type.lower() == 'classification':
-							result['Running Achievable Accuracy'] = response['accuracy']
+					result = pd.DataFrame.from_dict(result)
 
-						result = pd.DataFrame.from_dict(result)
+					if 'selection_order' in response:
+						result.set_index('Selection Order', inplace=True)
 
-						if 'selection_order' in response:
-							result.set_index('Selection Order', inplace=True)
-
-						spinner.text = 'Received results from the backend after %s.' % duration
-						spinner.succeed()
-						return result
+					spinner.text = 'Received results from the backend after %s.' % duration
+					spinner.succeed()
+					return result
 
 
-				except:
-					logging.exception('\nVariable selection failed. Last HTTP code: %s, Content: %s' % (api_response.status_code, api_response.content))
-					spinner.text = 'The backend encountered an unexpected error we are looking into. Please try again later.'
-					spinner.fail()
-					return None
+			except:
+				logging.exception('\nVariable selection failed. Last HTTP code: %s, Content: %s' % (api_response.status_code, api_response.content))
+				spinner.text = 'The backend encountered an unexpected error we are looking into. Please try again later.'
+				spinner.fail()
+				return None
 
 		if api_response.status_code != requests.codes.ok:
 			spinner.text = 'The backend is taking longer than expected. Please try again later.'

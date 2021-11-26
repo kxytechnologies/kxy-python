@@ -72,11 +72,11 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 	k = 0
 	kp = 0
 	max_k = 100
+
+	file_name = upload_data(data_df)
 	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
 	spinner.start()
 
-
-	file_name = upload_data(data_df)
 	if file_name:
 		job_id = EXPLANATION_JOB_IDS.get((file_name, prediction_column, problem_type), None)
 		if job_id:
@@ -118,7 +118,7 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 						try:
 							response = api_response.json()
 							if 'eta' in response:
-								progress_text = '%s% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
+								progress_text = '%s%% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
 								spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
 						except:
 							pass

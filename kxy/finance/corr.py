@@ -98,7 +98,7 @@ def information_adjusted_correlation(data_df, market_column, asset_column):
 						try:
 							response = api_response.json()
 							if 'eta' in response:
-								progress_text = '%s% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
+								progress_text = '%s%% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
 								spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
 						except:
 							pass

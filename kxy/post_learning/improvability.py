@@ -71,10 +71,11 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 	k = 0
 	kp = 0
 	max_k = 100
+
+	file_name = upload_data(data_df)
 	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
 	spinner.start()
 
-	file_name = upload_data(data_df)
 	if file_name:
 		job_id = DD_IMPROVABILITY_JOB_IDS.get((file_name, target_column, str(new_variables), problem_type, snr), None)
 
@@ -90,6 +91,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 				file_name=file_name, target_column=target_column, \
 				problem_type=problem_type, new_variables=json.dumps(new_variables), \
 				timestamp=int(time()), snr=snr)
+
 
 		initial_time = time()
 		while api_response.status_code == requests.codes.ok and k < max_k:
@@ -116,7 +118,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 						try:
 							response = api_response.json()
 							if 'eta' in response:
-								progress_text = '%s% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
+								progress_text = '%s%% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
 								spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
 						except:
 							pass
@@ -209,10 +211,10 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 	k = 0
 	kp = 0
 	max_k = 100
-	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
-	spinner.start()
 
 	file_name = upload_data(data_df)
+	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
+	spinner.start()
 
 	if file_name:
 		job_id = MD_IMPROVABILITY_JOB_IDS.get((file_name, target_column, prediction_column, problem_type, snr), None)
@@ -254,7 +256,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 						try:
 							response = api_response.json()
 							if 'eta' in response:
-								progress_text = '%s% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
+								progress_text = '%s%% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
 								spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
 						except:
 							pass
