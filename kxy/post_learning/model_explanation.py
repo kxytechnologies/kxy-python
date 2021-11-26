@@ -117,8 +117,9 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 
 						try:
 							response = api_response.json()
-							if 'ETA' in response:
-								spinner.text = 'Waiting for results from the backend. ETA: %s' % response['ETA']
+							if 'eta' in response:
+								progress_text = '%s% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
+								spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
 						except:
 							pass
 

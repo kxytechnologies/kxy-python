@@ -115,8 +115,9 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 
 						try:
 							response = api_response.json()
-							if 'ETA' in response:
-								spinner.text = 'Waiting for results from the backend. ETA: %s' % response['ETA']
+							if 'eta' in response:
+								progress_text = '%s% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
+								spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
 						except:
 							pass
 
@@ -252,8 +253,9 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 
 						try:
 							response = api_response.json()
-							if 'ETA' in response:
-								spinner.text = 'Waiting for results from the backend. ETA: %s' % response['ETA']
+							if 'eta' in response:
+								progress_text = '%s% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
+								spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
 						except:
 							pass
 
