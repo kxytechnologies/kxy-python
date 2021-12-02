@@ -107,7 +107,7 @@ def get_lightgbm_learner_sklearn_api(class_name, boosting_type='gbdt', num_leave
 
 def get_lightgbm_learner_learning_api(params, num_boost_round=100, fobj=None, feval=None, init_model=None, feature_name='auto', \
 		categorical_feature='auto', early_stopping_rounds=None, verbose_eval='warn', learning_rates=None, \
-		keep_training_booster=False, callbacks=None, split_random_seed=None, weight_func=None):
+		keep_training_booster=False, callbacks=None, split_random_seed=None, weight_func=None, verbose=-1):
 	'''
 	Generate a base learner class as a subclass of an lightgbm learner class (using the regular training api), but one whose hyper-parameters are frozen to user-specified values.
 
@@ -118,6 +118,8 @@ def get_lightgbm_learner_learning_api(params, num_boost_round=100, fobj=None, fe
 
 	class Learner(object):
 		def __init__(self,):
+			if 'verbose' not in params:
+				params['verbose'] = verbose
 			self.params = params
 			self.num_boost_round = num_boost_round
 			self.fobj = fobj
@@ -135,6 +137,8 @@ def get_lightgbm_learner_learning_api(params, num_boost_round=100, fobj=None, fe
 
 		def fit(self, x, y):
 			x_train, x_val, y_train,  y_val = train_test_split(x, y, test_size=0.2, random_state=split_random_seed)
+			y_train = y_train.ravel()
+			y_val = y_val.ravel()
 			if self.weight_func:
 				train_weights = self.weight_func(x_train, y_train)
 				val_weights   = self.weight_func(x_val, y_val)
