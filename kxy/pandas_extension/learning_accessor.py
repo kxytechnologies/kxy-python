@@ -71,7 +71,7 @@ class LearningAccessor(BaseAccessor):
 
 	def _non_additive_fit(self, target_column, learner_func, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
-			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=1, \
+			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
 			regression_baseline='mean', regression_error_type='additive', return_scores=False, start_n_features_perf_frac=0.9):
 		# A base learner here does not fix mistakes made by another.
 		obj = self._obj
@@ -100,6 +100,7 @@ class LearningAccessor(BaseAccessor):
 		if score == 'auto':
 			score = 'r2_score' if problem_type == 'regression' else 'accuracy_score'
 		score_func = eval(score)
+		self.val_scores = []
 
 		if getattr(self, 'models', None) is None or force_redo:
 			# 0. Train/Validation split
@@ -182,6 +183,7 @@ class LearningAccessor(BaseAccessor):
 					previous_score = val_score
 					self.models = [m]
 					self.max_var_ixs = [i]
+					self.val_scores = self.val_scores + [(i, val_score)]
 
 				else:
 					n_down_perf += 1
@@ -201,6 +203,7 @@ class LearningAccessor(BaseAccessor):
 			if self.models == []:
 				self.models = [base_m]
 				self.max_var_ixs = [1]
+				self.val_scores = [(0, previous_score)]
 
 			results = {'Selected Variables': self.selected_variables}
 			if return_scores:
@@ -244,7 +247,7 @@ class LearningAccessor(BaseAccessor):
 
 	def _additive_fit(self, target_column, learner_func, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
-			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=1, \
+			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
 			regression_baseline='mean', regression_error_type='additive', return_scores=False, start_n_features_perf_frac=0.9):
 		# A base learner here is fitted to the residuals of the best model so far.
 		obj = self._obj
@@ -273,6 +276,7 @@ class LearningAccessor(BaseAccessor):
 		if score == 'auto':
 			score = 'r2_score' if problem_type == 'regression' else 'accuracy_score'
 		score_func = eval(score)
+		self.val_scores = []
 
 		if getattr(self, 'models', None) is None or force_redo:
 			# 0. Train/Validation split
@@ -378,7 +382,8 @@ class LearningAccessor(BaseAccessor):
 						target_train = np.logical_not(target_train == target_train_pred).astype(int)
 
 					self.models = self.models+[m]
-					self.max_var_ixs = self.max_var_ixs+[i]	
+					self.max_var_ixs = self.max_var_ixs+[i]
+					self.val_scores = self.val_scores + [(i, val_score)]
 
 				else:
 					n_down_perf += 1
@@ -398,6 +403,7 @@ class LearningAccessor(BaseAccessor):
 			if self.models == []:
 				self.models = [base_m]
 				self.max_var_ixs = [1]
+				self.val_scores = [(0, previous_score)]
 
 			results = {'Selected Variables': self.selected_variables}
 			if return_scores:
@@ -445,7 +451,7 @@ class LearningAccessor(BaseAccessor):
 
 	def fit(self, target_column, learner_func, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
-			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=1, \
+			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
 			regression_baseline='mean', additive_learning=False, regression_error_type='additive', return_scores=False, \
 			start_n_features_perf_frac=0.9):
 		"""
@@ -574,6 +580,7 @@ class LearningAccessor(BaseAccessor):
 
 
 	def _predict(self, obj):
+		assert hasattr(self, 'models'), 'The model should be first fitted'
 		if self.additive_learning:
 			return self._additive_predict(obj)
 		else:

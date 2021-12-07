@@ -123,7 +123,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 						except:
 							pass
 
-					if 'job_id' not in response:
+					if ('job_id' not in response) or ('r-squared-boost' in response):
 						duration = int(time()-initial_time)
 						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
 						result = {}
@@ -261,7 +261,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 						except:
 							pass
 
-					if 'job_id' not in response:
+					if ('job_id' not in response) or ('lost-r-squared' in response):
 						result = {}
 
 						if 'lost-r-squared' in response:

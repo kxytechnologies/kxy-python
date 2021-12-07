@@ -99,7 +99,7 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 					progress_text = '%s%% Completed.' % response['progress_pct'] if 'progress_pct' in response else ''
 					spinner.text = 'Waiting for results from the backend. ETA: %s. %s' % (response['eta'], progress_text)
 					
-				if 'job_id' in response:
+				if ('job_id' in response) and ('selection_order' not in response):
 					job_id = response['job_id']
 					VARIABLE_SELECTION_JOB_IDS[(file_name, target_column, problem_type, snr)] = job_id
 					k += 1
@@ -120,7 +120,7 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 					except:
 						pass
 
-				if 'job_id' not in response:
+				if ('job_id' not in response) or ('selection_order' in response):
 					duration = int(time()-initial_time)
 					duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
 

@@ -123,7 +123,7 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 						except:
 							pass
 
-					if 'job_id' not in response:
+					if ('job_id' not in response) or ('selection_order' in response):
 						duration = int(time()-initial_time)
 						duration = str(duration) + 's' if duration < 60 else str(duration//60) + 'min'
 
