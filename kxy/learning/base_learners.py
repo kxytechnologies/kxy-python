@@ -4,11 +4,12 @@
 MODELS_TAKING_FLAT_OUTPUTS = [\
 	'sklearn.ensemble.RandomForestRegressor', \
 	'sklearn.neural_network.MLPRegressor', \
+	'sklearn.linear_model.LassoCV',
 	'lightgbm.LGBMClassifier', \
 	'lightgbm.LGBMRegressor'
 ]
 
-def get_sklearn_learner(class_name, *args, fit_kwargs={}, predict_kwargs={}, **kwargs):
+def get_sklearn_learner(class_name, *args, fit_intercept=True, fit_kwargs={}, predict_kwargs={}, **kwargs):
 	'''
 	Generate base learner class as a subclass of an sklearn learner class, but one whose hyper-parameters are frozen to user-specified values.
 
@@ -23,17 +24,77 @@ def get_sklearn_learner(class_name, *args, fit_kwargs={}, predict_kwargs={}, **k
 	import sklearn.tree
 	import sklearn.neighbors
 
-	BaseLearner = eval(class_name)
-	class Learner(BaseLearner):
-		def __init__(self):
-			super(Learner, self).__init__(*args, **kwargs)
+	if class_name == 'sklearn.linear_model.LassoCV':
+		class Learner(sklearn.linear_model.LassoCV):
+			eps = kwargs.get('eps', 0.001)
+			n_alphas = kwargs.get('n_alphas', 100)
+			alphas = kwargs.get('alphas', None)
+			fit_intercept = kwargs.get('fit_intercept', True)
+			precompute = kwargs.get('precompute', 'auto')
+			max_iter = kwargs.get('max_iter', 1000)
+			tol = kwargs.get('tol', 0.0001)
+			copy_X = kwargs.get('copy_X', True)
+			cv = kwargs.get('cv', None)
+			verbose = kwargs.get('verbose', False)
+			n_jobs = kwargs.get('n_jobs', None)
+			positive = kwargs.get('positive', False)
+			random_state = kwargs.get('random_state', None)
+			selection = kwargs.get('selection', 'cyclic')
+			normalize = kwargs.get('normalize', 'deprecated')
 
-		def fit(self, x, y):
-			y_ = y.flatten() if class_name in MODELS_TAKING_FLAT_OUTPUTS else y
-			return super(Learner, self).fit(x, y_, **fit_kwargs)
+			def __init__(self, eps=eps, n_alphas=n_alphas, alphas=alphas, \
+					fit_intercept=fit_intercept, precompute=precompute, \
+					max_iter=max_iter, tol=tol, copy_X=copy_X, cv=cv, verbose=verbose, \
+					n_jobs=n_jobs, positive=positive, random_state=random_state, \
+					selection=selection, normalize=normalize):
+				super(Learner, self).__init__(eps=eps, n_alphas=n_alphas, alphas=alphas, \
+					fit_intercept=fit_intercept, precompute=precompute, \
+					max_iter=max_iter, tol=tol, copy_X=copy_X, cv=cv, verbose=verbose, \
+					n_jobs=n_jobs, positive=positive, random_state=random_state, \
+					selection=selection, normalize=normalize)
 
-		def predict(self, x):
-			return super(Learner, self).predict(x, **predict_kwargs)	
+			def fit(self, x, y):
+				y_ = y.flatten() if class_name in MODELS_TAKING_FLAT_OUTPUTS else y
+				return super(Learner, self).fit(x, y_, **fit_kwargs)
+
+			def predict(self, x):
+				return super(Learner, self).predict(x, **predict_kwargs)
+
+
+	elif class_name == 'sklearn.linear_model.LinearRegression':
+		fit_intercept = kwargs.get('fit_intercept', True)
+		copy_X = kwargs.get('copy_X', True)
+		n_jobs = kwargs.get('n_jobs', None)
+		positive = kwargs.get('positive', False)
+		normalize = kwargs.get('normalize', 'deprecated')
+
+		class Learner(sklearn.linear_model.LinearRegression):
+			def __init__(self, fit_intercept=fit_intercept,\
+					copy_X=copy_X, n_jobs=n_jobs, positive=positive, \
+					normalize=normalize):
+				super(Learner, self).__init__(fit_intercept=fit_intercept,\
+					copy_X=copy_X, n_jobs=n_jobs, positive=positive, \
+					normalize=normalize)
+
+			def fit(self, x, y):
+				y_ = y.flatten() if class_name in MODELS_TAKING_FLAT_OUTPUTS else y
+				return super(Learner, self).fit(x, y_, **fit_kwargs)
+
+			def predict(self, x):
+				return super(Learner, self).predict(x, **predict_kwargs)
+
+	else:
+		BaseLearner = eval(class_name)
+		class Learner(BaseLearner):
+			def __init__(self):
+				super(Learner, self).__init__(*args, **kwargs)
+
+			def fit(self, x, y):
+				y_ = y.flatten() if class_name in MODELS_TAKING_FLAT_OUTPUTS else y
+				return super(Learner, self).fit(x, y_, **fit_kwargs)
+
+			def predict(self, x):
+				return super(Learner, self).predict(x, **predict_kwargs)	
 
 	def create_instance(n_vars=None):
 		return Learner()

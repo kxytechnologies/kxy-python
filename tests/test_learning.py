@@ -24,6 +24,49 @@ def test_lean_boosted_sklearn_regressor():
 		'Viscera weight.ABS(* - Q75(*))', 'Viscera weight.ABS(* - Q25(*))', 'Diameter.ABS(* - Q25(*))', 'Sex_M', 'Sex_F']
 
 
+def test_sklearn_lasso_cv():
+	# Regression
+	sklearn_regressor_cls = get_sklearn_learner('sklearn.linear_model.LassoCV')
+	dataset = Abalone()
+	target_column = dataset.y_column
+	df = dataset.df
+
+	# Features generation
+	features_df = df.kxy.generate_features(entity=None, max_lag=None, entity_name='*', exclude=[target_column])
+
+	# Model building
+	results = features_df.kxy.fit(target_column, sklearn_regressor_cls, \
+		problem_type='regression', additive_learning=True, return_scores=True)
+	assert results['Testing R-Squared'] == '0.551'
+	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', \
+		'Shell weight.ABS(* - Q25(*))', 'Viscera weight.ABS(* - MEDIAN(*))', 'Viscera weight.ABS(* - MEAN(*))', \
+		'Height', 'Length', 'Diameter', 'Sex_I', 'Shucked weight.ABS(* - MEDIAN(*))', 'Diameter.ABS(* - MEDIAN(*))', \
+		'Viscera weight.ABS(* - Q75(*))', 'Viscera weight.ABS(* - Q25(*))', 'Diameter.ABS(* - Q25(*))', 'Sex_M', \
+		'Sex_F', 'Shucked weight.ABS(* - Q75(*))']
+
+
+def test_sklearn_linear_regression():
+	# Regression
+	sklearn_regressor_cls = get_sklearn_learner('sklearn.linear_model.LinearRegression')
+	dataset = Abalone()
+	target_column = dataset.y_column
+	df = dataset.df
+
+	# Features generation
+	features_df = df.kxy.generate_features(entity=None, max_lag=None, entity_name='*', exclude=[target_column])
+
+	# Model building
+	results = features_df.kxy.fit(target_column, sklearn_regressor_cls, \
+		problem_type='regression', additive_learning=True, return_scores=True)
+	assert results['Testing R-Squared'] == '0.547'
+	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', \
+		'Shell weight.ABS(* - Q25(*))', 'Viscera weight.ABS(* - MEDIAN(*))', 'Viscera weight.ABS(* - MEAN(*))', \
+		'Height', 'Length', 'Diameter', 'Sex_I', 'Shucked weight.ABS(* - MEDIAN(*))', 'Diameter.ABS(* - MEDIAN(*))', \
+		'Viscera weight.ABS(* - Q75(*))', 'Viscera weight.ABS(* - Q25(*))', 'Diameter.ABS(* - Q25(*))', 'Sex_M', \
+		'Sex_F', 'Shucked weight.ABS(* - Q75(*))', 'Shucked weight.ABS(* - Q25(*))', 'Diameter.ABS(* - Q75(*))', \
+		'Length.ABS(* - Q75(*))']
+
+
 def test_lean_boosted_xgboost_regressor():
 	# Regression
 	xgboost_regressor_cls = get_xgboost_learner('xgboost.XGBRegressor')
