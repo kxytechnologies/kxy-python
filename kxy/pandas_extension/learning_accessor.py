@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import inspect
+import gc
 import logging
 import numpy as np
 import pandas as pd
@@ -141,12 +142,12 @@ class LearningAccessor(BaseAccessor):
 
 			# 2. Sequentially add variables in decreasing order of importance.
 			# 2.1 Baseline performance
-			y_train = self.train_df[[self.target_column]].values.copy()
-			y_val = self.val_df[[self.target_column]].values.copy()
+			y_train = self.train_df[[self.target_column]].values
+			y_val = self.val_df[[self.target_column]].values
 			if return_scores:
-				y_test = self.test_df[[self.target_column]].values.copy()
-			x_train = self.train_df[self.variables[:1]].values.copy()
-			x_val = self.val_df[self.variables[:1]].values.copy()
+				y_test = self.test_df[[self.target_column]].values
+			x_train = self.train_df[self.variables[:1]].values
+			x_val = self.val_df[self.variables[:1]].values
 
 			base_m = BaselineRegressor(baseline=regression_baseline) if problem_type == 'regression' else BaselineClassifier()
 			base_m.fit(x_train, y_train)
@@ -161,9 +162,10 @@ class LearningAccessor(BaseAccessor):
 			self.start_n_features = min(start_n_features, n_variables)
 			n_down_perf = 0
 			for i in range(self.start_n_features, n_variables+1):
+				gc.collect()
 				vs = self.variables[:i]
-				x_train = self.train_df[vs].values.copy()
-				x_val = self.val_df[vs].values.copy()
+				x_train = self.train_df[vs].values
+				x_val = self.val_df[vs].values
 				n_vars = x_train.shape[1] if len(x_train.shape) > 1 else 1
 
 				# Create the new model
@@ -208,9 +210,9 @@ class LearningAccessor(BaseAccessor):
 			results = {'Selected Variables': self.selected_variables}
 			if return_scores:
 				# Inputs
-				x_train = self.train_df[self.selected_variables].values.copy()
-				x_val = self.val_df[self.selected_variables].values.copy()
-				x_test = self.test_df[self.selected_variables].values.copy()
+				x_train = self.train_df[self.selected_variables].values
+				x_val = self.val_df[self.selected_variables].values
+				x_test = self.test_df[self.selected_variables].values
 
 				# Predictions
 				self.y_train_pred = self.models[0].predict(x_train)
@@ -317,12 +319,12 @@ class LearningAccessor(BaseAccessor):
 
 			# 2. Sequentially add variables in decreasing order of importance.
 			# 2.1 Baseline performance
-			y_train = self.train_df[[self.target_column]].values.copy()
-			y_val = self.val_df[[self.target_column]].values.copy()
+			y_train = self.train_df[[self.target_column]].values
+			y_val = self.val_df[[self.target_column]].values
 			if return_scores:
-				y_test = self.test_df[[self.target_column]].values.copy()
-			x_train = self.train_df[self.variables[:1]].values.copy()
-			x_val = self.val_df[self.variables[:1]].values.copy()
+				y_test = self.test_df[[self.target_column]].values
+			x_train = self.train_df[self.variables[:1]].values
+			x_val = self.val_df[self.variables[:1]].values
 
 			base_m = BaselineRegressor(baseline=regression_baseline) if problem_type == 'regression' else BaselineClassifier()
 			base_m.fit(x_train, y_train)
@@ -341,9 +343,10 @@ class LearningAccessor(BaseAccessor):
 			self.models = []
 			self.max_var_ixs = []
 			for i in range(self.start_n_features, n_variables+1):
+				gc.collect()
 				vs = self.variables[:i]
-				x_train = self.train_df[vs].values.copy()
-				x_val = self.val_df[vs].values.copy()
+				x_train = self.train_df[vs].values
+				x_val = self.val_df[vs].values
 				n_vars = x_train.shape[1] if len(x_train.shape) > 1 else 1
 
 				# Create the new model
@@ -408,9 +411,9 @@ class LearningAccessor(BaseAccessor):
 			results = {'Selected Variables': self.selected_variables}
 			if return_scores:
 				# Inputs
-				x_train = self.train_df[self.selected_variables].values.copy()
-				x_val = self.val_df[self.selected_variables].values.copy()
-				x_test = self.test_df[self.selected_variables].values.copy()
+				x_train = self.train_df[self.selected_variables].values
+				x_val = self.val_df[self.selected_variables].values
+				x_test = self.test_df[self.selected_variables].values
 
 				# Predictions
 				self.y_train_pred = self.predict(self.train_df)
@@ -545,7 +548,7 @@ class LearningAccessor(BaseAccessor):
 		y_pred = None
 		for i in range(len(self.models)):
 			vs = self.variables[:self.max_var_ixs[i]]
-			x = data[vs].values.copy()
+			x = data[vs].values
 			y_error_pred = self.models[i].predict(x)
 			y_error_pred = y_error_pred if len(y_error_pred.shape) > 1 else y_error_pred[:, None]
 			if y_pred is None:
@@ -571,7 +574,7 @@ class LearningAccessor(BaseAccessor):
 			assert not obj.kxy.is_categorical(col), 'All columns should be numeric'
 
 		data = obj[self.variables]
-		x = data[self.selected_variables].values.copy()
+		x = data[self.selected_variables].values
 		y_pred = self.models[0].predict(x)
 		y_pred = y_pred if len(y_pred.shape) > 1 else y_pred[:, None]
 		predictions = pd.DataFrame(y_pred, columns=[self.target_column], index=data.index)
