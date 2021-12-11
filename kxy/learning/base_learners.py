@@ -65,16 +65,13 @@ def get_sklearn_learner(class_name, *args, fit_intercept=True, fit_kwargs={}, pr
 		fit_intercept = kwargs.get('fit_intercept', True)
 		copy_X = kwargs.get('copy_X', True)
 		n_jobs = kwargs.get('n_jobs', None)
-		positive = kwargs.get('positive', False)
 		normalize = kwargs.get('normalize', 'deprecated')
 
 		class Learner(sklearn.linear_model.LinearRegression):
 			def __init__(self, fit_intercept=fit_intercept,\
-					copy_X=copy_X, n_jobs=n_jobs, positive=positive, \
-					normalize=normalize):
+					copy_X=copy_X, n_jobs=n_jobs, normalize=normalize):
 				super(Learner, self).__init__(fit_intercept=fit_intercept,\
-					copy_X=copy_X, n_jobs=n_jobs, positive=positive, \
-					normalize=normalize)
+					copy_X=copy_X, n_jobs=n_jobs, normalize=normalize)
 
 			def fit(self, x, y):
 				y_ = y.flatten() if class_name in MODELS_TAKING_FLAT_OUTPUTS else y
