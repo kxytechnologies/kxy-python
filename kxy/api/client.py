@@ -10,6 +10,7 @@ import os
 import requests
 
 from .decorators import requires_api_key, get_api_key
+from .. import __version__ as client_version
 
 
 class APIClient(object):
@@ -89,6 +90,8 @@ class APIClient(object):
 		"""
 		url = APIClient.url(path)
 		api_key = get_api_key()
+		if 'client_version' not in params:
+			params['client_version'] = client_version
 		response = requests.get(url, params=params, headers={'x-api-key': api_key, \
 			'content-type': 'application/json'})
 
@@ -139,6 +142,8 @@ class APIClient(object):
 		"""
 		url = APIClient.url(path)
 		api_key = get_api_key()
+		if 'client_version' not in params:
+			params['client_version'] = client_version
 		response = requests.post(url, json=params, headers={'x-api-key': api_key, \
 			'content-type': 'application/json'})
 

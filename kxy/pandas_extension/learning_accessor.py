@@ -85,7 +85,7 @@ class LearningAccessor(BaseAccessor):
 		Returns
 		-------
 		result : dict
-			Dictionary containing selected variables, as well as training, validation and testing performance.
+			Dictionary containing selected variables, as well as training, validation and testing performance, and the trained model.
 		"""
 
 		predictor = ShrunkLearner()
@@ -94,6 +94,7 @@ class LearningAccessor(BaseAccessor):
 				benchmark_feature=benchmark_feature, missing_value_imputation=missing_value_imputation, score=score, n_down_perf_before_stop=n_down_perf_before_stop, \
 				regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, start_n_features_perf_frac=start_n_features_perf_frac)
 		self.predictor = predictor
+		res['predictor'] = predictor
 
 		return res
 

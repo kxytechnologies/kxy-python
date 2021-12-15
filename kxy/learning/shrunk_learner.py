@@ -61,8 +61,8 @@ class BaselineRegressor(object):
 
 class ShrunkLearner(object):
 	"""
+	Wrapper to seamlessly add effective variable selection to any supervised learner. 
 	"""
-
 	def _non_additive_fit(self, obj, target_column, learner_func, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
@@ -451,9 +451,9 @@ class ShrunkLearner(object):
 			regression_baseline='mean', additive_learning=False, regression_error_type='additive', return_scores=False, \
 			start_n_features_perf_frac=0.9):
 		"""
-		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
+		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`obj.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
-		Specifically, training proceeds as follows. First, KXY's model-free variable selection is run (i.e. :code:`df.kxy.variable_selection`). 
+		Specifically, training proceeds as follows. First, KXY's model-free variable selection is run (i.e. :code:`obj.kxy.variable_selection`). 
 
 		Then we train a model (instance returned by :code:`learner_func`) using the :code:`start_n_features` most important feature/variable to predict the target (defined by :code:`target_column`).
 
@@ -461,13 +461,15 @@ class ShrunkLearner(object):
 	
 		If doing so improves performance on the validation set, we keep going until either performance no longer improves on the validation set :code:`n_down_perf_before_stop` consecutive times, or we've selected :code:`max_n_features` features.
 
-		When :code:`start_n_features` is :code:`None` the initial set of variables is the smallest set of variables with which we may achieve :code:`start_n_features_perf_frac` of the performance we could achieve using all variables (as per :code:`df.kxy.variable_selection`).
+		When :code:`start_n_features` is :code:`None` the initial set of variables is the smallest set of variables with which we may achieve :code:`start_n_features_perf_frac` of the performance we could achieve using all variables (as per :code:`obj.kxy.variable_selection`).
 
 		When :code:`additive_learning` is set to :code:`False`, after adding a new variable, we will train the new model on the original problem, rather than trying to improve residuals.
 
 
 		Parameters
 		----------
+		obj : pd.DataFrame
+			The pandas dataframe containing training data.
 		target_column : str
 			The name of the column containing true labels.
 		learner_func : function
@@ -504,7 +506,7 @@ class ShrunkLearner(object):
 		regression_error_type : str ('additive' | 'multiplicative')
 			For regression problems with additive learning, this determines whether the final model should be additive (pruning tries to reduce regressor residuals) or multiplicative (i.e. pruning tries to bring the ratio between true and predicted labels as closed to 1 as possible).
 		start_n_features_perf_frac : float (between 0 and 1)
-			When :code:`start_n_features` is not specified, it is set to the number of variables required to achieve a fraction :code:`start_n_features_perf_frac` of the maximum performance achievable (as per :code:`df.kxy.variable_selection`).
+			When :code:`start_n_features` is not specified, it is set to the number of variables required to achieve a fraction :code:`start_n_features_perf_frac` of the maximum performance achievable (as per :code:`obj.kxy.variable_selection`).
 		return_scores : bool (Default False)
 			Whether to return training, validation and testing performance after lean boosting.
 
