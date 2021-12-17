@@ -60,6 +60,10 @@ def get_sklearn_learner(class_name, *args, fit_intercept=True, fit_kwargs={}, pr
 			def predict(self, x):
 				return super(Learner, self).predict(x, **predict_kwargs)
 
+			@property
+			def _feature_importances(self):
+				return np.abs(self.coef_)
+
 
 	elif class_name == 'sklearn.linear_model.LinearRegression':
 		fit_intercept = kwargs.get('fit_intercept', True)
@@ -79,6 +83,10 @@ def get_sklearn_learner(class_name, *args, fit_intercept=True, fit_kwargs={}, pr
 
 			def predict(self, x):
 				return super(Learner, self).predict(x, **predict_kwargs)
+
+			@property
+			def _feature_importances(self):
+				return np.abs(self.coef_)
 
 	else:
 		BaseLearner = eval(class_name)
@@ -165,7 +173,8 @@ def get_lightgbm_learner_sklearn_api(class_name, boosting_type='gbdt', num_leave
 
 def get_lightgbm_learner_learning_api(params, num_boost_round=100, fobj=None, feval=None, init_model=None, feature_name='auto', \
 		categorical_feature='auto', early_stopping_rounds=None, verbose_eval='warn', learning_rates=None, \
-		keep_training_booster=False, callbacks=None, split_random_seed=None, weight_func=None, verbose=-1):
+		keep_training_booster=False, callbacks=None, split_random_seed=None, weight_func=None, verbose=-1, \
+		importance_type='split'):
 	'''
 	Generate a base learner class as a subclass of an lightgbm learner class (using the regular training api), but one whose hyper-parameters are frozen to user-specified values.
 
@@ -227,6 +236,12 @@ def get_lightgbm_learner_learning_api(params, num_boost_round=100, fobj=None, fe
 				y_pred = np.argmax(y_pred, axis=1).astype(int)
 
 			return y_pred
+
+
+		@property
+		def _feature_importances(self):
+			return self._model.feature_importance(importance_type=importance_type)
+
 
 	def create_instance(n_vars=None):
 		return Learner()
