@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 with open('README.md') as f:
 	long_description = f.read()
 	
-version = "1.2.84"
+version = "1.3.0"
 setup(name="kxy",
 	version=version,
 	zip_safe=False,
@@ -29,7 +29,7 @@ setup(name="kxy",
 	download_url = "https://github.com/kxytechnologies/kxy-python/archive/v%s.tar.gz" % version,
 	keywords = ["Lean ML", "AutoML", "Pre-Learning", "Post-Learning", "Model-Free ML"],
 	packages=find_packages(exclude=["tests"]),
-	install_requires=["numpy>=1.13.1", "scipy>=1.4.1", "pandas>=0.23.0", "requests>=2.22.0", "pandarallel", "halo", "ipywidgets"],
+	install_requires=["numpy>=1.13.1", "scipy>=1.4.1", "pandas>=0.23.0", "requests>=2.22.0", "pandarallel", "halo", "ipywidgets", "scikit-learn"],
 	classifiers=[
         "Environment :: Console",
         "Intended Audience :: Developers",

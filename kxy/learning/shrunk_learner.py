@@ -6,6 +6,7 @@ import logging
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
+import pickle as pkl
 
 try:
 	get_ipython().__class__.__name__
@@ -568,8 +569,8 @@ class ShrunkLearner(object):
 		for col in obj.columns:
 			assert not obj.kxy.is_categorical(col), 'All columns should be numeric'
 
-		data = obj[self.variables]
-		x = data[self.selected_variables].values
+		data = obj[self.selected_variables]
+		x = data.values
 		y_pred = self.models[0].predict(x)
 		y_pred = y_pred if len(y_pred.shape) > 1 else y_pred[:, None]
 		predictions = pd.DataFrame(y_pred, columns=[self.target_column], index=data.index)
@@ -616,3 +617,57 @@ class ShrunkLearner(object):
 
 		else:
 			return self._predict(obj)
+
+
+	def save(self, path):
+		""" """
+		n_models = len(self.models)
+		meta_path = path + '-meta-ShrunkLearner'
+		meta = {\
+			'additive_learning': self.additive_learning, 'target_column': self.target_column, 'variables': self.variables, \
+			'selected_variables': self.selected_variables, 'problem_type': self.problem_type, 'max_var_ixs': self.max_var_ixs, \
+			'n_models': n_models \
+		}
+		with open(meta_path, 'wb') as f:
+			pkl.dump(meta, f)
+
+		for i in range(n_models):
+			self.models[i].save(path + '-model-%d-ShrunkLearner' % i)
+
+
+	@classmethod
+	def load(self, path, learner_func):
+		""" 
+		Load the learner from disk.
+		"""
+		meta_path = path + '-meta-ShrunkLearner'
+		with open(meta_path, 'rb') as f:
+			meta = pkl.load(f)
+
+		additive_learning = meta['additive_learning']
+		target_column = meta['target_column']
+		variables = meta['variables']
+		selected_variables = meta['selected_variables']
+		problem_type = meta['problem_type']
+		max_var_ixs = meta['max_var_ixs']
+		n_models = meta['n_models']
+		n_vars = len(selected_variables)
+
+		predictor = ShrunkLearner()
+		predictor.additive_learning = additive_learning
+		predictor.target_column = target_column
+		predictor.variables = variables
+		predictor.selected_variables = selected_variables
+		predictor.problem_type = problem_type
+		predictor.max_var_ixs = max_var_ixs
+
+		predictor.models = []
+		for i in range(n_models):
+			model_path = path + '-model-%d-ShrunkLearner' % i
+			model = learner_func(n_vars=n_vars, path=model_path)
+			predictor.models.append(model)
+
+		return predictor
+
+
+

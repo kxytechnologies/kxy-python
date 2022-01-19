@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import pickle as pkl
+import numpy as np
+
 MODELS_TAKING_FLAT_OUTPUTS = [\
 	'sklearn.ensemble.RandomForestRegressor', \
 	'sklearn.neural_network.MLPRegressor', \
@@ -24,6 +27,7 @@ def get_sklearn_learner(class_name, *args, fit_intercept=True, fit_kwargs={}, pr
 	import sklearn.tree
 	import sklearn.neighbors
 
+	global Learner
 	if class_name == 'sklearn.linear_model.LassoCV':
 		class Learner(sklearn.linear_model.LassoCV):
 			eps = kwargs.get('eps', 0.001)
@@ -61,8 +65,38 @@ def get_sklearn_learner(class_name, *args, fit_intercept=True, fit_kwargs={}, pr
 				return super(Learner, self).predict(x, **predict_kwargs)
 
 			@property
-			def _feature_importances(self):
-				return np.abs(self.coef_)
+			def feature_importances_(self):
+				try:
+					coef = np.abs(self.coef_)
+					coef = np.array(coef)
+					if len(coef.shape) > 1:
+						return np.mean(coef, axis=0)
+					else:
+						return coef
+				except:
+					return []
+
+			def __getstate__(self):
+				try:
+					state = super(Learner, self).__getstate__()
+				except AttributeError:
+					state = super(Learner, self).__dict__.copy()
+				state['feature_importances_'] = self.feature_importances_
+				return state
+
+			def save(self, path):
+				with open(path, 'wb') as f:
+					pkl.dump(self, f)
+
+			def __setstate__(self, state):
+				self.__dict__ = state
+				self.predict = lambda x: super(Learner, self).predict(x, **predict_kwargs)
+
+			@classmethod
+			def load(cls, path):
+				with open(path, 'rb') as f:
+					model = pkl.load(f)
+				return model
 
 
 	elif class_name == 'sklearn.linear_model.LinearRegression':
@@ -85,8 +119,38 @@ def get_sklearn_learner(class_name, *args, fit_intercept=True, fit_kwargs={}, pr
 				return super(Learner, self).predict(x, **predict_kwargs)
 
 			@property
-			def _feature_importances(self):
-				return np.abs(self.coef_)
+			def feature_importances_(self):
+				try:
+					coef = np.abs(self.coef_)
+					coef = np.array(coef)
+					if len(coef.shape) > 1:
+						return np.mean(coef, axis=0)
+					else:
+						return coef
+				except:
+					return []
+
+			def __getstate__(self):
+				try:
+					state = super(Learner, self).__getstate__()
+				except AttributeError:
+					state = super(Learner, self).__dict__.copy()
+				state['feature_importances_'] = self.feature_importances_
+				return state
+
+			def save(self, path):
+				with open(path, 'wb') as f:
+					pkl.dump(self, f)
+
+			def __setstate__(self, state):
+				self.__dict__ = state
+				self.predict = lambda x: super(Learner, self).predict(x, **predict_kwargs)
+
+			@classmethod
+			def load(cls, path):
+				with open(path, 'rb') as f:
+					model = pkl.load(f)
+				return model
 
 	else:
 		BaseLearner = eval(class_name)
@@ -99,10 +163,51 @@ def get_sklearn_learner(class_name, *args, fit_intercept=True, fit_kwargs={}, pr
 				return super(Learner, self).fit(x, y_, **fit_kwargs)
 
 			def predict(self, x):
-				return super(Learner, self).predict(x, **predict_kwargs)	
+				return super(Learner, self).predict(x, **predict_kwargs)
 
-	def create_instance(n_vars=None):
-		return Learner()
+			@property
+			def feature_importances_(self):
+				try:
+					return super(Learner, self).feature_importances_
+				except:
+					try:
+						coef = np.abs(self.coef_)
+						coef = np.array(coef)
+						if len(coef.shape) > 1:
+							return np.mean(coef, axis=0)
+						else:
+							return coef
+					except:
+						return []
+
+			def __getstate__(self):
+				try:
+					state = super(Learner, self).__getstate__()
+				except AttributeError:
+					state = super(Learner, self).__dict__.copy()
+				state['feature_importances_'] = self.feature_importances_
+				return state
+
+			def save(self, path):
+				with open(path, 'wb') as f:
+					pkl.dump(self, f)
+
+			def __setstate__(self, state):
+				self.__dict__ = state
+				self.predict = lambda x: super(Learner, self).predict(x, **predict_kwargs)
+
+			@classmethod
+			def load(cls, path):
+				with open(path, 'rb') as f:
+					model = pkl.load(f)
+				return model
+
+
+	def create_instance(n_vars=None, path=None):
+		if path is None:
+			return Learner()
+		else:
+			return Learner.load(path)
 
 	return create_instance
 
@@ -115,6 +220,8 @@ def get_xgboost_learner(class_name, *args, fit_kwargs={}, predict_kwargs={}, **k
 	The class name should be full (e.g. xgboost.XGBRegressor).
 	'''
 	import xgboost
+	global Learner
+
 	BaseLearner = eval(class_name)
 	class Learner(BaseLearner):
 		def __init__(self):
@@ -126,8 +233,33 @@ def get_xgboost_learner(class_name, *args, fit_kwargs={}, predict_kwargs={}, **k
 		def predict(self, x):
 			return super(Learner, self).predict(x, **predict_kwargs)
 
-	def create_instance(n_vars=None):
-		return Learner()
+		def __getstate__(self):
+			try:
+				state = super(Learner, self).__getstate__()
+			except AttributeError:
+				state = super(Learner, self).__dict__.copy()
+			return state
+
+		def save(self, path):
+			with open(path, 'wb') as f:
+				pkl.dump(self, f)
+
+		def __setstate__(self, state):
+			self.__dict__ = state
+			self.predict = lambda x: super(Learner, self).predict(x, **predict_kwargs)
+
+		@classmethod
+		def load(cls, path):
+			with open(path, 'rb') as f:
+				model = pkl.load(f)
+			return model
+
+
+	def create_instance(n_vars=None, path=None):
+		if path is None:
+			return Learner()
+		else:
+			return Learner.load(path)
 
 	return create_instance
 
@@ -143,6 +275,7 @@ def get_lightgbm_learner_sklearn_api(class_name, boosting_type='gbdt', num_leave
 	The class name should be full (e.g. lightgbm.LGBMRegressor).
 	'''
 	import lightgbm
+	global Learner
 	BaseLearner = eval(class_name)
 
 	class Learner(BaseLearner):
@@ -164,8 +297,33 @@ def get_lightgbm_learner_sklearn_api(class_name, boosting_type='gbdt', num_leave
 		def predict(self, x):
 			return super(Learner, self).predict(x, **predict_kwargs)	
 
-	def create_instance(n_vars=None):
-		return Learner()
+		def __getstate__(self):
+			try:
+				state = super(Learner, self).__getstate__()
+			except AttributeError:
+				state = super(Learner, self).__dict__.copy()
+			return state
+
+		def save(self, path):
+			with open(path, 'wb') as f:
+				pkl.dump(self, f)
+
+		def __setstate__(self, state):
+			self.__dict__ = state
+			self.predict = lambda x: super(Learner, self).predict(x, **predict_kwargs)
+
+		@classmethod
+		def load(cls, path):
+			with open(path, 'rb') as f:
+				model = pkl.load(f)
+			return model
+
+
+	def create_instance(n_vars=None, path=None):
+		if path is None:
+			return Learner()
+		else:
+			return Learner.load(path)
 
 	return create_instance
 
@@ -182,6 +340,7 @@ def get_lightgbm_learner_learning_api(params, num_boost_round=100, fobj=None, fe
 	'''
 	import lightgbm
 	from sklearn.model_selection import train_test_split
+	global Learner
 
 	class Learner(object):
 		def __init__(self,):
@@ -201,6 +360,7 @@ def get_lightgbm_learner_learning_api(params, num_boost_round=100, fobj=None, fe
 			self.keep_training_booster = keep_training_booster
 			self.callbacks = callbacks
 			self.weight_func = weight_func
+			self.importance_type = importance_type
 
 		def fit(self, x, y):
 			x_train, x_val, y_train,  y_val = train_test_split(x, y, test_size=0.2, random_state=split_random_seed)
@@ -237,14 +397,33 @@ def get_lightgbm_learner_learning_api(params, num_boost_round=100, fobj=None, fe
 
 			return y_pred
 
-
 		@property
-		def _feature_importances(self):
-			return self._model.feature_importance(importance_type=importance_type)
+		def feature_importances_(self):
+			try:
+				return self._model.feature_importance(importance_type=self.importance_type)
+			except:
+				return []
+
+		def save(self, path):
+			with open(path, 'wb') as f:
+				pkl.dump(self._model, f)
+
+		@classmethod
+		def load(cls, path):
+			with open(path, 'rb') as f:
+				_model = pkl.load(f)
+				learner = Learner()
+				learner._model = _model
+			return learner
 
 
-	def create_instance(n_vars=None):
-		return Learner()
+	def create_instance(n_vars=None, path=None):
+		if path is None:
+			return Learner()
+		else:
+			return Learner.load(path)
+
+
 
 	return create_instance
 
@@ -280,6 +459,7 @@ def get_tensorflow_dense_learner(class_name, layers, loss, optimizer='adam', fit
 	import tensorflow as tf
 	from tensorflow.python.keras.wrappers.scikit_learn import KerasRegressor
 	from tensorflow.python.keras.wrappers.scikit_learn import KerasClassifier
+	from tensorflow.keras.models import load_model
 	BaseLearner = eval(class_name)
 
 	class Learner(BaseLearner):
@@ -302,8 +482,24 @@ def get_tensorflow_dense_learner(class_name, layers, loss, optimizer='adam', fit
 		def predict(self, x):
 			return super(Learner, self).predict(x, **predict_kwargs)
 
-	def create_instance(n_vars=None):
-		return Learner(n_vars)
+		def save(self, path):
+			return self.model.save(path)
+
+		@classmethod
+		def load(cls, path, n_vars):
+			model = load_model(path)
+			n_vars = 1 if n_vars is None else n_vars
+			learner = Learner(n_vars)
+			learner.model = model
+			return learner
+
+
+	def create_instance(n_vars=None, path=None):
+		if path is None:
+			return Learner(n_vars)
+		else:
+			return Learner.load(path, n_vars)
+
 
 	return create_instance
 
@@ -382,9 +578,23 @@ def get_pytorch_dense_learner(class_name, layers, optimizer='Adam', fit_kwargs={
 			except:
 				return super(Learner, self).predict(x.astype(np.float32), **predict_kwargs)
 
+		def save(self, path):
+			return self.save_params(f_params=path)
 
-	def create_instance(n_vars=None):
-		return Learner(n_vars)
+		@classmethod
+		def load(cls, path, n_vars):
+			learner = Learner(n_vars)
+			learner.initialize()
+			learner.load_params(f_params=path)
+			return learner
+
+
+	def create_instance(n_vars=None, path=None):
+		if path is None:
+			return Learner(n_vars)
+		else:
+			return Learner.load(path, n_vars)
+
 
 	return create_instance
 

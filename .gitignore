@@ -134,8 +134,12 @@ lambdas/
 learners/
 
 .DS_Store
-UCIBankMarketing/
+UCI*/
 
 *.csv
 *.pkl
+*.sav
+*.sav-*
+*.json
+*.h5
 local_*.py
