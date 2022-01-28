@@ -39,9 +39,15 @@ class BaseAccessor(object):
 		"""
 		Determine whether the input column contains categorical (i.e. non-ordinal) observations.
 		"""
-		ret = (not np.can_cast(self._obj[column].values, float))
-
-		return ret
+		cannot_cast_type = (not np.can_cast(self._obj[column].values, float))
+		if cannot_cast_type:
+			try:
+				casted = self._obj[column].values.astype(float)
+				return False
+			except:
+				return True
+		else:
+			return False
 
 
 	@property

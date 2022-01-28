@@ -225,14 +225,15 @@ class FeaturesAccessor(BaseAccessor):
 			The original dataframe extended with computed features.
 		"""
 		ord_columns = [col for col in self._obj.columns if not self.is_categorical(col) and col not in exclude]
+		df = self._obj.copy()
+		df[ord_columns] = df[ord_columns].astype(float)
 
 		if means is None:
-			means = self._obj.mean(axis=0, skipna=True)
+			means = df.mean(axis=0, skipna=True)
 
 		if quantiles is None:
-			quantiles = self._obj.quantile(q=[0.25, 0.5, 0.75])
+			quantiles = df.quantile(q=[0.25, 0.5, 0.75])
 
-		df = self._obj.copy()
 		if ord_columns:
 			for col in ord_columns:
 				df['%s.ABS(* - MEAN(*))' % col] = np.abs(df[col]-means.loc[col])
@@ -278,6 +279,7 @@ class FeaturesAccessor(BaseAccessor):
 
 		ord_columns = [col for col in self._obj.columns if not self.is_categorical(col) and col not in exclude]
 		df = self._obj.copy()
+		df[ord_columns] = df[ord_columns].astype(float)
 		if index and (df.index.name != index):
 			df = df.set_index(index)
 
@@ -442,6 +444,8 @@ class FeaturesAccessor(BaseAccessor):
 
 		if fill_na:
 			df = df.fillna(df.median(skipna=True))
+
+		df = df.loc[:,~df.columns.duplicated()]
 
 		if return_baselines:
 			return df, res[1], res[2]

@@ -37,6 +37,24 @@ class BaselineClassifier(object):
 			logging.error('The model should be fitted first')
 
 
+	def __getstate__(self):
+		state = {'training_mode': self.training_mode}
+		return state
+
+	def save(self, path):
+		with open(path, 'wb') as f:
+			pkl.dump(self, f)
+
+	def __setstate__(self, state):
+		self.training_mode = state['training_mode']
+
+	@classmethod
+	def load(cls, path):
+		with open(path, 'rb') as f:
+			model = pkl.load(f)
+		return model
+
+
 
 class BaselineRegressor(object):
 	"""
@@ -57,6 +75,28 @@ class BaselineRegressor(object):
 
 		except AttributeError:
 			logging.error('The model should be fitted first')
+
+	def __getstate__(self):
+		state = {
+			'baseline': 'mean' if self._baseline == np.mean else 'median', \
+			'training_baseline': self.training_baseline
+		}
+		return state
+
+	def save(self, path):
+		with open(path, 'wb') as f:
+			pkl.dump(self, f)
+
+	def __setstate__(self, state):
+		self.training_baseline = state['training_baseline']
+		self._baseline = np.nanmean if state['baseline'] == 'mean' else np.nanmedian
+
+	@classmethod
+	def load(cls, path):
+		with open(path, 'rb') as f:
+			model = pkl.load(f)
+		return model
+
 
 
 
