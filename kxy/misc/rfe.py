@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from time import time
 import numpy as np
 from tqdm import tqdm
 
@@ -29,7 +30,7 @@ class RFE(object):
 		self.learner_func = learner_func
 
 
-	def fit(self, x_df, y_df, n_vars):
+	def fit(self, x_df, y_df, n_vars, max_duration=None):
 		"""
 		Performs a run of the Recursive Feature Elimination (RFE) feature selection algorithm.
 
@@ -43,7 +44,8 @@ class RFE(object):
 			A dataframe containing the target.
 		n_vars : int
 			The number of features to keep.
-
+		max_duration : float | None (default)
+			If not None, then feature elimination will stop after this many seconds.
 
 		Attributes
 		----------
@@ -63,12 +65,18 @@ class RFE(object):
 		# Fit the model
 		x = x_df[columns].values
 		current_n_vars = len(columns)
+		start_time = time()
 		m = self.learner_func(n_vars=current_n_vars)
 		m.fit(x, y)
 		importances = [_ for _ in m.feature_importances_]
 
 		n_rounds = max(current_n_vars-n_vars, 0)
 		for _ in tqdm(range(n_rounds)):
+			duration = time()-start_time
+			if max_duration and duration > max_duration:
+				logging.warning('We have exceeded the configured maximum duration %.2fs: exiting...' % max_duration)
+				break
+
 			# Remove the least important variable
 			importances = [_ for _ in m.feature_importances_]
 			least_important_ix = np.argmin(np.abs(importances))

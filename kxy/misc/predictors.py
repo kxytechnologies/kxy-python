@@ -92,7 +92,7 @@ class BasePredictor(object):
 
 
 class RFEPredictor(BasePredictor):
-	def fit(self, obj, target_column, learner_func, n_features):
+	def fit(self, obj, target_column, learner_func, n_features, max_duration=None):
 		"""
 		Fits a supervised learner enriched with feature selection using the Recursive Feature Elimination algorithm.
 
@@ -107,6 +107,8 @@ class RFEPredictor(BasePredictor):
 			Function or callable that expects one optional argument :code:`n_vars` and returns an instance of a superviser learner (regressor or classifier) following the scikit-learn convention, and expecting :code:`n_vars` features. Specifically, the learner should have a :code:`fit(x_train, y_train)` method. The learner should also have a :code:`feature_importances_` property or attribute, which is an array or a list containing feature importances once the model has been trained. There should be as many importance scores in :code:`feature_importances_` as columns in :code:`fit(x_train, y_train)`.
 		n_features : int
 			The number of features to keep.
+		max_duration : float | None (default)
+			If not None, then feature elimination will stop after this many seconds.
 
 
 		Attributes
@@ -131,7 +133,7 @@ class RFEPredictor(BasePredictor):
 		y_df = obj[[target_column]]
 
 		feature_selector = RFE(learner_func)
-		m = feature_selector.fit(x_df, y_df, n_features)
+		m = feature_selector.fit(x_df, y_df, n_features, max_duration=max_duration)
 		self.models = [m]
 		self.selected_variables = feature_selector.selected_variables
 
@@ -141,7 +143,7 @@ class RFEPredictor(BasePredictor):
 
 
 class BorutaPredictor(BasePredictor):
-	def fit(self, obj, target_column, learner_func, n_evaluations=20, pval=0.95):
+	def fit(self, obj, target_column, learner_func, n_evaluations=20, pval=0.95, max_duration=None):
 		"""
 		Fits a supervised learner enriched with feature selection using the Boruta algorithm.
 
@@ -158,7 +160,8 @@ class BorutaPredictor(BasePredictor):
 			The number of trials to run in the Boruta algorithm.
 		pval : float (Default 0.95)
 			The quantile level above which to consider a feature relevant in the Boruta algorithm.
-
+		max_duration : float | None (default)
+			If not None, then feature elimination will stop after this many seconds.
 
 		Attributes
 		----------
@@ -182,7 +185,7 @@ class BorutaPredictor(BasePredictor):
 		y_df = obj[[target_column]]
 
 		feature_selector = Boruta(learner_func)
-		m = feature_selector.fit(x_df, y_df, n_evaluations=n_evaluations, pval=pval)
+		m = feature_selector.fit(x_df, y_df, n_evaluations=n_evaluations, pval=pval, max_duration=max_duration)
 		self.models = [m]
 		self.selected_variables = feature_selector.selected_variables
 

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from time import time
 import numpy as np
 import pandas as pd
 from scipy.stats import binom
@@ -32,7 +33,7 @@ class Boruta(object):
 		self.learner_func = learner_func
 
 
-	def fit(self, x_df, y_df, n_evaluations=20, pval=0.95):
+	def fit(self, x_df, y_df, n_evaluations=20, pval=0.95, max_duration=None):
 		"""
 		Performs a run of the Boruta feature selection algorithm. 
 
@@ -71,6 +72,8 @@ class Boruta(object):
 			Number of trials in the Boruta algorithm.
 		pval : float (between 0 and 1, default 0.95)
 			Quantile level above which features are considered relevant.
+		max_duration : float | None (default)
+			If not None, then feature elimination will stop after this many seconds.
 
 
 		Attributes
@@ -93,8 +96,8 @@ class Boruta(object):
 		y = y_df.values
 
 		hits = {col: 0 for col in columns}
-
-		for _ in tqdm(range(n_evaluations)):
+		start_time = time()
+		for trial in tqdm(range(n_evaluations)):
 			# Construct shaddow features
 			train_x_df = pd.DataFrame(x_df.sample(frac=1).values, \
 				index=x_df.index, columns=['shaddow_%s' % col for col in columns])
@@ -119,6 +122,12 @@ class Boruta(object):
 			for i in range(current_n_vars):
 				if not all_columns[i].startswith('shaddow_') and np.abs(importances[i]) > hit_threshold:
 					hits[all_columns[i]] = hits[all_columns[i]] + 1
+
+			duration = time()-start_time
+			if max_duration and duration > max_duration:
+				logging.warning('We have exceeded the configured maximum duration %.2fs: exiting after %d trials...' % (max_duration, trial+1))
+				break
+
 
 		# Testing whether the number of hits is statistically significant to conclude the feature is important.
 		# H0: We can't tell if a feature is important or not. Said differently, there is 50% chance that a feature will be a 'hit' in a round.
