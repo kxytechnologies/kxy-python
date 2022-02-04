@@ -142,4 +142,5 @@ UCI*/
 *.sav-*
 *.json
 *.h5
+*.png
 local_*.py

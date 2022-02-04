@@ -4,7 +4,7 @@ import pandas as pd
 
 from .base_accessor import BaseAccessor
 from ..learning.shrunk_learner import ShrunkLearner as LeanMLPredictor
-from ..misc.predictors import BorutaPredictor, RFEPredictor
+from ..misc.predictors import BorutaPredictor, RFEPredictor, NaivePredictor
 
 
 
@@ -24,7 +24,7 @@ class LearningAccessor(BaseAccessor):
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
 			regression_baseline='mean', additive_learning=False, regression_error_type='additive', return_scores=False, \
 			start_n_features_perf_frac=0.9, feature_selection_method='leanml', rfe_n_features=None, boruta_pval=0.5, \
-			boruta_n_evaluations=20, max_duration=None):
+			boruta_n_evaluations=20, max_duration=None, val_performance_buffer=0.0):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -80,7 +80,7 @@ class LearningAccessor(BaseAccessor):
 			When :code:`start_n_features` is not specified, it is set to the number of variables required to achieve a fraction :code:`start_n_features_perf_frac` of the maximum performance achievable (as per :code:`df.kxy.variable_selection`).
 		return_scores : bool (Default False)
 			Whether to return training, validation and testing performance after lean boosting.
-		feature_selection_method : str (:code:`leanml` | :code:`rfe` | :code:`boruta`. Default :code:`leanml`)
+		feature_selection_method : str (:code:`leanml` | :code:`rfe` | :code:`boruta` | :code:`none`. Default :code:`leanml`)
 			Do not change this unless you want to try out Boruta or Recursive Feature Selection. The leanml method outperforms both.
 		rfe_n_features : int
 			The number of features to keep when the feature selection method is :code:`rfe`.
@@ -90,7 +90,8 @@ class LearningAccessor(BaseAccessor):
 			The number of trials to use when the feature selection method is :code:`boruta`.
 		max_duration : float | None (default)
 			If not None, then Boruta and RFE will stop after this many seconds.
-
+		val_performance_buffer : float (Default 0.0)
+			In LeanML feature selection, this is the threshold by which the new validation performance needs to exceed the previously evaluated validation performance to consider increasing the number of features.
 
 
 		Returns
@@ -98,12 +99,20 @@ class LearningAccessor(BaseAccessor):
 		result : dict
 			Dictionary containing selected variables, as well as training, validation and testing performance, and the trained model.
 		"""
-		if feature_selection_method.lower() == 'leanml':
+
+		if str(feature_selection_method).lower() == 'none':
+			predictor = NaivePredictor()
+			res = predictor.fit(self._obj, target_column, learner_func)
+			self.predictor = predictor
+			res['predictor'] = predictor
+
+		elif feature_selection_method.lower() == 'leanml':
 			predictor = LeanMLPredictor()
 			res = predictor.fit(self._obj, target_column, learner_func, problem_type=problem_type, snr=snr, train_frac=train_frac, random_state=random_state, \
 					max_n_features=max_n_features, min_n_features=min_n_features, start_n_features=start_n_features, anonymize=anonymize, \
 					benchmark_feature=benchmark_feature, missing_value_imputation=missing_value_imputation, score=score, n_down_perf_before_stop=n_down_perf_before_stop, \
-					regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, start_n_features_perf_frac=start_n_features_perf_frac)
+					regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, \
+					start_n_features_perf_frac=start_n_features_perf_frac, val_performance_buffer=val_performance_buffer)
 			self.predictor = predictor
 			res['predictor'] = predictor
 
@@ -112,7 +121,6 @@ class LearningAccessor(BaseAccessor):
 			res = predictor.fit(self._obj, target_column, learner_func, pval=boruta_pval, n_evaluations=boruta_n_evaluations, max_duration=max_duration)
 			self.predictor = predictor
 			res['predictor'] = predictor
-
 
 		elif feature_selection_method.lower() == 'rfe':
 			assert rfe_n_features is not None

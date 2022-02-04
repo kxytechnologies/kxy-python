@@ -126,6 +126,7 @@ class Boruta(object):
 			duration = time()-start_time
 			if max_duration and duration > max_duration:
 				logging.warning('We have exceeded the configured maximum duration %.2fs: exiting after %d trials...' % (max_duration, trial+1))
+				n_evaluations = trial+1
 				break
 
 

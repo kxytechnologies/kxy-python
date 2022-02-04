@@ -6,6 +6,7 @@ import pandas as pd
 import pickle as pkl
 
 from .boruta import Boruta
+from .naive import NaiveLearner
 from .rfe import RFE
 
 
@@ -191,6 +192,55 @@ class BorutaPredictor(BasePredictor):
 
 		results = {'Selected Variables': self.selected_variables}
 		return results
+
+
+
+class NaivePredictor(BasePredictor):
+	def fit(self, obj, target_column, learner_func):
+		"""
+		Fits a supervised learner without feature selection.
+
+
+		Parameters
+		----------
+		obj : pandas.DataFrame
+			A dataframe containing training explanatory variables/features as well as the target.
+		target_column : str
+			The name of the column in :code:`obj` containing targets.
+		learner_func : func | callable
+			Function or callable that expects one optional argument :code:`n_vars` and returns an instance of a superviser learner (regressor or classifier) following the scikit-learn convention, and expecting :code:`n_vars` features. Specifically, the learner should have a :code:`fit(x_train, y_train)` method. The learner should also have a :code:`feature_importances_` property or attribute, which is an array or a list containing feature importances once the model has been trained. There should be as many importance scores in :code:`feature_importances_` as columns in :code:`fit(x_train, y_train)`.
+
+		Attributes
+		----------
+		selected_variables : list
+			The list of the :code:`n_features` features we kept.
+		target_column : str
+			The name of the column used as target.
+		models : list
+			An array whose first entry is the fitted model.
+
+
+		Returns
+		-------
+		results : dict
+			A dictionary containing, among other things, selected variables.
+
+		"""
+		self.target_column = target_column
+		x_columns = [_ for _ in obj.columns if _ != target_column]
+		x_df = obj[x_columns]
+		y_df = obj[[target_column]]
+
+		feature_selector = NaiveLearner(learner_func)
+		m = feature_selector.fit(x_df, y_df)
+		self.models = [m]
+		self.selected_variables = feature_selector.selected_variables
+
+		results = {'Selected Variables': self.selected_variables}
+		return results
+
+
+
 
 
 

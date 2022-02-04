@@ -5,7 +5,7 @@ import gc
 import logging
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
+from sklearn.metrics import accuracy_score, r2_score, mean_squared_error, roc_auc_score
 import pickle as pkl
 
 try:
@@ -107,7 +107,8 @@ class ShrunkLearner(object):
 	def _non_additive_fit(self, obj, target_column, learner_func, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
-			regression_baseline='mean', regression_error_type='additive', return_scores=False, start_n_features_perf_frac=0.9):
+			regression_baseline='mean', regression_error_type='additive', return_scores=False, start_n_features_perf_frac=0.9, \
+			val_performance_buffer=0.0):
 		# A base learner here does not fix mistakes made by another.
 		assert inspect.isfunction(learner_func), 'learner_func should be a class'
 		assert target_column in obj.columns, 'The target column should be a valid column'
@@ -213,7 +214,7 @@ class ShrunkLearner(object):
 				y_val_pred = m.predict(x_val)
 				val_score = score_func(y_val, y_val_pred)
 
-				if val_score > previous_score or (min_n_features and i<=min_n_features):
+				if val_score > previous_score+val_performance_buffer or (min_n_features and i<=min_n_features):
 					n_down_perf = 0
 					logging.info('Variable #%d (%s) increased validation performance from %.4f to %.4f' % (i, self.variables[i-1], previous_score, val_score))
 					spinner.text = 'Lean Boosting -- %d Variables, Validation %s: %.4f' % (i, score, val_score)
@@ -285,7 +286,8 @@ class ShrunkLearner(object):
 	def _additive_fit(self, obj, target_column, learner_func, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
-			regression_baseline='mean', regression_error_type='additive', return_scores=False, start_n_features_perf_frac=0.9):
+			regression_baseline='mean', regression_error_type='additive', return_scores=False, start_n_features_perf_frac=0.9, \
+			val_performance_buffer=0.0):
 		# A base learner here is fitted to the residuals of the best model so far.
 		assert inspect.isfunction(learner_func), 'learner_func should be a class'
 		assert target_column in obj.columns, 'The target column should be a valid column'
@@ -406,7 +408,7 @@ class ShrunkLearner(object):
 						y_val_pred = np.abs(y_val_pred-target_val_pred)
 
 				val_score = score_func(y_val, y_val_pred)
-				if val_score > previous_score or (min_n_features and i<=min_n_features):
+				if val_score > previous_score+val_performance_buffer or (min_n_features and i<=min_n_features):
 					n_down_perf = 0
 					logging.info('Variable #%d (%s) increased validation performance from %.4f to %.4f' % (i, self.variables[i-1], previous_score, val_score))
 					spinner.text = 'Lean Boosting -- %d Variables, Validation %s: %.4f' % (i, score, val_score)
@@ -490,7 +492,7 @@ class ShrunkLearner(object):
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
 			regression_baseline='mean', additive_learning=False, regression_error_type='additive', return_scores=False, \
-			start_n_features_perf_frac=0.9):
+			start_n_features_perf_frac=0.9, val_performance_buffer=0.0):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`obj.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -550,6 +552,8 @@ class ShrunkLearner(object):
 			When :code:`start_n_features` is not specified, it is set to the number of variables required to achieve a fraction :code:`start_n_features_perf_frac` of the maximum performance achievable (as per :code:`obj.kxy.variable_selection`).
 		return_scores : bool (Default False)
 			Whether to return training, validation and testing performance after lean boosting.
+		val_performance_buffer : float (Default 0.0)
+			The threshold by which the new validation performance needs to exceed the previously evaluated validation performance to consider increasing the number of features.
 
 
 
@@ -564,13 +568,15 @@ class ShrunkLearner(object):
 			return self._additive_fit(obj, target_column, learner_func, problem_type=problem_type, snr=snr, train_frac=train_frac, random_state=random_state, \
 				force_redo=force_redo, max_n_features=max_n_features, min_n_features=min_n_features, start_n_features=start_n_features, anonymize=anonymize, \
 				benchmark_feature=benchmark_feature, missing_value_imputation=missing_value_imputation, score=score, n_down_perf_before_stop=n_down_perf_before_stop, \
-				regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, start_n_features_perf_frac=start_n_features_perf_frac)
+				regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, start_n_features_perf_frac=start_n_features_perf_frac, \
+				val_performance_buffer=val_performance_buffer)
 
 		else:
 			return self._non_additive_fit(obj, target_column, learner_func, problem_type=problem_type, snr=snr, train_frac=train_frac, random_state=random_state, \
 				force_redo=force_redo, max_n_features=max_n_features, min_n_features=min_n_features, start_n_features=start_n_features, anonymize=anonymize, \
 				benchmark_feature=benchmark_feature, missing_value_imputation=missing_value_imputation, score=score, n_down_perf_before_stop=n_down_perf_before_stop, \
-				regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, start_n_features_perf_frac=start_n_features_perf_frac)
+				regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, start_n_features_perf_frac=start_n_features_perf_frac, \
+				val_performance_buffer=val_performance_buffer)
 
 
 
