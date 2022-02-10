@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 __author__ = "Dr. Yves-Laurent Kom Samo"
-__copyright__ = "Copyright (C) 2021 KXY Technologies, Inc."
+__copyright__ = "Copyright (C) 2022 KXY Technologies, Inc."
 __license__ = """
 Copyright (C) 2021 KXY TECHNOLOGIES, INC.
 
