@@ -5,6 +5,7 @@ import json
 import logging
 import pandas as pd
 import numpy as np
+from time import sleep
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, r2_score, mean_squared_error, roc_auc_score
@@ -323,7 +324,7 @@ def random_forest_classification_benchmark():
 	classification_benchmark(rf_classifier_cls, 'rf')
 
 
-def summary():
+def summary(model_name='lightgbm'):
 	dataset_names = []
 	sources = []
 	ds = []
@@ -334,7 +335,7 @@ def summary():
 	for l in [all_classification_datasets, all_regression_datasets]:
 		problem_type = 'classification' if problem_type is None else 'regression'
 		try:
-			with open('./cache/lightgbm_%s_benchmark_n_features.json' % (problem_type), 'r') as f:
+			with open('./cache/%s_%s_benchmark_n_features.json' % (model_name, problem_type), 'r') as f:
 				n_features = json.load(f)
 		except:
 			logging.exception('Boom')
@@ -358,12 +359,18 @@ def summary():
 	return df
 
 
-def results():
+def results(pretty_model_name='LightGBM', model_name='lightgbm'):
+	print()
+	print('============================')
+	print(model_name)
+	print('============================')
+	print()
 	leanml_comp = []
 	boruta_comp = []
 	diff_comp = []
 	ns_leanml = []
 	ns_boruta = []
+	ns_none = []
 	perfs_leanml = []
 	perfs_boruta = []
 	perfs_rfe = []
@@ -373,16 +380,15 @@ def results():
 	durations_rfe = []
 	durations_none = []
 
-
 	for problem_type in ['classification', 'regression']:
 		try:
-			with open('./cache/lightgbm_%s_benchmark_n_features.json' % (problem_type), 'r') as f:
+			with open('./cache/%s_%s_benchmark_n_features.json' % (model_name, problem_type), 'r') as f:
 				n_features = json.load(f)
 
-			with open('./cache/lightgbm_%s_benchmark_durations.json' % (problem_type), 'r') as f:
+			with open('./cache/%s_%s_benchmark_durations.json' % (model_name, problem_type), 'r') as f:
 				durations = json.load(f)
 
-			with open('./cache/lightgbm_%s_benchmark_perfs.json' % (problem_type), 'r') as f:
+			with open('./cache/%s_%s_benchmark_perfs.json' % (model_name, problem_type), 'r') as f:
 				perfs = json.load(f)
 		except:
 			logging.exception('Boom')
@@ -399,6 +405,7 @@ def results():
 			diff_comp += [1.*(n_boruta-n_leanml)/n]
 			ns_leanml += [n_leanml]
 			ns_boruta += [n_boruta]
+			ns_none += [n]
 
 			perfs_leanml += [perfs[k]['leanml']]
 			perfs_boruta += [perfs[k]['boruta']]
@@ -442,75 +449,82 @@ def results():
 	}
 	matplotlib.rcParams.update(params)
 
-	fig = df.boxplot(fontsize=20, whis=3, figsize=(12, 10))
+	plt.figure(figsize=(12,12))
+	fig = df.boxplot(fontsize=20, whis=3, figsize=(12, 12))
 	plt.ylabel('Compression Rate')
-	plt.savefig('./plot_compression_boxplot.png')
+	plt.savefig('./plot_%s_compression_boxplot.png' % model_name)
+	plt.close()
 
 
-	plt.figure()
+	plt.figure(figsize=(12,12))
 	fig = df.plot(kind='hist',
 			alpha=0.7,
 			bins=7,
 			rot=45,
 			grid=True,
-			figsize=(12,10),
+			figsize=(12,12),
 			fontsize=20)
 	plt.xlabel('Compression Rate')
 	plt.ylabel('Number of Datasets')
-	plt.savefig('./plot_compression_hist.png')
+	plt.savefig('./plot_%s_compression_hist.png' % model_name)
+	plt.close()
 
 
-	plt.figure(figsize=(12,10))
+	plt.figure(figsize=(12,12))
 	df = pd.DataFrame(data={'LeanML': ns_leanml, 'Boruta': ns_boruta})
 	fig = df.plot(kind='hist',
 			alpha=0.7,
 			bins=7,
 			rot=45,
 			grid=True,
-			figsize=(12,10),
+			figsize=(12,12),
 			fontsize=20)
 	plt.xlabel('Number of Selected Features')
 	plt.ylabel('Number of Datasets')
-	plt.savefig('./plot_size_hist.png')
+	plt.savefig('./plot_%s_size_hist.png' % model_name)
+	plt.close()
 
 
-	plt.figure(figsize=(12,10))
+	plt.figure(figsize=(12,12))
 	df = pd.DataFrame(data={'Boruta': [ns_boruta[i]-ns_leanml[i] for i in range(len(ns_leanml))]})
 	fig = df.plot(kind='hist',
 			alpha=0.7,
 			bins=7,
 			rot=45,
 			grid=True,
-			figsize=(12,10),
+			figsize=(12,12),
 			fontsize=20)
 	plt.xlabel('Number of Excessive Features')
 	plt.ylabel('Number of Datasets')
-	plt.savefig('./plot_add_size_hist.png')
+	plt.savefig('./plot_%s_add_size_hist.png' % model_name)
+	plt.close()
 
 
-	plt.figure(figsize=(12,10))
+	plt.figure(figsize=(12,12))
 	df = pd.DataFrame(data={'LeanML': perfs_leanml, 'Boruta': perfs_boruta, 'RFE': perfs_rfe, \
 		'No Feature Selection': perfs_none})
 	df = df.clip(lower=0.0)
-	fig = df.boxplot(fontsize=20, whis=3, figsize=(12, 10))
+	fig = df.boxplot(fontsize=20, whis=3, figsize=(12, 12))
 	plt.ylabel('Performance')
-	plt.savefig('./plot_perf_boxplot.png')
+	plt.savefig('./plot_%s_perf_boxplot.png' % model_name)
+	plt.close()
 
 
-	plt.figure(figsize=(12,10))
+	plt.figure(figsize=(12,12))
 	fig = df.plot(kind='hist',
 			alpha=0.7,
 			bins=7,
 			rot=45,
 			grid=True,
-			figsize=(12,10),
+			figsize=(12,12),
 			fontsize=20)
 	plt.xlabel('Performance')
 	plt.ylabel('Number of Datasets')
-	plt.savefig('./plot_perf_hist.png')
+	plt.savefig('./plot_%s_perf_hist.png' % model_name)
+	plt.close()
 
 
-	plt.figure(figsize=(12,10))
+	plt.figure(figsize=(12,12))
 	df = pd.DataFrame(data={'LeanML': durations_leanml, \
 		'Boruta': durations_boruta, \
 		'RFE': durations_rfe
@@ -520,16 +534,172 @@ def results():
 			bins=15,
 			rot=45,
 			grid=True,
-			figsize=(12,10),
+			figsize=(12,12),
 			fontsize=20)
 	plt.xlabel('Training Duration\n(Seconds Per Candidate Feature)')
 	plt.ylabel('Number of Datasets')
-	plt.savefig('./plot_duration_hist.png')
+	plt.savefig('./plot_%s_duration_hist.png' % model_name)
+	plt.close()
 
-	plt.figure(figsize=(12,10))
-	fig = df.boxplot(fontsize=20, whis=20, figsize=(12, 10))
+
+	plt.figure(figsize=(12,12))
+	fig = df.boxplot(fontsize=20, whis=20, figsize=(12, 12))
 	plt.ylabel('Training Duration\n(Seconds Per Candidate Feature)')
-	plt.savefig('./plot_duration_boxplot.png')
+	plt.savefig('./plot_%s_duration_boxplot.png' % model_name)
+	plt.close()
+
+
+	compression_rates = {
+		'Model': '%s' % 'LightGBM' if model_name == 'lightgbm' else 'Random Forest' if model_name == 'rf' else 'XGBoost' if model_name == 'xgboost' else '',
+		'No Feature Selection': '0.00 \u00b1 0.00', 
+		'LeanML': '%.2f \u00b1 %.2f' % (np.mean(leanml_comp), np.std(leanml_comp)/np.sqrt(len(leanml_comp))),
+		'Boruta': '%.2f \u00b1 %.2f' % (np.mean(boruta_comp), np.std(boruta_comp)/np.sqrt(len(boruta_comp))),
+		'RFE': '-'
+	}
+	durations =  {
+		'Model': '%s' % 'LightGBM' if model_name == 'lightgbm' else 'Random Forest' if model_name == 'rf' else 'XGBoost' if model_name == 'xgboost' else '',
+		'No Feature Selection': '%.2f \u00b1 %.2f' % (np.mean(durations_none), np.std(durations_none)/np.sqrt(len(durations_none))),
+		'LeanML': '%.2f \u00b1 %.2f' % (np.mean(durations_leanml), np.std(durations_leanml)/np.sqrt(len(durations_leanml))),
+		'Boruta': '%.2f \u00b1 %.2f' % (np.mean(durations_boruta), np.std(durations_boruta)/np.sqrt(len(durations_boruta))),
+		'RFE': '%.2f \u00b1 %.2f' % (np.mean(durations_rfe), np.std(durations_rfe)/np.sqrt(len(durations_rfe)))
+	}
+
+	perfs_none = np.maximum(perfs_none, 0.0)
+	perfs_leanml = np.maximum(perfs_leanml, 0.0)
+	perfs_boruta = np.maximum(perfs_boruta, 0.0)
+	perfs_rfe = np.maximum(perfs_rfe, 0.0)
+	performances = {
+		'Model': '%s' % 'LightGBM' if model_name == 'lightgbm' else 'Random Forest' if model_name == 'rf' else 'XGBoost' if model_name == 'xgboost' else '',
+		'No Feature Selection': '%.2f \u00b1 %.2f' % (np.mean(perfs_none), np.std(perfs_none)/np.sqrt(len(perfs_none))),
+		'LeanML': '%.2f \u00b1 %.2f' % (np.mean(perfs_leanml), np.std(perfs_leanml)/np.sqrt(len(perfs_leanml))),
+		'Boruta': '%.2f \u00b1 %.2f' % (np.mean(perfs_boruta), np.std(perfs_boruta)/np.sqrt(len(perfs_boruta))),
+		'RFE': '%.2f \u00b1 %.2f' % (np.mean(perfs_rfe), np.std(perfs_rfe)/np.sqrt(len(perfs_rfe)))
+	}
+
+	boruta_n_exc_feat = [ns_boruta[i]-ns_leanml[i] for i in range(len(ns_leanml))]
+	none_n_exc_feat = [ns_none[i]-ns_leanml[i] for i in range(len(ns_none))]	
+	n_excessive_features = {
+		'Model': '%s' % 'LightGBM' if model_name == 'lightgbm' else 'Random Forest' if model_name == 'rf' else 'XGBoost' if model_name == 'xgboost' else '',
+		'No Feature Selection': '%d \u00b1 %d' % (np.mean(none_n_exc_feat), np.std(none_n_exc_feat)/np.sqrt(len(none_n_exc_feat))),
+		'LeanML': '0 \u00b1 0',
+		'Boruta': '%d \u00b1 %d' % (np.mean(boruta_n_exc_feat), np.std(boruta_n_exc_feat)/np.sqrt(len(boruta_n_exc_feat))),
+		'RFE': '-'
+	}
+
+	print(compression_rates)
+	print(durations)
+	print(performances)
+	print(n_excessive_features)
+
+	comps = [0.00, np.mean(leanml_comp), np.mean(boruta_comp), np.mean(leanml_comp)]
+	perfs = [np.mean(perfs_none), np.mean(perfs_leanml), np.mean(perfs_boruta), np.mean(perfs_rfe)]
+	durs  = [np.mean(durations_none), np.mean(durations_leanml), np.mean(durations_boruta), np.mean(durations_rfe)]
+	labels = ['No Feature Selection', 'LeanML', 'Boruta', 'RFE']
+
+	fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 12))
+	axes[0].scatter(perfs, comps, color='red')
+	axes[0].annotate(
+	    labels[0], 
+	    (perfs[0], comps[0]), 
+	    xytext=(perfs[0]-0.2, comps[0]+0.07), 
+	    arrowprops=dict(
+	        arrowstyle="simple",
+	        connectionstyle="arc3,rad=-0.2",
+	        facecolor='black'),
+	    fontsize=12
+	)
+	axes[0].annotate(
+	    labels[1], 
+	    (perfs[1], comps[1]), 
+	    xytext=(perfs[1]-0.1, comps[1]-0.03),
+	    arrowprops=dict(
+	        arrowstyle="simple",
+	        connectionstyle="arc3,rad=-0.2",
+	        facecolor='black'),
+	    fontsize=12
+	)
+	axes[0].annotate(
+	    labels[2], 
+	    (perfs[2], comps[2]), 
+	    xytext=(perfs[2]-0.05, comps[2]-0.07),
+	    arrowprops=dict(
+	        arrowstyle="simple",
+	        connectionstyle="arc3,rad=-0.2",
+	        facecolor='black'),
+	    fontsize=12
+	)
+	axes[0].annotate(
+	    labels[3], 
+	    (perfs[3], comps[3]), 
+	    xytext=(perfs[3]+0.02, comps[3]-0.07),
+	    arrowprops=dict(
+	        arrowstyle="simple",
+	        connectionstyle="arc3,rad=-0.2",
+	        facecolor='black'),
+	    fontsize=12
+	)
+
+	# axes[0].set_title(pretty_model_name, fontsize=16)
+	axes[0].set_xlabel('Performance', fontsize=15)
+	axes[0].set_ylabel('Compression Rate\n(Fraction of Deleted Features)', fontsize=15)
+	# plt.savefig('./plot_%s_performance_frontiere.png' % model_name)
+	# plt.close()
+
+
+	# fig, ax = plt.subplots(figsize=(12,12))
+	axes[1].scatter(durs, comps, color='red')
+	axes[1].annotate(
+	    labels[0], 
+	    (durs[0], comps[0]), 
+	    xytext=(durs[0]-0.05, comps[0]+0.07), 
+	    arrowprops=dict(
+	        arrowstyle="simple",
+	        connectionstyle="arc3,rad=-0.2",
+	        facecolor='black'),
+	    fontsize=12
+	)
+	axes[1].annotate(
+	    labels[1], 
+	    (durs[1], comps[1]), 
+	    xytext=(durs[1]-0.02, comps[1]-0.07),
+	    arrowprops=dict(
+	        arrowstyle="simple",
+	        connectionstyle="arc3,rad=-0.2",
+	        facecolor='black'),
+	    fontsize=12
+	)
+	axes[1].annotate(
+	    labels[2], 
+	    (durs[2], comps[2]), 
+	    xytext=(durs[2]-0.3, comps[2]-0.07),
+	    arrowprops=dict(
+	        arrowstyle="simple",
+	        connectionstyle="arc3,rad=-0.2",
+	        facecolor='black'),
+	    fontsize=12
+	)
+	axes[1].annotate(
+	    labels[3], 
+	    (durs[3], comps[3]), 
+	    xytext=(durs[3]-0.05, comps[3]-0.07),
+	    arrowprops=dict(
+	        arrowstyle="simple",
+	        connectionstyle="arc3,rad=-0.2",
+	        facecolor='black'),
+	    fontsize=12
+	)
+
+	fig.suptitle(pretty_model_name, fontsize=16)
+	axes[1].set_xlabel('Duration (s)/#Candidate Features', fontsize=15)
+	axes[1].set_ylabel('Compression Rate\n(Fraction of Deleted Features)', fontsize=15)
+	fig.tight_layout()
+	plt.savefig('./plot_%s_frontiere.png' % model_name)
+	plt.close()
+
+
+
+	return compression_rates, performances, durations, n_excessive_features
+
 
 
 
@@ -547,6 +717,39 @@ if __name__ == '__main__':
 	# random_forest_classification_benchmark()
 
 	# summary()
-	results()
+
+	lgbm_compression_rates, lgbm_performances, lgbm_durations, lgbm_n_excessive_features = results(
+		pretty_model_name='LightGBM', model_name='lightgbm')
+	rf_compression_rates, rf_performances, rf_durations, rf_n_excessive_features = results(
+		pretty_model_name='Random Forest', model_name='rf')
+	xgb_compression_rates, xgb_performances, xgb_durations, xgb_n_excessive_features = results(
+		pretty_model_name='XGBoost', model_name='xgboost')
+
+	compression_rates_df = pd.DataFrame([lgbm_compression_rates, rf_compression_rates, xgb_compression_rates])
+	compression_rates_df.set_index('Model', inplace=True)
+	print()
+	print('Compression Rate')
+	print(compression_rates_df.to_html())
+
+	print()
+	print('Performance')
+	performances_df = pd.DataFrame([lgbm_performances, rf_performances, xgb_performances])
+	performances_df.set_index('Model', inplace=True)
+	print(performances_df.to_html())
+
+	print()
+	print('Duration/Feature')
+	durations_df = pd.DataFrame([lgbm_durations, rf_durations, xgb_durations])
+	durations_df.set_index('Model', inplace=True)
+	print(durations_df.to_html())
+
+	print()
+	print('#Excessive Features')
+	n_excessive_df = pd.DataFrame([lgbm_n_excessive_features, rf_n_excessive_features, xgb_n_excessive_features])
+	n_excessive_df.set_index('Model', inplace=True)
+	print(n_excessive_df.to_html())
+
+
+
 
 
