@@ -10,5 +10,6 @@ if __name__ == '__main__':
 
 	df = pd.DataFrame(np.random.randn(20000, 50))
 	upload_data(df)
+	df.kxy.describe()
 
 
