@@ -174,11 +174,11 @@ def neg_rmspe_score(y_true, y_pred):
 
 def neg_mae_score(y_true, y_pred):
 	''' '''
-	return -np.nanmean(np.abs(y_true-y_pred))
+	return -np.nanmean(np.abs(y_true.flatten()-y_pred.flatten()))
 
 
 def neg_rmse_score(y_true, y_pred):
 	''' '''
-	return -np.sqrt(np.nanmean((y_true-y_pred)**2))
+	return -np.sqrt(np.nanmean((y_true.flatten()-y_pred.flatten())**2))
 
 

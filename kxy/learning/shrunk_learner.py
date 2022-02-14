@@ -5,7 +5,9 @@ import gc
 import logging
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score, r2_score, mean_squared_error, roc_auc_score
+from sklearn.metrics import accuracy_score, r2_score, mean_squared_error, roc_auc_score, \
+	explained_variance_score
+
 import pickle as pkl
 
 try:
@@ -132,9 +134,14 @@ class ShrunkLearner(object):
 		if benchmark_feature:
 			assert benchmark_feature in obj.columns, 'The benchmark feature should be a valid column'
 		self.benchmark_feature = benchmark_feature
-		if score == 'auto':
-			score = 'r2_score' if problem_type == 'regression' else 'accuracy_score'
-		score_func = eval(score)
+		if callable(score):
+			score_func = score
+		else:
+			if score == 'auto':
+				score = 'r2_score' if problem_type == 'regression' else 'accuracy_score'
+			score_func = eval(score)
+		score_name = score_func.__name__
+
 		self.val_scores = []
 
 		if getattr(self, 'models', None) is None or force_redo:
@@ -173,6 +180,7 @@ class ShrunkLearner(object):
 				max_perf = np.max(perfs)
 				perf_threshold = start_n_features_perf_frac*max_perf
 				start_n_features = n_variables-len([_ for _ in perfs if _ > perf_threshold])+1
+				logging.info('Starting with %d variables' % start_n_features)
 
 			# 2. Sequentially add variables in decreasing order of importance.
 			# 2.1 Baseline performance
@@ -190,8 +198,8 @@ class ShrunkLearner(object):
 
 			spinner = Halo(text='Lean Boosting:', spinner='dots')
 			spinner.start()
-			logging.info('Baseline score (%s): %.4f' % (score, previous_score))
-			spinner.text = 'Lean Boosting -- Baseline %s: %.4f' % (score, previous_score)
+			logging.info('Baseline score (%s): %.4f' % (score_name, previous_score))
+			spinner.text = 'Lean Boosting -- Baseline %s: %.4f' % (score_name, previous_score)
 
 			self.start_n_features = min(start_n_features, n_variables)
 			self.models = []
@@ -217,7 +225,7 @@ class ShrunkLearner(object):
 				if val_score > previous_score+val_performance_buffer or (min_n_features and i<=min_n_features):
 					n_down_perf = 0
 					logging.info('Variable #%d (%s) increased validation performance from %.4f to %.4f' % (i, self.variables[i-1], previous_score, val_score))
-					spinner.text = 'Lean Boosting -- %d Variables, Validation %s: %.4f' % (i, score, val_score)
+					spinner.text = 'Lean Boosting -- %d Variables, Validation %s: %.4f' % (i, score_name, val_score)
 					previous_score = val_score
 					self.models = [m]
 					self.max_var_ixs = [i]
@@ -311,9 +319,13 @@ class ShrunkLearner(object):
 		if benchmark_feature:
 			assert benchmark_feature in obj.columns, 'The benchmark feature should be a valid column'
 		self.benchmark_feature = benchmark_feature
-		if score == 'auto':
-			score = 'r2_score' if problem_type == 'regression' else 'accuracy_score'
-		score_func = eval(score)
+		if callable(score):
+			score_func = score
+		else:
+			if score == 'auto':
+				score = 'r2_score' if problem_type == 'regression' else 'accuracy_score'
+			score_func = eval(score)
+		score_name = score_func.__name__
 		self.val_scores = []
 
 		if getattr(self, 'models', None) is None or force_redo:
@@ -369,8 +381,8 @@ class ShrunkLearner(object):
 
 			spinner = Halo(text='Lean Boosting:', spinner='dots')
 			spinner.start()
-			logging.info('Baseline score (%s): %.4f' % (score, previous_score))
-			spinner.text = 'Lean Boosting -- Baseline %s: %.4f' % (score, previous_score)
+			logging.info('Baseline score (%s): %.4f' % (score_name, previous_score))
+			spinner.text = 'Lean Boosting -- Baseline %s: %.4f' % (score_name, previous_score)
 
 			self.start_n_features = min(start_n_features, n_variables)
 			n_down_perf = 0
@@ -411,7 +423,7 @@ class ShrunkLearner(object):
 				if val_score > previous_score+val_performance_buffer or (min_n_features and i<=min_n_features):
 					n_down_perf = 0
 					logging.info('Variable #%d (%s) increased validation performance from %.4f to %.4f' % (i, self.variables[i-1], previous_score, val_score))
-					spinner.text = 'Lean Boosting -- %d Variables, Validation %s: %.4f' % (i, score, val_score)
+					spinner.text = 'Lean Boosting -- %d Variables, Validation %s: %.4f' % (i, score_name, val_score)
 					previous_score = val_score
 
 					if self.problem_type == 'regression':
@@ -554,6 +566,8 @@ class ShrunkLearner(object):
 			Whether to return training, validation and testing performance after lean boosting.
 		val_performance_buffer : float (Default 0.0)
 			The threshold by which the new validation performance needs to exceed the previously evaluated validation performance to consider increasing the number of features.
+		score : str | func
+			The metric to use to determine if a new feature should be added.
 
 
 
