@@ -74,12 +74,12 @@ class BaseAccessor(object):
 						print('Other Labels: %.2f%%' % (100.-tot))
 						break
 			else:
-				m   = self._obj[col].min()
-				M   = self._obj[col].max()
-				mn  = self._obj[col].mean()
-				q50 = self._obj[col].median()
-				q25 = self._obj[col].quantile(0.25)
-				q75 = self._obj[col].quantile(0.75)
+				m   = self._obj[col].min(skipna=True, numeric_only=True)
+				M   = self._obj[col].max(skipna=True, numeric_only=True)
+				mn  = self._obj[col].mean(skipna=True, numeric_only=True)
+				q50 = self._obj[col].median(skipna=True, numeric_only=True)
+				q25 = self._obj[col].quantile(0.25, numeric_only=True)
+				q75 = self._obj[col].quantile(0.75, numeric_only=True)
 
 				print('Type:   Continuous')
 				print('Max:    %s' % ('%.1f' % M if M < 10. else '{:,}'.format(int(M))))
