@@ -600,7 +600,9 @@ def get_pytorch_dense_learner(class_name, layers, optimizer='Adam', fit_kwargs={
 
 
 
-
+def get_autogluon_learner(abel, problem_type=None, eval_metric=None, path=None, verbosity=2, \
+	sample_weight=None, weight_evaluation=False, groups=None, **kwargs):
+	pass
 
 
 

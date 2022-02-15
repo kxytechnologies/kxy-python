@@ -102,9 +102,9 @@ class BaselineRegressor(object):
 
 
 
-class ShrunkLearner(object):
+class LeanMLPredictor(object):
 	"""
-	Wrapper to seamlessly add effective variable selection to any supervised learner. 
+	Wrapper to seamlessly add LeanML variable selection to any supervised learner. 
 	"""
 	def _non_additive_fit(self, obj, target_column, learner_func, problem_type=None, snr='auto', train_frac=0.8, random_state=0, \
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
@@ -180,7 +180,8 @@ class ShrunkLearner(object):
 				max_perf = np.max(perfs)
 				perf_threshold = start_n_features_perf_frac*max_perf
 				start_n_features = n_variables-len([_ for _ in perfs if _ > perf_threshold])+1
-				logging.info('Starting with %d variables' % start_n_features)
+
+			logging.info('Starting with %d variables' % start_n_features)
 
 			# 2. Sequentially add variables in decreasing order of importance.
 			# 2.1 Baseline performance
@@ -567,7 +568,7 @@ class ShrunkLearner(object):
 		val_performance_buffer : float (Default 0.0)
 			The threshold by which the new validation performance needs to exceed the previously evaluated validation performance to consider increasing the number of features.
 		score : str | func
-			The metric to use to determine if a new feature should be added.
+			The validation metric to use to determine if a new feature should be added. When set to :code:`'auto'` (the default), the :math:`R^2` is used for regression problems and the classification accuracy is used for classification problems. Any other string should be the name of a globally accessible callable.
 
 
 
@@ -682,7 +683,7 @@ class ShrunkLearner(object):
 	def save(self, path):
 		""" """
 		n_models = len(self.models)
-		meta_path = path + '-meta-ShrunkLearner'
+		meta_path = path + '-meta-LeanMLPredictor'
 		meta = {\
 			'additive_learning': self.additive_learning, 'target_column': self.target_column, 'variables': self.variables, \
 			'selected_variables': self.selected_variables, 'problem_type': self.problem_type, 'max_var_ixs': self.max_var_ixs, \
@@ -692,7 +693,7 @@ class ShrunkLearner(object):
 			pkl.dump(meta, f)
 
 		for i in range(n_models):
-			self.models[i].save(path + '-model-%d-ShrunkLearner' % i)
+			self.models[i].save(path + '-model-%d-LeanMLPredictor' % i)
 
 
 	@classmethod
@@ -700,7 +701,7 @@ class ShrunkLearner(object):
 		""" 
 		Load the learner from disk.
 		"""
-		meta_path = path + '-meta-ShrunkLearner'
+		meta_path = path + '-meta-LeanMLPredictor'
 		with open(meta_path, 'rb') as f:
 			meta = pkl.load(f)
 
@@ -713,7 +714,7 @@ class ShrunkLearner(object):
 		n_models = meta['n_models']
 		n_vars = len(selected_variables)
 
-		predictor = ShrunkLearner()
+		predictor = LeanMLPredictor()
 		predictor.additive_learning = additive_learning
 		predictor.target_column = target_column
 		predictor.variables = variables
@@ -723,7 +724,7 @@ class ShrunkLearner(object):
 
 		predictor.models = []
 		for i in range(n_models):
-			model_path = path + '-model-%d-ShrunkLearner' % i
+			model_path = path + '-model-%d-LeanMLPredictor' % i
 			model = learner_func(n_vars=n_vars, path=model_path)
 			predictor.models.append(model)
 

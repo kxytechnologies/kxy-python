@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score, r2_score, mean_squared_error, roc_au
 
 from kxy.learning import get_xgboost_learner, get_lightgbm_learner_learning_api, get_sklearn_learner
 from kxy.misc.predictors import BorutaPredictor, RFEPredictor, NaivePredictor
-from kxy.learning.shrunk_learner import ShrunkLearner as LeanMLPredictor
+from kxy.learning.leanml_predictor import LeanMLPredictor
 
 from kxy_datasets.regressions import all_regression_datasets
 from kxy_datasets.classifications import all_classification_datasets

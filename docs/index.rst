@@ -90,7 +90,9 @@ We provide callbacks in the major Python machine learning libraries that will te
 
 	latest/data_valuation/index
 
-	latest/variable_selection/index
+	latest/model_free_variable_selection/index
+
+	latest/model_wrapped_feature_selection/index
 
 	latest/learning/index
 

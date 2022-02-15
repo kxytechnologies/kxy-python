@@ -3,7 +3,7 @@
 import pandas as pd
 
 from .base_accessor import BaseAccessor
-from ..learning.shrunk_learner import ShrunkLearner as LeanMLPredictor
+from ..learning.leanml_predictor import LeanMLPredictor
 from ..misc.predictors import BorutaPredictor, RFEPredictor, NaivePredictor
 
 
@@ -92,6 +92,8 @@ class LearningAccessor(BaseAccessor):
 			If not None, then Boruta and RFE will stop after this many seconds.
 		val_performance_buffer : float (Default 0.0)
 			In LeanML feature selection, this is the threshold by which the new validation performance needs to exceed the previously evaluated validation performance to consider increasing the number of features.
+		score : str | func
+			The validation metric to use to determine if a new feature should be added. When set to :code:`'auto'` (the default), the :math:`R^2` is used for regression problems and the classification accuracy is used for classification problems. Any other string should be the name of a globally accessible callable.
 
 
 		Returns

@@ -50,6 +50,67 @@ By default, your data is transmitted to our backend in clear. To anonymize your 
 
 
 
+Model Compression
+-----------------
+Here's how to wrap feature selection around LightGBM in Python.
+
+.. code-block:: python
+
+   from kxy.learning import get_lightgbm_learner_learning_api
+
+   params = {
+      'objective': 'rmse',  
+      'boosting_type': 'gbdt',
+      'num_leaves': 100,
+      'n_jobs': -1,
+      'learning_rate': 0.1,
+      'verbose': -1,
+   }
+   learner_func = get_lightgbm_learner_learning_api(params, num_boost_round=10000, \
+      early_stopping_rounds=50, verbose_eval=50, feature_selection_method='leanml')
+   results = df.kxy.fit(y_column, learner_func, problem_type=problem_type)
+
+   # The trained model
+   predictor = results['predictor']
+
+   # Feature columns selected
+   selected_variables = predictor.selected_variables
+
+   # To make predictions out of a dataframe of test data.
+   predictions = predictor.predict(test_df)
+
+Parameters of :code:`get_lightgbm_learner_learning_api` should be the same as those of :code:`lightgbm.train`. See the `LightGBM documentation<https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_.
+
+
+Wrapping feature selection around another model in Python is identical except for :code:`learner_func`. Here's how to create :code:`learner_func` for other models.
+
+For XGBoost:
+
+.. code-block:: python
+
+   from kxy.learning import get_xgboost_learner
+   # Use 'xgboost.XGBClassifier' for classification problems.
+   xgboost_learner_func = get_xgboost_learner('xgboost.XGBRegressor')
+
+
+Parameters of :code:`get_xgboost_learner` should be those you'd pass to instantiate :code:`xgboost.XGBRegressor` or :code:`xgboost.XGBClassifier`. See the `XGBoost documentation<https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_.
+
+
+For Scikit-Learn models:
+
+.. code-block:: python
+
+   from kxy.learning import get_sklearn_learner
+   # Replace 'sklearn.ensemble.RandomForestRegressor' with the import path of the sklearn model you want to use. 
+   rf_learner_func = get_sklearn_learner('sklearn.ensemble.RandomForestRegressor', \
+                  min_samples_split=0.01, max_samples=0.5, n_estimators=100)
+   df.kxy.fit(y_column, rf_learner_func, problem_type=problem_type)
+
+
+Parameters of :code:`get_sklearn_learner` should be those you'd pass to instantiate the scikit-learn model.
+
+
+
 Model-Driven Improvability
 --------------------------
 For the model-driven improvability analysis, predictions made by the production model should be contained in a column of the :code:`df`. The variable :code:`prediction_column` refers to said column. All columns in :code:`df` but :code:`y_column` and :code:`prediction_column` are considered to be the explanatory variables/features used to train the production model.

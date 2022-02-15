@@ -9,17 +9,22 @@
 ------------
 Case Studies
 ------------
-On this page we provide a few studies showcasing the efficacy of KXY analyses. 
+On this page we illustrate what KxY can do for you.
 
 
-Empirical Validation
---------------------
+Model Compression
+-----------------
+* `LightGBM, XGBoost or Random Forest: Same Performance With 80% Fewer Features <https://blog.kxy.ai/adding-feature-selection-to-any-model-in-python/>`_
+
+
+Data Valuation
+--------------
 
 * :ref:`The KXY Data Valuation Function Works (Regression)`
 * :ref:`The KXY Data Valuation Function Works (Classification)`
 
-Automatic (Model-Free) Feature Selection
-----------------------------------------
+Model-Free Feature Selection
+----------------------------
 * :ref:`Automatically Pruning Redundant Features With KXY`
 * :ref:`Detecting Features That Are Only Useful In Conjunction With Others`
 

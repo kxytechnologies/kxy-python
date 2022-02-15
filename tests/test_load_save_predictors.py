@@ -5,7 +5,7 @@ from kxy_datasets.classifications import BankNote, BankMarketing
 from kxy.learning import get_xgboost_learner, get_tensorflow_dense_learner, get_pytorch_dense_learner, \
 	get_lightgbm_learner_sklearn_api, get_lightgbm_learner_learning_api, get_sklearn_learner
 from kxy.misc.predictors import RFEPredictor, BorutaPredictor
-from kxy.learning.shrunk_learner import ShrunkLearner as LeanMLPredictor
+from kxy.learning.leanml_predictor import LeanMLPredictor
 
 
 def test_rfe_predictor_sklearn():

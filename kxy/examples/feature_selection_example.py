@@ -83,8 +83,7 @@ path = './lightgbm_uci_bank_marketing.sav'
 predictor.save(path)
 
 # 9. (Optional) Load the saved model.
-from kxy.learning.shrunk_learner import ShrunkLearner as \
-	LeanMLPredictor
+from kxy.learning.leanml_predictor import LeanMLPredictor
 loaded_predictor = LeanMLPredictor.load(path, lightgbm_learner_func)
 
 

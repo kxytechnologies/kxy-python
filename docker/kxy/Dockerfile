@@ -21,9 +21,10 @@ RUN pip install botocore
 RUN pip install boto3
 
 # Install kxy
-RUN pip install kxy==1.0.2
+RUN pip install kxy==1.3.7
 
 # Copy examples into the Notebooks folder
 RUN git clone https://github.com/kxytechnologies/kxy-python.git /opt/kxy-python
 RUN mkdir /opt/notebooks
-RUN cp -R /opt/kxy-python/docs/latest/examples/* /opt/notebooks/
+RUN cp -R /opt/kxy-python/docs/latest/applications/case_studies/* /opt/notebooks/
+RUN cp -R /opt/kxy-python/docs/latest/applications/illustrations/* /opt/notebooks/

@@ -31,6 +31,13 @@ one_shot_release:
 	make docker_release
 	
 
+update_docs:
+	make clean
+	make html
+	make deploy_docs
+	make refresh_web PATHS=/reference/*
+
+
 osr:
 	make one_shot_release
 
