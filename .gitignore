@@ -145,3 +145,4 @@ UCI*/
 *.png
 local_*.py
 *do-not-commit*
+AutogluonModels*
