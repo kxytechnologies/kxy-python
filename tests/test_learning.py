@@ -1,7 +1,8 @@
 from kxy_datasets.regressions import Abalone
 from kxy_datasets.classifications import BankNote, BankMarketing
 from kxy.learning import get_xgboost_learner, get_tensorflow_dense_learner, get_pytorch_dense_learner, \
-	get_lightgbm_learner_sklearn_api, get_lightgbm_learner_learning_api, get_sklearn_learner
+	get_lightgbm_learner_sklearn_api, get_lightgbm_learner_learning_api, get_sklearn_learner, \
+	get_autogluon_learner
 
 
 def test_lean_boosted_sklearn_regressor():
@@ -408,6 +409,25 @@ def test_non_additive_lean_boosted_classifier():
 
 	assert results['Testing Accuracy'] == '0.964'
 	assert results['Selected Variables'] == ['Variance', 'Skewness.ABS(* - Q25(*))', 'Kurtosis', 'Skewness', 'Entropy']
+
+
+def test_autogluon():
+	autogluon_learner_func = get_autogluon_learner(problem_type='binary')
+	dataset = BankNote()
+	target_column = dataset.y_column
+	df = dataset.df
+
+	# Features generation
+	features_df = df.kxy.generate_features(entity=None, max_lag=None, entity_name='*', exclude=[target_column])
+	features_df[target_column] = features_df[target_column].astype(int)
+
+	# Model building
+	results = features_df.kxy.fit(target_column, autogluon_learner_func, \
+		problem_type='classification', additive_learning=False, return_scores=True, \
+		n_down_perf_before_stop=1)
+
+	assert results['Testing Accuracy'] == '1.000'
+	assert results['Selected Variables'] == ['Variance', 'Skewness.ABS(* - Q25(*))', 'Kurtosis', 'Skewness']
 
 
 

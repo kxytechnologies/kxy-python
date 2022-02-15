@@ -3,6 +3,7 @@
 
 import pickle as pkl
 import numpy as np
+import pandas as pd
 
 MODELS_TAKING_FLAT_OUTPUTS = [\
 	'sklearn.ensemble.RandomForestRegressor', \
@@ -600,9 +601,78 @@ def get_pytorch_dense_learner(class_name, layers, optimizer='Adam', fit_kwargs={
 
 
 
-def get_autogluon_learner(abel, problem_type=None, eval_metric=None, path=None, verbosity=2, \
-	sample_weight=None, weight_evaluation=False, groups=None, **kwargs):
-	pass
+def get_autogluon_learner(problem_type=None, eval_metric=None, path=None, verbosity=2, \
+		sample_weight=None, weight_evaluation=False, groups=None, fit_kwargs={}, **kwargs):
+	'''
+	Return a learner function derived from AutoGluon's TabularPredictor.
+
+	Parameters should be the same as those of the constructor of :code:`autogluon.tabular.TabularPredictor`.
+
+	'''
+	from autogluon.tabular import TabularPredictor
+
+	global Learner
+	class Learner(object):
+		def __init__(self,):
+			pass
+
+		def fit(self, x, y):
+			''' '''
+			x = x if len(x.shape) > 1 else x[:, None]
+			y = y if len(y.shape) > 1 else y[:, None]
+			x_columns = ['x_%d' % i for i in range(x.shape[1])]
+			self.x_columns = x_columns
+			y_column = 'target'
+			columns = x_columns + [y_column]
+
+			train_data = pd.DataFrame(np.concatenate([x, y], axis=1), columns=columns)
+			self._model = TabularPredictor(y_column, problem_type=problem_type, eval_metric=eval_metric, \
+				path=path, verbosity=verbosity, sample_weight=sample_weight, weight_evaluation=weight_evaluation, \
+				groups=groups, **kwargs).fit(train_data, **fit_kwargs)
+
+
+		def predict(self, x):
+			''' '''
+			assert hasattr(self, '_model'), 'The model has not been fitted yet'
+			x = x if len(x.shape) > 1 else x[:, None]
+			assert x.shape[1] == len(self.x_columns), 'x has a shape incompatible with training data'
+			data = pd.DataFrame(x, columns=self.x_columns)
+			y_pred = self._model.predict(data, as_pandas=False)
+			return y_pred
+
+		@property
+		def feature_importances_(self):
+			try:
+				importance_df = self._model.feature_importance()
+				importances = [importance_df.at[col, 'importance'] for col in self.x_columns]
+				return importances 
+			except:
+				return []
+
+		def save(self, path):
+			logging.warning('AutoGluon models are automatically saved, so long as you pass the path parameter to get_autogluon_learner.')
+			
+
+		@classmethod
+		def load(cls, path):
+			with open(path, 'rb') as f:
+				_model = pkl.load(f)
+				learner = Learner()
+				learner._model = _model
+			return learner
+
+
+	def create_instance(n_vars=None, path=None):
+		if path is None:
+			return Learner()
+		else:
+			return Learner.load(path)
+
+
+
+	return create_instance
+
+
 
 
 
