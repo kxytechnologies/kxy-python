@@ -79,7 +79,7 @@ Here's how to wrap feature selection around LightGBM in Python.
    # To make predictions out of a dataframe of test data.
    predictions = predictor.predict(test_df)
 
-Parameters of :code:`get_lightgbm_learner_learning_api` should be the same as those of :code:`lightgbm.train`. See the `LightGBM documentation<https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_.
+Parameters of :code:`get_lightgbm_learner_learning_api` should be the same as those of :code:`lightgbm.train`. See the `LightGBM documentation <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_.
 
 
 Wrapping feature selection around another model in Python is identical except for :code:`learner_func`. Here's how to create :code:`learner_func` for other models.
@@ -93,7 +93,7 @@ For XGBoost:
    xgboost_learner_func = get_xgboost_learner('xgboost.XGBRegressor')
 
 
-Parameters of :code:`get_xgboost_learner` should be those you'd pass to instantiate :code:`xgboost.XGBRegressor` or :code:`xgboost.XGBClassifier`. See the `XGBoost documentation<https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_.
+Parameters of :code:`get_xgboost_learner` should be those you'd pass to instantiate :code:`xgboost.XGBRegressor` or :code:`xgboost.XGBClassifier`. See the `XGBoost documentation <https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_.
 
 
 For Scikit-Learn models:

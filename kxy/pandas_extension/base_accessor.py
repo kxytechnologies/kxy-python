@@ -127,7 +127,7 @@ class BaseAccessor(object):
 			else:
 				# Note: Any monotonic transformation applied to any continuous column would work.
 				# The gaussian scoring below makes no assumption on marginals whatsoever. 
-				x = df[col].values
+				x = df[col].values.astype(float)
 				x = x - np.nanmean(x)
 				s = np.nanstd(x)
 				if s > 0.0:
