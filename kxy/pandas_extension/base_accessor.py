@@ -120,7 +120,9 @@ class BaseAccessor(object):
 			if col in columns_to_exclude:
 				continue
 
-			if df.kxy.is_categorical(col):
+			if df.kxy.is_categorical(col) or df[col].dtype.name == 'category':
+				# Note: By using 'category' as dtype you are implicitly telling us that the 'natural'
+				# order of values does not matter.
 				unique_values = list(sorted(set(list(df[col].values))))
 				mapping = {unique_values[i]: "0x{:03x}".format(i) for i in range(len(unique_values))}
 				df[col] = df[col].apply(lambda x: mapping.get(x))
