@@ -11,6 +11,8 @@ from functools import wraps
 import json
 import os
 
+TRIAL_API_KEY = 'SZiRisvhzC7KBgROZG5dE1VQIlE8Jk4DbQ1YZdZ0'
+
 def get_api_key():
 	"""
 	Retrieves the store API key, or None if none was provided.
@@ -21,10 +23,10 @@ def get_api_key():
 	try:
 		with open(file_name, 'r') as f:
 			config = json.load(f)
-			existing_key = config.get('KXY_API_KEY', None)
+			existing_key = config.get('KXY_API_KEY', TRIAL_API_KEY)
 			return existing_key
 	except:
-		return os.environ.get('KXY_API_KEY', None)
+		return os.environ.get('KXY_API_KEY', TRIAL_API_KEY)
 
 	return None
 
