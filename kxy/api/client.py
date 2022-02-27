@@ -9,7 +9,7 @@ from functools import lru_cache
 import os
 import requests
 
-from .decorators import requires_api_key, get_api_key
+from .decorators import requires_api_key, get_api_key, log_backend_warnings
 from .. import __version__ as client_version
 
 
@@ -51,6 +51,7 @@ class APIClient(object):
 
 	@staticmethod
 	@requires_api_key
+	@log_backend_warnings
 	def get(path, **params):
 		"""
 		.. important:: This method requires a valid API key.
@@ -100,6 +101,7 @@ class APIClient(object):
 
 	@staticmethod
 	@requires_api_key
+	@log_backend_warnings
 	def post(path, **params):
 		"""
 		.. important:: This method requires a valid API key.

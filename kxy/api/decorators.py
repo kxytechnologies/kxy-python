@@ -9,7 +9,9 @@ kxy.api.decorators
 
 from functools import wraps
 import json
+import logging
 import os
+import requests
 
 TRIAL_API_KEY = 'SZiRisvhzC7KBgROZG5dE1VQIlE8Jk4DbQ1YZdZ0'
 
@@ -58,3 +60,28 @@ def requires_api_key(method):
 		return method(*args, **kw)
 
 	return wrapper
+
+
+
+def log_backend_warnings(method):
+	"""
+	Decorator used to make requests hitting the backend log backend warnings.
+	"""
+	@wraps(method)
+	def wrapper(*args, **kw):
+		response = method(*args, **kw)
+		try:
+			if response.status_code == requests.codes.ok:
+				response_json = response.json()
+				if 'warning' in response_json:
+					logging.warning('%s' % response_json['warning'])
+		except:
+			pass
+		return response
+
+	return wrapper
+
+
+
+
+

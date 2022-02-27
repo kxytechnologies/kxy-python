@@ -639,14 +639,9 @@ def results(pretty_model_name='LightGBM', model_name='lightgbm'):
 	    fontsize=12
 	)
 
-	# axes[0].set_title(pretty_model_name, fontsize=16)
 	axes[0].set_xlabel('Performance', fontsize=15)
 	axes[0].set_ylabel('Compression Rate\n(Fraction of Deleted Features)', fontsize=15)
-	# plt.savefig('./plot_%s_performance_frontiere.png' % model_name)
-	# plt.close()
 
-
-	# fig, ax = plt.subplots(figsize=(12,12))
 	axes[1].scatter(durs, comps, color='red')
 	axes[1].annotate(
 	    labels[0], 
@@ -704,19 +699,20 @@ def results(pretty_model_name='LightGBM', model_name='lightgbm'):
 
 
 if __name__ == '__main__':
-	# logging.warning('LightGBM\n\n')
-	# lightgbm_regression_benchmark()
-	# lightgbm_classification_benchmark()
+	logging.warning('LightGBM\n\n')
+	lightgbm_regression_benchmark()
+	lightgbm_classification_benchmark()
 
-	# logging.warning('XGBoost\n\n')
-	# xgboost_regression_benchmark()
-	# xgboost_classification_benchmark()
+	logging.warning('XGBoost\n\n')
+	xgboost_regression_benchmark()
+	xgboost_classification_benchmark()
 
-	# logging.warning('Random Forest\n\n')
-	# random_forest_regression_benchmark()
-	# random_forest_classification_benchmark()
+	logging.warning('Random Forest\n\n')
+	random_forest_regression_benchmark()
+	random_forest_classification_benchmark()
 
-	# summary()
+	# Summary
+	summary()
 
 	lgbm_compression_rates, lgbm_performances, lgbm_durations, lgbm_n_excessive_features = results(
 		pretty_model_name='LightGBM', model_name='lightgbm')
