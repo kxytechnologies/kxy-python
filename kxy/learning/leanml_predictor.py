@@ -110,7 +110,7 @@ class LeanMLPredictor(object):
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
 			regression_baseline='mean', regression_error_type='additive', return_scores=False, start_n_features_perf_frac=0.9, \
-			val_performance_buffer=0.0):
+			val_performance_buffer=0.0, path=None):
 		# A base learner here does not fix mistakes made by another.
 		assert inspect.isfunction(learner_func), 'learner_func should be a class'
 		assert target_column in obj.columns, 'The target column should be a valid column'
@@ -204,6 +204,8 @@ class LeanMLPredictor(object):
 
 			self.start_n_features = min(start_n_features, n_variables)
 			self.models = []
+			if path:
+				self.predictor_paths = []
 			self.max_var_ixs = []
 			n_down_perf = 0
 			for i in range(self.start_n_features, n_variables+1):
@@ -214,7 +216,8 @@ class LeanMLPredictor(object):
 				n_vars = x_train.shape[1] if len(x_train.shape) > 1 else 1
 
 				# Create the new model
-				m = learner_func(n_vars=n_vars)
+				model_path = path + '-model-%d-LeanMLPredictor' % i if path else None
+				m = learner_func(n_vars=n_vars, path=model_path)
 
 				# Fit the new model
 				m.fit(x_train, y_train)
@@ -229,6 +232,8 @@ class LeanMLPredictor(object):
 					spinner.text = 'Lean Boosting -- %d Variables, Validation %s: %.4f' % (i, score_name, val_score)
 					previous_score = val_score
 					self.models = [m]
+					if path:
+						self.predictor_paths = [model_path]
 					self.max_var_ixs = [i]
 					self.val_scores = self.val_scores + [(i, val_score)]
 
@@ -249,6 +254,9 @@ class LeanMLPredictor(object):
 			self.selected_variables = self.variables[:self.max_var_ixs[-1]] if self.models else []
 			if self.models == []:
 				self.models = [base_m]
+				if path:
+					model_path = path + '-base-model-LeanMLPredictor'
+					self.predictor_paths = [model_path]
 				self.max_var_ixs = [1]
 				self.val_scores = [(0, previous_score)]
 
@@ -296,7 +304,7 @@ class LeanMLPredictor(object):
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
 			regression_baseline='mean', regression_error_type='additive', return_scores=False, start_n_features_perf_frac=0.9, \
-			val_performance_buffer=0.0):
+			val_performance_buffer=0.0, path=None):
 		# A base learner here is fitted to the residuals of the best model so far.
 		assert inspect.isfunction(learner_func), 'learner_func should be a class'
 		assert target_column in obj.columns, 'The target column should be a valid column'
@@ -399,7 +407,8 @@ class LeanMLPredictor(object):
 				n_vars = x_train.shape[1] if len(x_train.shape) > 1 else 1
 
 				# Create the new model
-				m = learner_func(n_vars=n_vars)
+				model_path = path + '-model-%d-LeanMLPredictor' % i if path else None
+				m = learner_func(n_vars=n_vars, path=model_path)
 
 				# Fit the new model
 				m.fit(x_train, target_train)
@@ -434,6 +443,8 @@ class LeanMLPredictor(object):
 						target_train = np.logical_not(target_train == target_train_pred).astype(int)
 
 					self.models = self.models+[m]
+					if path:
+						self.predictor_paths = self.predictor_paths + [model_path]
 					self.max_var_ixs = self.max_var_ixs+[i]
 					self.val_scores = self.val_scores + [(i, val_score)]
 
@@ -454,6 +465,9 @@ class LeanMLPredictor(object):
 			self.selected_variables = self.variables[:self.max_var_ixs[-1]] if self.models else []
 			if self.models == []:
 				self.models = [base_m]
+				model_path = path + '-base-model-LeanMLPredictor'
+				if path:
+					self.predictor_paths = self.predictor_paths + [model_path]
 				self.max_var_ixs = [1]
 				self.val_scores = [(0, previous_score)]
 
@@ -505,7 +519,7 @@ class LeanMLPredictor(object):
 			force_redo=False, max_n_features=None, min_n_features=None, start_n_features=None, anonymize=False, \
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
 			regression_baseline='mean', additive_learning=False, regression_error_type='additive', return_scores=False, \
-			start_n_features_perf_frac=0.9, val_performance_buffer=0.0):
+			start_n_features_perf_frac=0.9, val_performance_buffer=0.0, path=None):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`obj.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -584,14 +598,14 @@ class LeanMLPredictor(object):
 				force_redo=force_redo, max_n_features=max_n_features, min_n_features=min_n_features, start_n_features=start_n_features, anonymize=anonymize, \
 				benchmark_feature=benchmark_feature, missing_value_imputation=missing_value_imputation, score=score, n_down_perf_before_stop=n_down_perf_before_stop, \
 				regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, start_n_features_perf_frac=start_n_features_perf_frac, \
-				val_performance_buffer=val_performance_buffer)
+				val_performance_buffer=val_performance_buffer, path=path)
 
 		else:
 			return self._non_additive_fit(obj, target_column, learner_func, problem_type=problem_type, snr=snr, train_frac=train_frac, random_state=random_state, \
 				force_redo=force_redo, max_n_features=max_n_features, min_n_features=min_n_features, start_n_features=start_n_features, anonymize=anonymize, \
 				benchmark_feature=benchmark_feature, missing_value_imputation=missing_value_imputation, score=score, n_down_perf_before_stop=n_down_perf_before_stop, \
 				regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, start_n_features_perf_frac=start_n_features_perf_frac, \
-				val_performance_buffer=val_performance_buffer)
+				val_performance_buffer=val_performance_buffer, path=path)
 
 
 
@@ -681,19 +695,28 @@ class LeanMLPredictor(object):
 
 
 	def save(self, path):
-		""" """
+		""" 
+		Save the learner to disk.
+		"""
 		n_models = len(self.models)
+		if not hasattr(self, 'predictor_paths'):
+			self.predictor_paths = [path + '-model-%d-LeanMLPredictor' % i for i in range(n_models)]
+
+		for i in range(n_models):
+			model_path = self.predictor_paths[i]
+			self.models[i].save(model_path)
+
+		
 		meta_path = path + '-meta-LeanMLPredictor'
 		meta = {\
 			'additive_learning': self.additive_learning, 'target_column': self.target_column, 'variables': self.variables, \
 			'selected_variables': self.selected_variables, 'problem_type': self.problem_type, 'max_var_ixs': self.max_var_ixs, \
-			'n_models': n_models \
+			'n_models': n_models, 'predictor_paths': self.predictor_paths \
 		}
 		with open(meta_path, 'wb') as f:
 			pkl.dump(meta, f)
 
-		for i in range(n_models):
-			self.models[i].save(path + '-model-%d-LeanMLPredictor' % i)
+
 
 
 	@classmethod
@@ -713,6 +736,8 @@ class LeanMLPredictor(object):
 		max_var_ixs = meta['max_var_ixs']
 		n_models = meta['n_models']
 		n_vars = len(selected_variables)
+		predictor_paths = meta.get('predictor_paths', [path + '-model-%d-LeanMLPredictor' % i \
+			for i in range(n_models)])
 
 		predictor = LeanMLPredictor()
 		predictor.additive_learning = additive_learning
@@ -723,9 +748,9 @@ class LeanMLPredictor(object):
 		predictor.max_var_ixs = max_var_ixs
 
 		predictor.models = []
-		for i in range(n_models):
-			model_path = path + '-model-%d-LeanMLPredictor' % i
-			model = learner_func(n_vars=n_vars, path=model_path)
+		for model_path in predictor_paths:
+			model = learner_func(n_vars=n_vars, path=model_path, \
+				safe=False)
 			predictor.models.append(model)
 
 		return predictor

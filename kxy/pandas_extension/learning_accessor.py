@@ -24,7 +24,7 @@ class LearningAccessor(BaseAccessor):
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
 			regression_baseline='mean', additive_learning=False, regression_error_type='additive', return_scores=False, \
 			start_n_features_perf_frac=0.9, feature_selection_method='leanml', rfe_n_features=None, boruta_pval=0.5, \
-			boruta_n_evaluations=20, max_duration=None, val_performance_buffer=0.0):
+			boruta_n_evaluations=20, max_duration=None, val_performance_buffer=0.0, path=None):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -104,7 +104,7 @@ class LearningAccessor(BaseAccessor):
 
 		if str(feature_selection_method).lower() == 'none':
 			predictor = NaivePredictor()
-			res = predictor.fit(self._obj, target_column, learner_func)
+			res = predictor.fit(self._obj, target_column, learner_func, path=path)
 			self.predictor = predictor
 			res['predictor'] = predictor
 
@@ -114,20 +114,20 @@ class LearningAccessor(BaseAccessor):
 					max_n_features=max_n_features, min_n_features=min_n_features, start_n_features=start_n_features, anonymize=anonymize, \
 					benchmark_feature=benchmark_feature, missing_value_imputation=missing_value_imputation, score=score, n_down_perf_before_stop=n_down_perf_before_stop, \
 					regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, \
-					start_n_features_perf_frac=start_n_features_perf_frac, val_performance_buffer=val_performance_buffer)
+					start_n_features_perf_frac=start_n_features_perf_frac, val_performance_buffer=val_performance_buffer, path=path)
 			self.predictor = predictor
 			res['predictor'] = predictor
 
 		elif feature_selection_method.lower() == 'boruta':
 			predictor = BorutaPredictor()
-			res = predictor.fit(self._obj, target_column, learner_func, pval=boruta_pval, n_evaluations=boruta_n_evaluations, max_duration=max_duration)
+			res = predictor.fit(self._obj, target_column, learner_func, pval=boruta_pval, n_evaluations=boruta_n_evaluations, max_duration=max_duration, path=path)
 			self.predictor = predictor
 			res['predictor'] = predictor
 
 		elif feature_selection_method.lower() == 'rfe':
 			assert rfe_n_features is not None
 			predictor = RFEPredictor()
-			res = predictor.fit(self._obj, target_column, learner_func, n_features=rfe_n_features, max_duration=max_duration)
+			res = predictor.fit(self._obj, target_column, learner_func, n_features=rfe_n_features, max_duration=max_duration, path=path)
 			self.predictor = predictor
 			res['predictor'] = predictor
 

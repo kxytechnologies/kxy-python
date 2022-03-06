@@ -15,7 +15,7 @@ class Boruta(object):
 
 	Reference: 
 	"""
-	def __init__(self, learner_func):
+	def __init__(self, learner_func, path=None):
 		"""
 		Constructor.
 
@@ -31,6 +31,7 @@ class Boruta(object):
 		"""
 		self.selected_variables = []
 		self.learner_func = learner_func
+		self.path = path
 
 
 	def fit(self, x_df, y_df, n_evaluations=20, pval=0.95, max_duration=None):
@@ -157,7 +158,7 @@ class Boruta(object):
 		# Keep only important features and retrain the model.
 		x = x_df[self.selected_variables].values
 		n_vars = len(self.selected_variables)
-		m = self.learner_func(n_vars=n_vars)
+		m = self.learner_func(n_vars=n_vars, path=self.path)
 		m.fit(x, y)
 
 		return m

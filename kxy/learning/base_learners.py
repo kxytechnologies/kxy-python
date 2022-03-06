@@ -4,6 +4,7 @@
 import pickle as pkl
 import numpy as np
 import pandas as pd
+import logging
 
 MODELS_TAKING_FLAT_OUTPUTS = [\
 	'sklearn.ensemble.RandomForestRegressor', \
@@ -204,11 +205,17 @@ def get_sklearn_learner(class_name, *args, fit_intercept=True, fit_kwargs={}, pr
 				return model
 
 
-	def create_instance(n_vars=None, path=None):
+	def create_instance(n_vars=None, path=None, safe=True):
+		''' '''
 		if path is None:
 			return Learner()
-		else:
+
+		try:
 			return Learner.load(path)
+		except FileNotFoundError:
+			if path and not safe:
+				raise
+			return Learner()
 
 	return create_instance
 
@@ -256,11 +263,17 @@ def get_xgboost_learner(class_name, *args, fit_kwargs={}, predict_kwargs={}, **k
 			return model
 
 
-	def create_instance(n_vars=None, path=None):
+	def create_instance(n_vars=None, path=None, safe=True):
+		''' '''
 		if path is None:
 			return Learner()
-		else:
+
+		try:
 			return Learner.load(path)
+		except FileNotFoundError:
+			if path and not safe:
+				raise
+			return Learner()
 
 	return create_instance
 
@@ -320,11 +333,17 @@ def get_lightgbm_learner_sklearn_api(class_name, boosting_type='gbdt', num_leave
 			return model
 
 
-	def create_instance(n_vars=None, path=None):
+	def create_instance(n_vars=None, path=None, safe=True):
+		''' '''
 		if path is None:
 			return Learner()
-		else:
+
+		try:
 			return Learner.load(path)
+		except FileNotFoundError:
+			if path and not safe:
+				raise
+			return Learner()
 
 	return create_instance
 
@@ -418,13 +437,18 @@ def get_lightgbm_learner_learning_api(params, num_boost_round=100, fobj=None, fe
 			return learner
 
 
-	def create_instance(n_vars=None, path=None):
+	def create_instance(n_vars=None, path=None, safe=True):
+		'''
+		'''
 		if path is None:
 			return Learner()
-		else:
+
+		try:
 			return Learner.load(path)
-
-
+		except FileNotFoundError:
+			if path and not safe:
+				raise
+			return Learner()
 
 	return create_instance
 
@@ -495,11 +519,18 @@ def get_tensorflow_dense_learner(class_name, layers, loss, optimizer='adam', fit
 			return learner
 
 
-	def create_instance(n_vars=None, path=None):
+	def create_instance(n_vars=None, path=None, safe=True):
+		'''
+		'''
 		if path is None:
-			return Learner(n_vars)
-		else:
+			return Learner()
+
+		try:
 			return Learner.load(path, n_vars)
+		except FileNotFoundError:
+			if path and not safe:
+				raise
+			return Learner(n_vars)
 
 
 	return create_instance
@@ -590,18 +621,25 @@ def get_pytorch_dense_learner(class_name, layers, optimizer='Adam', fit_kwargs={
 			return learner
 
 
-	def create_instance(n_vars=None, path=None):
+	def create_instance(n_vars=None, path=None, safe=True):
+		'''
+		'''
 		if path is None:
-			return Learner(n_vars)
-		else:
+			return Learner()
+
+		try:
 			return Learner.load(path, n_vars)
+		except FileNotFoundError:
+			if path and not safe:
+				raise
+			return Learner(n_vars)
 
 
 	return create_instance
 
 
 
-def get_autogluon_learner(problem_type=None, eval_metric=None, path=None, verbosity=2, \
+def get_autogluon_learner(problem_type=None, eval_metric=None, verbosity=2, \
 		sample_weight=None, weight_evaluation=False, groups=None, fit_kwargs={}, **kwargs):
 	'''
 	Return a learner function derived from AutoGluon's TabularPredictor.
@@ -613,8 +651,8 @@ def get_autogluon_learner(problem_type=None, eval_metric=None, path=None, verbos
 
 	global Learner
 	class Learner(object):
-		def __init__(self,):
-			pass
+		def __init__(self, path=None):
+			self.path = path
 
 		def fit(self, x, y):
 			''' '''
@@ -627,7 +665,7 @@ def get_autogluon_learner(problem_type=None, eval_metric=None, path=None, verbos
 
 			train_data = pd.DataFrame(np.concatenate([x, y], axis=1), columns=columns)
 			self._model = TabularPredictor(y_column, problem_type=problem_type, eval_metric=eval_metric, \
-				path=path, verbosity=verbosity, sample_weight=sample_weight, weight_evaluation=weight_evaluation, \
+				path=self.path, verbosity=verbosity, sample_weight=sample_weight, weight_evaluation=weight_evaluation, \
 				groups=groups, **kwargs).fit(train_data, **fit_kwargs)
 
 
@@ -635,6 +673,8 @@ def get_autogluon_learner(problem_type=None, eval_metric=None, path=None, verbos
 			''' '''
 			assert hasattr(self, '_model'), 'The model has not been fitted yet'
 			x = x if len(x.shape) > 1 else x[:, None]
+			if not hasattr(self, 'x_columns'):
+				self.x_columns = ['x_%d' % i for i in range(x.shape[1])]
 			assert x.shape[1] == len(self.x_columns), 'x has a shape incompatible with training data'
 			data = pd.DataFrame(x, columns=self.x_columns)
 			y_pred = self._model.predict(data, as_pandas=False)
@@ -650,24 +690,28 @@ def get_autogluon_learner(problem_type=None, eval_metric=None, path=None, verbos
 				return []
 
 		def save(self, path):
-			logging.warning('AutoGluon models are automatically saved, so long as you pass the path parameter to get_autogluon_learner.')
-			
+			self._model.save()
 
 		@classmethod
 		def load(cls, path):
-			with open(path, 'rb') as f:
-				_model = pkl.load(f)
-				learner = Learner()
-				learner._model = _model
+			learner = Learner(path=path)
+			learner._model = TabularPredictor.load(path)
 			return learner
 
 
-	def create_instance(n_vars=None, path=None):
+	def create_instance(n_vars=None, path=None, safe=True):
+		'''
+		'''
 		if path is None:
 			return Learner()
-		else:
-			return Learner.load(path)
 
+		try:
+			return Learner.load(path)
+		except FileNotFoundError:
+			if path and not safe:
+				raise
+			logging.exception('')
+			return Learner(path=path)
 
 
 	return create_instance

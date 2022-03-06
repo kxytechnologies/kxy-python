@@ -12,7 +12,7 @@ class RFE(object):
 
 	Reference: 
 	"""
-	def __init__(self, learner_func):
+	def __init__(self, learner_func, path=None):
 		"""
 		Constructor.
 
@@ -28,6 +28,7 @@ class RFE(object):
 		"""
 		self.selected_variables = []
 		self.learner_func = learner_func
+		self.path = path
 
 
 	def fit(self, x_df, y_df, n_vars, max_duration=None):
@@ -88,7 +89,7 @@ class RFE(object):
 
 			# Re-fit the model
 			x = x_df[columns].values
-			m = self.learner_func(n_vars=current_n_vars)
+			m = self.learner_func(n_vars=current_n_vars, path=self.path)
 			m.fit(x, y)
 
 		self.selected_variables = [col for _,  col in sorted(zip(importances, columns), reverse=True)]

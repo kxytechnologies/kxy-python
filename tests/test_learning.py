@@ -191,12 +191,12 @@ def test_lean_boosted_pytorch_regressor():
 	results = features_df.kxy.fit(target_column, pt_regressor_cls, \
 		problem_type='regression', additive_learning=True, return_scores=True, \
 		n_down_perf_before_stop=3)
-	assert results['Testing R-Squared'] == '0.424'
+	assert results['Testing R-Squared'] == '0.410'
 	print(results['Selected Variables'])
-	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', 'Shell weight.ABS(* - Q25(*))', \
-		'Viscera weight.ABS(* - MEDIAN(*))', 'Viscera weight.ABS(* - MEAN(*))', 'Height', 'Length', 'Diameter', 'Sex_I', 
-		'Shucked weight.ABS(* - MEDIAN(*))', 'Diameter.ABS(* - MEDIAN(*))', 'Viscera weight.ABS(* - Q75(*))', 'Viscera weight.ABS(* - Q25(*))', \
-		'Diameter.ABS(* - Q25(*))', 'Sex_M', 'Sex_F', 'Shucked weight.ABS(* - Q75(*))', 'Shucked weight.ABS(* - Q25(*))', 'Diameter.ABS(* - Q75(*))']
+	assert results['Selected Variables'] == ['Shell weight', 'Shucked weight', 'Whole weight', \
+		'Shell weight.ABS(* - Q25(*))', 'Viscera weight.ABS(* - MEDIAN(*))', 'Viscera weight.ABS(* - MEAN(*))', \
+		'Height', 'Length', 'Diameter', 'Sex_I', 'Shucked weight.ABS(* - MEDIAN(*))', 'Diameter.ABS(* - MEDIAN(*))', \
+		'Viscera weight.ABS(* - Q75(*))', 'Viscera weight.ABS(* - Q25(*))', 'Diameter.ABS(* - Q25(*))', 'Sex_M', 'Sex_F']
 
 
 def test_lean_boosted_xgboost_classifier():

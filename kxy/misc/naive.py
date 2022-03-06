@@ -11,7 +11,7 @@ class NaiveLearner(object):
 
 	Reference: 
 	"""
-	def __init__(self, learner_func):
+	def __init__(self, learner_func, path=None):
 		"""
 		Constructor.
 
@@ -27,6 +27,7 @@ class NaiveLearner(object):
 		"""
 		self.selected_variables = []
 		self.learner_func = learner_func
+		self.path = path
 
 
 	def fit(self, x_df, y_df):
@@ -55,7 +56,7 @@ class NaiveLearner(object):
 		y = y_df.values
 		x = x_df[columns].values
 		n_vars = len(columns)
-		m = self.learner_func(n_vars=n_vars)
+		m = self.learner_func(n_vars=n_vars, path=self.path)
 		m.fit(x, y)
 		self.selected_variables = columns
 

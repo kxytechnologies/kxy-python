@@ -80,7 +80,7 @@ class BasePredictor(object):
 		selected_variables = meta['selected_variables']
 
 		n_vars = len(selected_variables)
-		model = learner_func(n_vars=n_vars, path=path + '-' + cls.__name__)
+		model = learner_func(n_vars=n_vars, path=path + '-' + cls.__name__, safe=False)
 		
 		predictor = cls()
 		predictor.models = [model]
@@ -93,7 +93,7 @@ class BasePredictor(object):
 
 
 class RFEPredictor(BasePredictor):
-	def fit(self, obj, target_column, learner_func, n_features, max_duration=None):
+	def fit(self, obj, target_column, learner_func, n_features, max_duration=None, path=None):
 		"""
 		Fits a supervised learner enriched with feature selection using the Recursive Feature Elimination algorithm.
 
@@ -133,10 +133,12 @@ class RFEPredictor(BasePredictor):
 		x_df = obj[x_columns]
 		y_df = obj[[target_column]]
 
-		feature_selector = RFE(learner_func)
+		feature_selector = RFE(learner_func, path=path + '-' + self.__class__.__name__)
 		m = feature_selector.fit(x_df, y_df, n_features, max_duration=max_duration)
 		self.models = [m]
 		self.selected_variables = feature_selector.selected_variables
+		if path:
+			self.save(path)
 
 		results = {'Selected Variables': self.selected_variables}
 		return results
@@ -144,7 +146,7 @@ class RFEPredictor(BasePredictor):
 
 
 class BorutaPredictor(BasePredictor):
-	def fit(self, obj, target_column, learner_func, n_evaluations=20, pval=0.95, max_duration=None):
+	def fit(self, obj, target_column, learner_func, n_evaluations=20, pval=0.95, max_duration=None, path=None):
 		"""
 		Fits a supervised learner enriched with feature selection using the Boruta algorithm.
 
@@ -185,10 +187,12 @@ class BorutaPredictor(BasePredictor):
 		x_df = obj[x_columns]
 		y_df = obj[[target_column]]
 
-		feature_selector = Boruta(learner_func)
+		feature_selector = Boruta(learner_func, path=path + '-' + self.__class__.__name__)
 		m = feature_selector.fit(x_df, y_df, n_evaluations=n_evaluations, pval=pval, max_duration=max_duration)
 		self.models = [m]
 		self.selected_variables = feature_selector.selected_variables
+		if path:
+			self.save(path)
 
 		results = {'Selected Variables': self.selected_variables}
 		return results
@@ -196,7 +200,7 @@ class BorutaPredictor(BasePredictor):
 
 
 class NaivePredictor(BasePredictor):
-	def fit(self, obj, target_column, learner_func):
+	def fit(self, obj, target_column, learner_func, path=None):
 		"""
 		Fits a supervised learner without feature selection.
 
@@ -231,10 +235,12 @@ class NaivePredictor(BasePredictor):
 		x_df = obj[x_columns]
 		y_df = obj[[target_column]]
 
-		feature_selector = NaiveLearner(learner_func)
+		feature_selector = NaiveLearner(learner_func, path=path + '-' + self.__class__.__name__)
 		m = feature_selector.fit(x_df, y_df)
 		self.models = [m]
 		self.selected_variables = feature_selector.selected_variables
+		if path:
+			self.save(path)
 
 		results = {'Selected Variables': self.selected_variables}
 		return results
