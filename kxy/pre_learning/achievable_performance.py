@@ -24,7 +24,7 @@ from kxy.api import APIClient, upload_data
 # Cache old job ids to avoid being charged twice for the same job.
 VALUATION_JOB_IDS = {}
 
-def data_valuation(data_df, target_column, problem_type, snr='auto'):
+def data_valuation(data_df, target_column, problem_type, snr='auto', include_mutual_information=False):
 	"""
 	.. _data-valuation:
 	Estimate the highest performance metrics achievable when predicting the :code:`target_column` using all other columns.
@@ -40,6 +40,8 @@ def data_valuation(data_df, target_column, problem_type, snr='auto'):
 		The name of the column containing true labels.
 	problem_type : None | 'classification' | 'regression'
 		The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
+	include_mutual_information : bool
+		Whether to include the mutual information between target and explanatory variables in the result.
 
 
 
@@ -133,6 +135,9 @@ def data_valuation(data_df, target_column, problem_type, snr='auto'):
 
 					if 'accuracy' in response and problem_type.lower() == 'classification':
 						result['Achievable Accuracy'] = [response['accuracy']]
+
+					if include_mutual_information and 'mi' in response:
+						result['Mutual Information'] = [response['mi']]
 
 					result = pd.DataFrame.from_dict(result)
 

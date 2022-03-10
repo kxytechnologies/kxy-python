@@ -17,7 +17,7 @@ class PreLearningAccessor(BaseAccessor):
 
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_pre_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
-	def data_valuation(self, target_column, problem_type=None, anonymize=False, snr='auto'):
+	def data_valuation(self, target_column, problem_type=None, anonymize=False, snr='auto', include_mutual_information=False):
 		"""
 		Estimate the highest performance metrics achievable when predicting the :code:`target_column` using all other columns.
 
@@ -32,7 +32,8 @@ class PreLearningAccessor(BaseAccessor):
 			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
 		anonymize : bool
 			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
-
+		include_mutual_information : bool
+			Whether to include the mutual information between target and explanatory variables in the result.
 
 
 		Returns
@@ -63,7 +64,7 @@ class PreLearningAccessor(BaseAccessor):
 
 		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize or self.is_too_large else self._obj
 
-		return dv(_obj, target_column, problem_type, snr=snr)
+		return dv(_obj, target_column, problem_type, snr=snr, include_mutual_information=include_mutual_information)
 
 
 	def variable_selection(self, target_column, problem_type=None, anonymize=False, snr='auto'):
