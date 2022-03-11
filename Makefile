@@ -1,4 +1,4 @@
-
+VERSION = 1.4.2
 
 # Update the s3 bucket of the docs website
 deploy_docs:
@@ -21,6 +21,13 @@ install:
 docker_release:
 	docker build -t kxytechnologies/kxy:latest ./docker/kxy/
 	docker login --username drylnks && docker push kxytechnologies/kxy:latest
+
+
+docker_release_github:
+	docker build -t ghcr.io/kxytechnologies/kxy-python:latest ./docker/kxy/
+	echo $(CR_PAT) | docker login ghcr.io -u USERNAME --password-stdin && docker push ghcr.io/kxytechnologies/kxy-python:latest
+	docker build -t ghcr.io/kxytechnologies/kxy-python:$(VERSION) ./docker/kxy/
+	echo $(CR_PAT) | docker login ghcr.io -u USERNAME --password-stdin && docker push ghcr.io/kxytechnologies/kxy-python:$(VERSION)
 
 
 one_shot_release:
