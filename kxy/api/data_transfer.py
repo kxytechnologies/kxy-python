@@ -61,7 +61,7 @@ def generate_upload_url(file_name):
 		return None
 
 
-def upload_data(df):
+def upload_data(df, file_name=None):
 	"""
 	Updloads a dataframe to kxy servers.
 
@@ -75,19 +75,22 @@ def upload_data(df):
 	d : bool
 		Whether the upload was successful.
 	"""
-	logging.debug('')
-	logging.debug('Hashing the data to form the file name')
-	content = pd.util.hash_pandas_object(df).to_string()
-	data_identifier = hashlib.sha256(content.encode()).hexdigest()
-	columns = str(sorted([col for col in df.columns]))
-	columns_identifier = hashlib.sha256(columns.encode()).hexdigest()
-	identifier = hashlib.sha256((data_identifier+columns_identifier).encode()).hexdigest()
-	memory_usage = df.memory_usage(index=False).sum()/(1024.0*1024.0*1024.0)
-	file_name = identifier + '.parquet.gzip' if memory_usage > 1.5 else identifier + '.parquet' if memory_usage > 0.5 else identifier + '.csv'
-	logging.debug('Done hashing the data')
+	if file_name is None:
+		logging.debug('')
+		logging.debug('Hashing the data to form the file name')
+		content = pd.util.hash_pandas_object(df).to_string()
+		data_identifier = hashlib.sha256(content.encode()).hexdigest()
+		columns = str(sorted([col for col in df.columns]))
+		columns_identifier = hashlib.sha256(columns.encode()).hexdigest()
+		identifier = hashlib.sha256((data_identifier+columns_identifier).encode()).hexdigest()
+		memory_usage = df.memory_usage(index=False).sum()/(1024.0*1024.0*1024.0)
+		file_name = identifier + '.parquet.gzip' if memory_usage > 1.5 else identifier + '.parquet' if memory_usage > 0.5 else identifier + '.csv'
+		logging.debug('Done hashing the data')
+	else:
+		identifier = file_name.split('.')[0]
 
 	if UPLOADED_FILES.get(identifier, False):
-		logging.debug('The file with identifier %s was previously uplooaded' % identifier)
+		logging.debug('The file with identifier %s was previously uploaded' % identifier)
 		return file_name
 
 	logging.debug('Requesting a signed upload URL')

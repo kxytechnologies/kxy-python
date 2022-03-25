@@ -25,7 +25,7 @@ from kxy.api import APIClient, upload_data
 DD_IMPROVABILITY_JOB_IDS = {}
 MD_IMPROVABILITY_JOB_IDS = {}
 
-def data_driven_improvability(data_df, target_column, new_variables, problem_type, snr='auto'):
+def data_driven_improvability(data_df, target_column, new_variables, problem_type, snr='auto', file_name=None):
 	"""
 	.. data-driven-improvability:
 	Estimate the potential performance boost that a set of new explanatory variables can bring about.
@@ -41,6 +41,8 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 		The names of the columns to use as new explanatory variables.
 	problem_type : None | 'classification' | 'regression'
 		The type of supervised learning problem. When None, it is inferred from whether or not :code:`target_column` is categorical.
+	file_name : None | str
+		A unique identifier characterizing data_df in the form of a file name. Do not set this unless you know why.
 
 
 
@@ -72,7 +74,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 	kp = 0
 	max_k = 100
 
-	file_name = upload_data(data_df)
+	file_name = upload_data(data_df, file_name=file_name)
 	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
 	spinner.start()
 
@@ -162,7 +164,7 @@ def data_driven_improvability(data_df, target_column, new_variables, problem_typ
 	return None
 
 
-def model_driven_improvability(data_df, target_column, prediction_column, problem_type, snr='auto'):
+def model_driven_improvability(data_df, target_column, prediction_column, problem_type, snr='auto', file_name=None):
 	"""
 	.. model-driven-improvability:
 	Estimate the extent to which a trained supervised learner may be improved in a model-driven fashion (i.e. without resorting to additional explanatory variables).
@@ -178,7 +180,8 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 		The name of the column containing model predictions.
 	problem_type : None | 'classification' | 'regression'
 		The type of supervised learning problem. When None, it is inferred from whether or not :code:`target_column` is categorical.
-
+	file_name : None | str
+		A unique identifier characterizing data_df in the form of a file name. Do not set this unless you know why.
 
 
 	Returns
@@ -212,7 +215,7 @@ def model_driven_improvability(data_df, target_column, prediction_column, proble
 	kp = 0
 	max_k = 100
 
-	file_name = upload_data(data_df)
+	file_name = upload_data(data_df, file_name=file_name)
 	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
 	spinner.start()
 

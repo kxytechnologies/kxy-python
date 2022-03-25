@@ -1,9 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import logging
 import hashlib
 import numpy as np
 from scipy.stats import norm
 import pandas as pd
+
+try:
+	get_ipython().__class__.__name__
+	from halo import HaloNotebook as Halo
+except:
+	from halo import Halo
 
 
 class BaseAccessor(object):
@@ -115,6 +122,8 @@ class BaseAccessor(object):
 		result : pandas.DataFrame
 			The result is a pandas.Dataframe with columns (where applicable):
 		"""
+		spinner = Halo(text='Preparing data upload', spinner='dots')
+		spinner.start()
 		df = self._obj.copy()
 		for col in df.columns:
 			if col in columns_to_exclude:
@@ -136,7 +145,7 @@ class BaseAccessor(object):
 					x = x/s
 					x = norm.cdf(x)
 				df[col] = np.around(x.copy(), 3)
-
+		spinner.succeed()
 
 		return df
 

@@ -24,7 +24,7 @@ from kxy.api import APIClient, upload_data
 # Cache old job ids to avoid being charged twice for the same job.
 EXPLANATION_JOB_IDS = {}
 
-def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
+def model_explanation(data_df, prediction_column, problem_type, snr='auto', file_name=None):
 	"""
 	.. _model-explanation:
 	Analyzes the variables that a model relies on the most in a brute-force fashion.
@@ -44,7 +44,8 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 		The name of the column containing true labels.
 	problem_type : None | 'classification' | 'regression'
 		The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
-
+	file_name : None | str
+		A unique identifier characterizing data_df in the form of a file name. Do not set this unless you know why.
 
 
 	Returns
@@ -73,7 +74,7 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto'):
 	kp = 0
 	max_k = 100
 
-	file_name = upload_data(data_df)
+	file_name = upload_data(data_df, file_name=file_name)
 	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
 	spinner.start()
 

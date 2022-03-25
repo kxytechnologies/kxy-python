@@ -141,6 +141,7 @@ UCI*/
 *.sav
 *.sav-*
 *.json
+*.parquet
 *.h5
 *.png
 local_*.py

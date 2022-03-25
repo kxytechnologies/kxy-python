@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 
-from kxy.api import upload_data
 from kxy.pre_learning import data_valuation as dv
 from kxy.pre_learning import variable_selection as vs
 
@@ -17,7 +16,7 @@ class PreLearningAccessor(BaseAccessor):
 
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_pre_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
-	def data_valuation(self, target_column, problem_type=None, anonymize=False, snr='auto', include_mutual_information=False):
+	def data_valuation(self, target_column, problem_type=None, anonymize=None, snr='auto', include_mutual_information=False, file_name=None):
 		"""
 		Estimate the highest performance metrics achievable when predicting the :code:`target_column` using all other columns.
 
@@ -30,8 +29,8 @@ class PreLearningAccessor(BaseAccessor):
 			The name of the column containing true labels.
 		problem_type : None | 'classification' | 'regression'
 			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
-		anonymize : bool
-			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
+		anonymize : None | bool
+			When set to true, your explanatory variables will never be shared with KXY (at no performance cost). When set to None (the default), your data will be anonymized when it is too big.
 		include_mutual_information : bool
 			Whether to include the mutual information between target and explanatory variables in the result.
 
@@ -62,12 +61,13 @@ class PreLearningAccessor(BaseAccessor):
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
-		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize or self.is_too_large else self._obj
+		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize or (anonymize is None and self.is_too_large) else self._obj
 
-		return dv(_obj, target_column, problem_type, snr=snr, include_mutual_information=include_mutual_information)
+		return dv(_obj, target_column, problem_type, snr=snr, include_mutual_information=include_mutual_information, \
+			file_name=file_name)
 
 
-	def variable_selection(self, target_column, problem_type=None, anonymize=False, snr='auto'):
+	def variable_selection(self, target_column, problem_type=None, anonymize=None, snr='auto', file_name=None):
 		"""
 		Runs the model-free variable selection analysis.
 
@@ -80,8 +80,8 @@ class PreLearningAccessor(BaseAccessor):
 			The name of the column containing true labels.
 		problem_type : None | 'classification' | 'regression'
 			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
-		anonymize : bool
-			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
+		anonymize : None | bool
+			When set to true, your explanatory variables will never be shared with KXY (at no performance cost). When set to None (the default), your data will be anonymized when it is too big.
 
 		Returns
 		-------
@@ -107,9 +107,9 @@ class PreLearningAccessor(BaseAccessor):
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
-		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize or self.is_too_large else self._obj
+		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize or (anonymize is None and self.is_too_large) else self._obj
 
-		return vs(_obj, target_column, problem_type, snr=snr)
+		return vs(_obj, target_column, problem_type, snr=snr, file_name=file_name)
 
 
 

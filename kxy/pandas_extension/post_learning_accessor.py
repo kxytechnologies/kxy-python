@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 
-from kxy.api import upload_data
 from kxy.post_learning import data_driven_improvability as ddi
 from kxy.post_learning import model_driven_improvability as mdi
 from kxy.post_learning import model_explanation as me
@@ -19,7 +18,7 @@ class PostLearningAccessor(BaseAccessor):
 	All its methods defined are accessible from any DataFrame instance as :code:`df.kxy_post_learning.<method_name>`, so long as the :code:`kxy` python package is imported alongside :code:`pandas`. 
 	"""
 
-	def data_driven_improvability(self, target_column, new_variables, problem_type=None, anonymize=False, snr='auto'):
+	def data_driven_improvability(self, target_column, new_variables, problem_type=None, anonymize=None, snr='auto', file_name=None):
 		"""
 		Estimate the potential performance boost that a set of new explanatory variables can bring about.
 
@@ -33,7 +32,7 @@ class PostLearningAccessor(BaseAccessor):
 		problem_type : None | 'classification' | 'regression'
 			The type of supervised learning problem. When None, it is inferred from whether or not :code:`target_column` is categorical.
 		anonymize : bool
-			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
+			When set to true, your explanatory variables will never be shared with KXY (at no performance cost). When set to None (the default), your data will be anonymized when it is too big.
 
 
 
@@ -62,12 +61,12 @@ class PostLearningAccessor(BaseAccessor):
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
-		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize or self.is_too_large else self._obj
+		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize or (anonymize is None and self.is_too_large) else self._obj
 
-		return ddi(_obj, target_column, new_variables, problem_type, snr=snr)
+		return ddi(_obj, target_column, new_variables, problem_type, snr=snr, file_name=file_name)
 
 
-	def model_driven_improvability(self, target_column, prediction_column, problem_type=None, anonymize=False, snr='auto'):
+	def model_driven_improvability(self, target_column, prediction_column, problem_type=None, anonymize=None, snr='auto', file_name=None):
 		"""
 		Estimate the extent to which a trained supervised learner may be improved in a model-driven fashion (i.e. without resorting to additional explanatory variables).
 
@@ -80,8 +79,8 @@ class PostLearningAccessor(BaseAccessor):
 			The name of the column containing model predictions.
 		problem_type : None | 'classification' | 'regression'
 			The type of supervised learning problem. When None, it is inferred from whether or not :code:`target_column` is categorical.
-		anonymize : bool
-			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
+		anonymize : None | bool
+			When set to true, your explanatory variables will never be shared with KXY (at no performance cost). When set to None (the default), your data will be anonymized when it is too big.
 
 
 		Returns
@@ -114,12 +113,12 @@ class PostLearningAccessor(BaseAccessor):
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
 
-		_obj = self.anonymize(columns_to_exclude=[target_column, prediction_column]) if anonymize or self.is_too_large else self._obj
+		_obj = self.anonymize(columns_to_exclude=[target_column, prediction_column]) if anonymize or (anonymize is None and self.is_too_large) else self._obj
 
-		return mdi(_obj, target_column, prediction_column, problem_type, snr=snr)
+		return mdi(_obj, target_column, prediction_column, problem_type, snr=snr, file_name=file_name)
 
 
-	def model_explanation(self, prediction_column, problem_type=None, anonymize=False, snr='auto'):
+	def model_explanation(self, prediction_column, problem_type=None, anonymize=None, snr='auto', file_name=None):
 		"""
 		Analyzes the variables that a model relies on the most in a brute-force fashion.
 		
@@ -136,8 +135,8 @@ class PostLearningAccessor(BaseAccessor):
 			The name of the column containing model predictions.
 		problem_type : None | 'classification' | 'regression'
 			The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
-		anonymize : bool
-			When set to true, your explanatory variables will never be shared with KXY (at no performance cost).
+		anonymize : None | bool
+			When set to true, your explanatory variables will never be shared with KXY (at no performance cost). When set to None (the default), your data will be anonymized when it is too big.
 
 		Returns
 		-------
@@ -165,8 +164,8 @@ class PostLearningAccessor(BaseAccessor):
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(prediction_column) else 'regression'
 
-		_obj = self.anonymize(columns_to_exclude=[prediction_column]) if anonymize or self.is_too_large else self._obj
+		_obj = self.anonymize(columns_to_exclude=[prediction_column]) if anonymize or (anonymize is None and self.is_too_large) else self._obj
 
-		return me(_obj, prediction_column, problem_type, snr=snr)
+		return me(_obj, prediction_column, problem_type, snr=snr, file_name=file_name)
 
 

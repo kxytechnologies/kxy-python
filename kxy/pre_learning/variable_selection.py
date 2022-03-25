@@ -24,7 +24,7 @@ from kxy.api import APIClient, upload_data
 # Cache old job ids to avoid being charged twice for the same job.
 VARIABLE_SELECTION_JOB_IDS = {}
 
-def variable_selection(data_df, target_column, problem_type, snr='auto'):
+def variable_selection(data_df, target_column, problem_type, snr='auto', file_name=None):
 	"""
 	.. _variable-selection:
 	Runs the model-free variable selection analysis.
@@ -44,7 +44,8 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 		The name of the column containing true labels.
 	problem_type : None | 'classification' | 'regression'
 		The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
-
+	file_name : None | str
+		A unique identifier characterizing data_df in the form of a file name. Do not set this unless you know why.
 
 
 	Returns
@@ -69,7 +70,7 @@ def variable_selection(data_df, target_column, problem_type, snr='auto'):
 	if problem_type.lower() == 'regression':
 		assert np.can_cast(data_df[target_column], float), 'The target column should be numeric'
 
-	file_name = upload_data(data_df)
+	file_name = upload_data(data_df, file_name=file_name)
 	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
 	spinner.start()
 

@@ -24,7 +24,7 @@ from kxy.api import APIClient, upload_data
 # Cache old job ids to avoid being charged twice for the same job.
 VALUATION_JOB_IDS = {}
 
-def data_valuation(data_df, target_column, problem_type, snr='auto', include_mutual_information=False):
+def data_valuation(data_df, target_column, problem_type, snr='auto', include_mutual_information=False, file_name=None):
 	"""
 	.. _data-valuation:
 	Estimate the highest performance metrics achievable when predicting the :code:`target_column` using all other columns.
@@ -42,6 +42,8 @@ def data_valuation(data_df, target_column, problem_type, snr='auto', include_mut
 		The type of supervised learning problem. When None, it is inferred from the column type and the number of distinct values.
 	include_mutual_information : bool
 		Whether to include the mutual information between target and explanatory variables in the result.
+	file_name : None | str
+		A unique identifier characterizing data_df in the form of a file name. Do not set this unless you know why.
 
 
 
@@ -68,7 +70,7 @@ def data_valuation(data_df, target_column, problem_type, snr='auto', include_mut
 	k = 0
 	max_k = 100
 
-	file_name = upload_data(data_df)
+	file_name = upload_data(data_df, file_name=file_name)
 	spinner = Halo(text='Waiting for results from the backend.', spinner='dots')
 	spinner.start()
 
