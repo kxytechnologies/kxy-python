@@ -20,6 +20,7 @@ except:
 	from halo import Halo
 
 from kxy.api import APIClient, upload_data
+from kxy.misc import LongerThanExpectedException
 
 # Cache old job ids to avoid being charged twice for the same job.
 VALUATION_JOB_IDS = {}
@@ -164,6 +165,8 @@ def data_valuation(data_df, target_column, problem_type, snr='auto', include_mut
 					logging.error('\n%s' % response['message'])
 			except:
 				logging.error('\nData valuation failed. Last HTTP code: %s' % api_response.status_code)
+
+	raise LongerThanExpectedException('The backend is taking longer than expected, but rest reassured your task is still running. Please try again later to retrieve your results.')
 
 	return None
 

@@ -20,3 +20,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from .boruta import *
 from .rfe import *
 from .predictors import *
+from .exceptions import *

@@ -60,6 +60,7 @@ class PreLearningAccessor(BaseAccessor):
 		assert target_column in self._obj.columns, 'The target_column should be a column'
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
+		self.check_problem_type(problem_type, target_column)
 
 		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize or (anonymize is None and self.is_too_large) else self._obj
 
@@ -106,7 +107,8 @@ class PreLearningAccessor(BaseAccessor):
 		assert target_column in self._obj.columns, 'The target_column should be a column'
 		if problem_type is None:
 			problem_type = 'classification' if self.is_discrete(target_column) else 'regression'
-
+		self.check_problem_type(problem_type, target_column)
+		
 		_obj = self.anonymize(columns_to_exclude=[target_column]) if anonymize or (anonymize is None and self.is_too_large) else self._obj
 
 		return vs(_obj, target_column, problem_type, snr=snr, file_name=file_name)

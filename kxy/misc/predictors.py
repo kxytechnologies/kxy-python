@@ -133,7 +133,8 @@ class RFEPredictor(BasePredictor):
 		x_df = obj[x_columns]
 		y_df = obj[[target_column]]
 
-		feature_selector = RFE(learner_func, path=path + '-' + self.__class__.__name__)
+		derived_path = None if path is None else path + '-' + self.__class__.__name__
+		feature_selector = RFE(learner_func, path=derived_path)
 		m = feature_selector.fit(x_df, y_df, n_features, max_duration=max_duration)
 		self.models = [m]
 		self.selected_variables = feature_selector.selected_variables
@@ -187,7 +188,8 @@ class BorutaPredictor(BasePredictor):
 		x_df = obj[x_columns]
 		y_df = obj[[target_column]]
 
-		feature_selector = Boruta(learner_func, path=path + '-' + self.__class__.__name__)
+		derived_path = None if path is None else path + '-' + self.__class__.__name__
+		feature_selector = Boruta(learner_func, path=derived_path)
 		m = feature_selector.fit(x_df, y_df, n_evaluations=n_evaluations, pval=pval, max_duration=max_duration)
 		self.models = [m]
 		self.selected_variables = feature_selector.selected_variables
@@ -235,7 +237,8 @@ class NaivePredictor(BasePredictor):
 		x_df = obj[x_columns]
 		y_df = obj[[target_column]]
 
-		feature_selector = NaiveLearner(learner_func, path=path + '-' + self.__class__.__name__)
+		derived_path = None if path is None else path + '-' + self.__class__.__name__
+		feature_selector = NaiveLearner(learner_func, path=derived_path)
 		m = feature_selector.fit(x_df, y_df)
 		self.models = [m]
 		self.selected_variables = feature_selector.selected_variables

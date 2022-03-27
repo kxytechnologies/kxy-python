@@ -21,6 +21,14 @@ class BaseAccessor(object):
 		self._obj = pandas_obj
 
 
+	def check_problem_type(self, problem_type, target_column):
+		if problem_type == 'regression':
+			try:
+				y = self._obj[target_column].astype(float)
+			except:
+				raise ValueError('You specified regression as problem_type but the target column is not numeric')
+
+
 	def is_discrete(self, column):
 		"""
 		Determine whether the input column contains discrete (i.e as opposed to continuous) observations.

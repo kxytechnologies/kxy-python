@@ -20,6 +20,7 @@ except:
 	from halo import Halo
 
 from kxy.api import APIClient, upload_data
+from kxy.misc import LongerThanExpectedException
 
 # Cache old job ids to avoid being charged twice for the same job.
 EXPLANATION_JOB_IDS = {}
@@ -173,6 +174,8 @@ def model_explanation(data_df, prediction_column, problem_type, snr='auto', file
 					logging.error('\n%s' % response['message'])
 			except:
 				logging.error('\nModel explanation failed. Last HTTP code: %s, Content: %s' % (api_response.status_code, api_response.content))
+
+	raise LongerThanExpectedException('The backend is taking longer than expected, but rest reassured your task is still running. Please try again later to retrieve your results.')
 
 	return None
 
