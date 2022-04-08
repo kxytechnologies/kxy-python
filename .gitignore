@@ -147,3 +147,5 @@ UCI*/
 local_*.py
 *do-not-commit*
 AutogluonModels*
+*-PFSPredictor
+*-PCAPredictor

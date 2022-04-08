@@ -5,6 +5,7 @@ import pandas as pd
 from .base_accessor import BaseAccessor
 from ..learning.leanml_predictor import LeanMLPredictor
 from ..misc.predictors import BorutaPredictor, RFEPredictor, NaivePredictor
+from ..pfs.pfs_predictor import PFSPredictor, PCAPredictor
 
 
 
@@ -24,7 +25,8 @@ class LearningAccessor(BaseAccessor):
 			benchmark_feature=None, missing_value_imputation=False, score='auto', n_down_perf_before_stop=3, \
 			regression_baseline='mean', additive_learning=False, regression_error_type='additive', return_scores=False, \
 			start_n_features_perf_frac=0.9, feature_selection_method='leanml', rfe_n_features=None, boruta_pval=0.5, \
-			boruta_n_evaluations=20, max_duration=None, val_performance_buffer=0.0, path=None, data_identifier=None):
+			boruta_n_evaluations=20, max_duration=None, val_performance_buffer=0.0, path=None, data_identifier=None, \
+			pca_energy_loss_frac=0.05, pfs_p=None):
 		"""
 		Train a lean boosted supervised learner, bringing in variables one at a time, in decreasing order of importance (as per :code:`df.kxy.variable_selection`), until doing so no longer improves validation performance or another stopping criterion is met.
 
@@ -80,8 +82,8 @@ class LearningAccessor(BaseAccessor):
 			When :code:`start_n_features` is not specified, it is set to the number of variables required to achieve a fraction :code:`start_n_features_perf_frac` of the maximum performance achievable (as per :code:`df.kxy.variable_selection`).
 		return_scores : bool (Default False)
 			Whether to return training, validation and testing performance after lean boosting.
-		feature_selection_method : str (:code:`leanml` | :code:`rfe` | :code:`boruta` | :code:`none`. Default :code:`leanml`)
-			Do not change this unless you want to try out Boruta or Recursive Feature Selection. The leanml method outperforms both.
+		feature_selection_method : str (:code:`leanml` | :code:`rfe` | :code:`boruta` | :code:`pfs` | :code:`pca` | :code:`none`. Default :code:`leanml`)
+			Do not change this unless you want to try out Boruta, Recursive Feature Selection, PCA or Principal Feature Selection. The leanml method outperforms all four.
 		rfe_n_features : int
 			The number of features to keep when the feature selection method is :code:`rfe`.
 		boruta_pval : float
@@ -94,6 +96,10 @@ class LearningAccessor(BaseAccessor):
 			In LeanML feature selection, this is the threshold by which the new validation performance needs to exceed the previously evaluated validation performance to consider increasing the number of features.
 		score : str | func
 			The validation metric to use to determine if a new feature should be added. When set to :code:`'auto'` (the default), the :math:`R^2` is used for regression problems and the classification accuracy is used for classification problems. Any other string should be the name of a globally accessible callable.
+		pca_energy_loss_frac : float (Default 0.05)
+			The maximum fraction of energy (or variance) that left-out principal directions should account for when PCA is the feature selection method chosen.
+		pfs_p : int | None (Default)
+			The number of principal features to learn when using PFS. A value that is not :code:`None` automatically selects the one-shot flavor of PFS instead of the PCA-style.
 
 
 		Returns
@@ -131,6 +137,18 @@ class LearningAccessor(BaseAccessor):
 			res = predictor.fit(self._obj, target_column, learner_func, n_features=rfe_n_features, max_duration=max_duration, path=path)
 			self.predictor = predictor
 			res['predictor'] = predictor
+
+		elif feature_selection_method.lower() == 'pfs':
+			predictor = PFSPredictor()
+			res = predictor.fit(self._obj, target_column, learner_func, max_duration=max_duration, path=path, p=pfs_p)
+			self.predictor = predictor
+			res['predictor'] = predictor
+
+		elif feature_selection_method.lower() == 'pca':
+			predictor = PCAPredictor(energy_loss_frac=pca_energy_loss_frac)
+			res = predictor.fit(self._obj, target_column, learner_func, max_duration=max_duration, path=path)
+			self.predictor = predictor
+			res['predictor'] = predictor	
 
 		else:
 			raise ValueError('The value of feature_selection_method (%s) is not allowed' % feature_selection_method)

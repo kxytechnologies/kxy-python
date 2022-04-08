@@ -22,7 +22,7 @@ df = df[columns]
 ####################
 # Train/Test Split #
 ####################
-random_seed = 0
+random_seed = 2
 test_df = df.sample(frac=0.8, random_state=random_seed)
 train_df = df.drop(test_df.index)
 train_features = train_df[feature_columns]
@@ -40,15 +40,16 @@ lightgbm_regressor_learner_cls = get_lightgbm_learner_sklearn_api('lightgbm.LGBM
 
 # Lean boosting fit
 results = train_df.kxy.fit(target_column, lightgbm_regressor_learner_cls, \
-    problem_type=problem_type, feature_selection_method='leanml', \
-    data_identifier='numerai_training_data_int8_train_seed_%d.parquet.gzip' % random_seed, \
-    snr='high')
+    problem_type=problem_type, feature_selection_method='pfs', pfs_p=100, \
+    data_identifier='numerai_training_data_int8_train_seed_%d.parquet.gzip' % random_seed)
 
 predictor = results['predictor']
-selected_features = predictor.selected_variables
+p = predictor.feature_directions.shape[0]
+print('Number of features: %d' % p)
 
-print('Selected Variables')
-print(selected_features)
+# selected_features = predictor.selected_variables
+# print('Selected Variables')
+# print(selected_features)
 
 # Training/Testing Predictions
 train_predictions = predictor.predict(train_features)

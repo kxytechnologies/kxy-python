@@ -406,7 +406,6 @@ def test_non_additive_lean_boosted_classifier():
 	results = features_df.kxy.fit(target_column, lightgbm_classifier_cls, \
 		problem_type='classification', additive_learning=False, return_scores=True, \
 		n_down_perf_before_stop=1)
-
 	assert results['Testing Accuracy'] == '0.964'
 	assert results['Selected Variables'] == ['Variance', 'Skewness.ABS(* - Q25(*))', 'Kurtosis', 'Skewness', 'Entropy']
 
@@ -425,7 +424,6 @@ def test_autogluon():
 	results = features_df.kxy.fit(target_column, autogluon_learner_func, \
 		problem_type='classification', additive_learning=False, return_scores=True, \
 		n_down_perf_before_stop=1)
-
 	assert results['Testing Accuracy'] == '1.000'
 	assert results['Selected Variables'] == ['Variance', 'Skewness.ABS(* - Q25(*))', 'Kurtosis', 'Skewness']
 

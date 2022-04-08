@@ -1,4 +1,4 @@
-VERSION = 1.4.2
+VERSION = 1.4.4
 
 # Update the s3 bucket of the docs website
 deploy_docs:
@@ -25,9 +25,11 @@ docker_release:
 
 docker_release_github:
 	docker build -t ghcr.io/kxytechnologies/kxy-python:latest ./docker/kxy/
-	echo $(CR_PAT) | docker login ghcr.io -u USERNAME --password-stdin && docker push ghcr.io/kxytechnologies/kxy-python:latest
+	# echo $(CR_PAT) | docker login ghcr.io -u USERNAME --password-stdin && docker push ghcr.io/kxytechnologies/kxy-python:latest
+	docker push ghcr.io/kxytechnologies/kxy-python:latest
 	docker build -t ghcr.io/kxytechnologies/kxy-python:$(VERSION) ./docker/kxy/
-	echo $(CR_PAT) | docker login ghcr.io -u USERNAME --password-stdin && docker push ghcr.io/kxytechnologies/kxy-python:$(VERSION)
+	# echo $(CR_PAT) | docker login ghcr.io -u USERNAME --password-stdin && docker push ghcr.io/kxytechnologies/kxy-python:$(VERSION)
+	docker push ghcr.io/kxytechnologies/kxy-python:$(VERSION)
 
 
 one_shot_release:
@@ -43,6 +45,17 @@ update_docs:
 	make html
 	make deploy_docs
 	make refresh_web PATHS=/reference/*
+
+
+github_release:
+	gh release create v$(VERSION) -F CHANGELOG.md
+
+
+package_release:
+	make pypi_release
+	make github_release
+	make docker_release_github
+	make docker_release
 
 
 osr:
