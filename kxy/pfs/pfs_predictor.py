@@ -9,6 +9,9 @@ from .pfs_selector import PFS, PCA
 
 
 class PFSPredictor(object):
+	"""
+	Principal Feature Selection Predictor.
+	"""
 	def _predict(self, obj):
 		assert hasattr(self, 'models'), 'The model should be first fitted'
 		assert hasattr(self, 'feature_directions'), 'The model should first be fitted'
@@ -162,6 +165,9 @@ class PFSPredictor(object):
 
 
 class PCAPredictor(PFSPredictor):
+	"""
+	Principal Component Analysis Predictor.
+	"""
 	def __init__(self, energy_loss_frac=0.05):
 		self.energy_loss_frac = energy_loss_frac
 

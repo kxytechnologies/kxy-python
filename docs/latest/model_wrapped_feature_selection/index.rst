@@ -31,6 +31,17 @@ Boruta and Recursive Feature Elimination
     :members:
 
 
+Principal Feature Selection
+---------------------------
+
+.. automodule:: kxy.pfs.pfs_selector
+    :members:
+
+.. automodule:: kxy.pfs.pfs_predictor
+    :members:
+
+
+
 Utilities Generating Learner Functions
 --------------------------------------
 

@@ -76,6 +76,9 @@ def learn_principal_directions_one_shot(y, x, p):
 
 
 class PFS(object):
+	"""
+	Principal Feature Selection.
+	"""
 	def fit(self, x, y, p=None, mi_tolerance=0.0001, max_duration=None):
 		"""
 		Perform Principal Feature Selection using :math:`x` to predict :math:`y`.
@@ -152,6 +155,9 @@ class PFS(object):
 
 
 class PCA(object):
+	"""
+	Principal Component Analysis.
+	"""
 	def __init__(self, energy_loss_frac=0.05):
 		self.energy_loss_frac = energy_loss_frac
 

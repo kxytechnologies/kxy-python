@@ -17,6 +17,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+try:
+	from pkg_resources import parse_version
+	import tensorflow as tf
+	assert parse_version(tf.__version__) >= parse_version('2.4.1')
+except:
+	import logging
+	logging.warning('You need tensorflow version 2.8 or higher to estimate mutual information or copula entropy locally.')
 from .generators import *
 from .layers import *
 from .losses import *

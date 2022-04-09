@@ -4,7 +4,12 @@
 import logging
 from time import time
 import numpy as np
-from tqdm import tqdm
+
+try:
+	from tqdm import tqdm
+except:
+	logging.warning('Boruta requires tqdm, which does not seem installed.')
+
 
 class RFE(object):
 	"""

@@ -7,7 +7,11 @@ import numpy as np
 import pandas as pd
 from scipy.stats import binom
 
-from tqdm import tqdm
+try:
+	from tqdm import tqdm
+except:
+	logging.warning('Boruta requires tqdm, which does not seem installed.')
+
 
 class Boruta(object):
 	"""
