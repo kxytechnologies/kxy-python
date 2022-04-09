@@ -19,6 +19,7 @@ RUN pip install tensorflow
 RUN pip install tensorflow_probability
 RUN pip install botocore
 RUN pip install boto3
+RUN pip install tqdm
 
 # Install kxy
 RUN pip install kxy==1.4.4
