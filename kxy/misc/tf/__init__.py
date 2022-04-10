@@ -27,6 +27,8 @@ except:
 
 from .generators import *
 from .ops import *
+from .config import *
+from .initializers import *
 from .layers import *
 from .losses import *
 from .models import *

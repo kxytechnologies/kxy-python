@@ -104,6 +104,8 @@ def test_save_pfs():
 
 def test_pfs_accuracy():
 	# Generate the data
+	seed = 1
+	np.random.seed(seed)
 	d = 100
 	w = np.ones(d)/d
 	x = np.random.randn(10000, d)
@@ -111,8 +113,10 @@ def test_pfs_accuracy():
 	y = xTw + 2.*xTw**2 + 0.5*xTw**3
 
 	# Run PFS
+	from kxy.misc.tf import set_default_parameter
+	set_default_parameter('lr', 0.001)
 	selector = PFS()
-	selector.fit(x, y, epochs=21)
+	selector.fit(x, y, epochs=21, seed=seed)
 
 	# Learned principal directions
 	F = selector.feature_directions

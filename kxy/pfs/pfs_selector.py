@@ -4,6 +4,7 @@ from time import time
 import logging
 import numpy as np
 
+import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, TerminateOnNaN
 from tensorflow.keras.optimizers import Adam
 
@@ -80,7 +81,7 @@ class PFS(object):
 	"""
 	Principal Feature Selection.
 	"""
-	def fit(self, x, y, p=None, mi_tolerance=0.0001, max_duration=None, epochs=20):
+	def fit(self, x, y, p=None, mi_tolerance=0.0001, max_duration=None, epochs=20, seed=None):
 		"""
 		Perform Principal Feature Selection using :math:`x` to predict :math:`y`.
 
@@ -114,6 +115,10 @@ class PFS(object):
 		W : np.array
 			2D array whose rows are directions to use to compute principal features: :math:`z = Wx`.
 		"""
+		if not seed is None:
+			from kxy.misc.tf import set_seed
+			set_seed(seed)
+
 		if max_duration:
 			start_time = time()
 

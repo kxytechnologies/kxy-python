@@ -1,4 +1,4 @@
-VERSION = 1.4.6
+VERSION = 1.4.7
 
 # Update the s3 bucket of the docs website
 deploy_docs:

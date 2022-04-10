@@ -11,6 +11,12 @@ tf.config.threading.set_intra_op_parallelism_threads(8)
 tf.config.set_soft_device_placement(True)
 from tensorflow.keras.utils import Sequence
 
+LOCAL_SEED = None
+
+def set_generators_seed(seed):
+	globals()['LOCAL_SEED'] = seed
+
+
 rankdata = lambda x: 1.+np.argsort(np.argsort(x, axis=0), axis=0)
 class CopulaBatchGenerator(Sequence):
 	''' 
@@ -24,17 +30,18 @@ class CopulaBatchGenerator(Sequence):
 		self.steps_per_epoch = steps_per_epoch
 		self.emp_u = rankdata(self.z)/(self.n + 1.)
 		self.emp_u[np.isnan(self.z)] = 0.5
+		self.rnd_gen = np.random.default_rng(LOCAL_SEED)
 
 		if self.n < 200*self.d:
 			dn = 200*self.d - self.n
-			selected_rows = np.random.choice(self.n, dn, replace=True)
+			selected_rows = self.rnd_gen.choice(self.n, dn, replace=True)
 			emp_u = self.emp_u[selected_rows, :].copy()
 			scale = 1./(100.*self.n)
-			emp_u += (scale*np.random.rand(*emp_u.shape) - 0.5*scale)
+			emp_u += (scale*self.rnd_gen.uniform(size=emp_u.shape) - 0.5*scale)
 			self.emp_u = np.concatenate([self.emp_u, emp_u], axis=0)
 			self.n = self.emp_u.shape[0]
 
-		self.batch_selector = np.random.choice(self.n, self.batch_size*self.steps_per_epoch, replace=True)
+		self.batch_selector = self.rnd_gen.choice(self.n, self.batch_size*self.steps_per_epoch, replace=True)
 		self.batch_selector = self.batch_selector.reshape((self.steps_per_epoch, self.batch_size))
 
 
@@ -44,7 +51,7 @@ class CopulaBatchGenerator(Sequence):
 		selected_rows = self.batch_selector[i]
 		emp_u_ = self.emp_u[selected_rows, :]
 		z_p = emp_u_.copy()
-		z_q = np.random.rand(*emp_u_.shape)
+		z_q = self.rnd_gen.uniform(size=emp_u_.shape)
 
 		z = np.empty((self.batch_size, self.d, 2))
 		z[:, :, 0] = z_p
@@ -70,6 +77,7 @@ class PFSBatchGenerator(Sequence):
 	Random batch generator.
 	'''
 	def __init__(self, x, y, ox=None, oy=None, batch_size=1000, steps_per_epoch=100, n_shuffle=5):
+		self.rnd_gen = np.random.default_rng(LOCAL_SEED)
 		assert x.shape[0] == y.shape[0]
 		self.batch_size = batch_size
 		self.n_shuffle = n_shuffle
@@ -89,7 +97,7 @@ class PFSBatchGenerator(Sequence):
 
 		self.steps_per_epoch = steps_per_epoch
 		replace = False if self.n > self.batch_size*self.steps_per_epoch else True
-		self.batch_selector = np.random.choice(self.n, self.batch_size*self.steps_per_epoch, replace=replace)
+		self.batch_selector = self.rnd_gen.choice(self.n, self.batch_size*self.steps_per_epoch, replace=replace)
 		self.batch_selector = self.batch_selector.reshape((self.steps_per_epoch, self.batch_size))
 		
 		
@@ -110,7 +118,7 @@ class PFSBatchGenerator(Sequence):
 			z_p = z_.copy() if z_p is None else np.concatenate([z_p, z_.copy()], axis=0)
 			y_q = y_.copy()
 			randomize = np.arange(y_q.shape[0])
-			np.random.shuffle(randomize)
+			self.rnd_gen.shuffle(randomize)
 			y_q = y_q[randomize]
 			if not self.ox is None:
 				oy_q = oy_.copy()
