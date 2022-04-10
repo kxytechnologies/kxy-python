@@ -112,7 +112,7 @@ def test_pfs_accuracy():
 
 	# Run PFS
 	selector = PFS()
-	selector.fit(x, y)
+	selector.fit(x, y, epochs=21)
 
 	# Learned principal directions
 	F = selector.feature_directions
@@ -126,6 +126,6 @@ def test_pfs_accuracy():
 	e = np.linalg.norm(true_f_1-learned_f_1)
 
 	assert e <= 0.10
-
+	assert selector.mutual_information > 1.0
 
 

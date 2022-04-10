@@ -24,7 +24,9 @@ try:
 except:
 	import logging
 	logging.warning('You need tensorflow version 2.8 or higher to estimate mutual information or copula entropy locally.')
+
 from .generators import *
+from .ops import *
 from .layers import *
 from .losses import *
 from .models import *

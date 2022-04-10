@@ -212,7 +212,7 @@ class PFSOneShotModel(Model):
 		t_q = self.statistics(q_samples)
 		
 		t = concatenate([t_p, t_q], axis=1)
-		t = clip(t, -200., 200.)
+		t = clip(t, -200., 400.)
 		return t
 
 

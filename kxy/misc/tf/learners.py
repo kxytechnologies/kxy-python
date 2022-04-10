@@ -11,7 +11,7 @@ from tensorflow.keras.optimizers import Adam
 
 from .generators import CopulaBatchGenerator, PFSBatchGenerator
 from .models import CopulaModel, PFSModel, PFSOneShotModel
-from .losses import MINDLoss
+from .losses import MINDLoss, ApproximateMINDLoss, RectifiedMINDLoss
 
 
 class CopulaLearner(object):
@@ -53,7 +53,7 @@ class PFSLearner(object):
 		self.model = PFSModel(x_ixs, y_ixs, ox_ixs=ox_ixs, oy_ixs=oy_ixs)
 		self.opt = Adam(beta_1=beta_1, beta_2=beta_2, epsilon=epsilon, amsgrad=amsgrad, \
 			name=name, lr=lr)
-		self.loss = MINDLoss()
+		self.loss = RectifiedMINDLoss() # MINDLoss()
 		self.model.compile(optimizer=self.opt, loss=self.loss)
 		self.mutual_information = None
 		self.feature_direction = None
@@ -110,7 +110,7 @@ class PFSOneShotLearner(object):
 		self.model = PFSOneShotModel(x_ixs, y_ixs, p=p)
 		self.opt = Adam(beta_1=beta_1, beta_2=beta_2, epsilon=epsilon, amsgrad=amsgrad, \
 			name=name, lr=lr)
-		self.loss = MINDLoss()
+		self.loss = RectifiedMINDLoss() # MINDLoss()
 		self.model.compile(optimizer=self.opt, loss=self.loss)
 		self.mutual_information = None
 		self.feature_direction = None

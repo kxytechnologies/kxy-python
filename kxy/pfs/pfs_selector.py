@@ -12,7 +12,7 @@ from kxy.misc.tf import PFSLearner, PFSOneShotLearner
 
 
 
-def learn_principal_direction(y, x, ox=None, oy=None):
+def learn_principal_direction(y, x, ox=None, oy=None, epochs=20):
 	"""
 	Learn the i-th principal feature when using :math:`x` to predict :math:`y`.
 
@@ -36,7 +36,7 @@ def learn_principal_direction(y, x, ox=None, oy=None):
 	doy = 0 if oy is None else 1 if len(oy.shape) == 1 else oy.shape[1]
 
 	learner = PFSLearner(dx, dy=dy, dox=dox, doy=doy)
-	learner.fit(x, y, ox=ox, oy=oy)
+	learner.fit(x, y, ox=ox, oy=oy, epochs=epochs)
 
 	mi = learner.mutual_information
 	w = learner.feature_direction
@@ -47,7 +47,7 @@ def learn_principal_direction(y, x, ox=None, oy=None):
 
 
 
-def learn_principal_directions_one_shot(y, x, p):
+def learn_principal_directions_one_shot(y, x, p, epochs=20):
 	"""
 	Jointly learn p principal features.
 
@@ -67,10 +67,11 @@ def learn_principal_directions_one_shot(y, x, p):
 	"""
 	dx = 1 if len(x.shape) == 1 else x.shape[1]
 	learner = PFSOneShotLearner(dx, p=p)
-	learner.fit(x, y)
+	learner.fit(x, y, epochs=epochs)
 	w = learner.feature_directions
+	mi = learner.mutual_information
 
-	return w
+	return w, mi
 
 
 
@@ -79,7 +80,7 @@ class PFS(object):
 	"""
 	Principal Feature Selection.
 	"""
-	def fit(self, x, y, p=None, mi_tolerance=0.0001, max_duration=None):
+	def fit(self, x, y, p=None, mi_tolerance=0.0001, max_duration=None, epochs=20):
 		"""
 		Perform Principal Feature Selection using :math:`x` to predict :math:`y`.
 
@@ -124,7 +125,7 @@ class PFS(object):
 			ox = None
 			oy = None
 			for i in range(d):
-				w, mi, ox, oy = learn_principal_direction(t, x, ox=ox, oy=oy)
+				w, mi, ox, oy = learn_principal_direction(t, x, ox=ox, oy=oy, epochs=epochs)
 
 				if mi-old_mi < mi_tolerance:
 					logging.info('The mutual information %.4f after %d round has not increase by more than %.4f: stopping.' % (
@@ -146,9 +147,12 @@ class PFS(object):
 				rows += [w.copy()]
 
 			self.feature_directions = np.array(rows)
+			self.mutual_information = old_mi
 		else:
 			# Learn all p principal features jointly.
-			self.feature_directions = learn_principal_directions_one_shot(y, x, p)
+			feature_directions, mi = learn_principal_directions_one_shot(y, x, p, epochs=epochs)
+			self.feature_directions = feature_directions
+			self.mutual_information = mi
 
 		return self.feature_directions
 
