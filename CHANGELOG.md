@@ -1,6 +1,11 @@
 
 
 # Change Log
+## v.1.4.8 Changes
+
+* Froze the versions of all python packages in the docker file.
+
+
 ## v.1.4.7 Changes
 
 Changes related to optimizing Principal Feature Selection.
