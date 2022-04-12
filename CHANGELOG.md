@@ -5,7 +5,7 @@
 
 * Froze the versions of all python packages in the docker file.
 * Change the activation function used by PFS from ReLU to switch/SILU.
-* Removed code setting the log level to INFO.
+* Leaving it to the user to set the logging level.
 
 
 ## v.1.4.7 Changes
