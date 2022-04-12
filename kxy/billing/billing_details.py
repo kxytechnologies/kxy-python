@@ -4,7 +4,6 @@
 Everything billing.
 """
 import logging
-logging.basicConfig(level=logging.INFO)
 import requests
 from time import time
 

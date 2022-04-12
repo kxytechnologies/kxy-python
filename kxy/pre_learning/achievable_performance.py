@@ -5,7 +5,6 @@ Estimation of the highest performance achievable in a supervised learning proble
 E.g. :math:`R^2`, RMSE, classification accuracy, true log-likelihood per observation.
 """
 import logging
-logging.basicConfig(level=logging.INFO)
 import requests
 import sys
 from time import time, sleep

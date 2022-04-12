@@ -34,9 +34,9 @@ class CopulaModel(Model):
 		self.p_samples = Lambda(lambda x: x[:,:,0])
 		self.q_samples = Lambda(lambda x: x[:,:,1])
 
-		self.fx_non_mon_layer_1s = [Dense(3, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform()) for _ in range(self.n_subsets)]
-		self.fx_non_mon_layer_2s = [Dense(5, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform()) for _ in range(self.n_subsets)]
-		self.fx_non_mon_layer_3s = [Dense(3, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform()) for _ in range(self.n_subsets)]
+		self.fx_non_mon_layer_1s = [Dense(3, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform()) for _ in range(self.n_subsets)]
+		self.fx_non_mon_layer_2s = [Dense(5, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform()) for _ in range(self.n_subsets)]
+		self.fx_non_mon_layer_3s = [Dense(3, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform()) for _ in range(self.n_subsets)]
 		self.fx_non_mon_layer_4s = [Dense(1) for _ in range(self.n_subsets)]
 
 		eff_ds = [len(subset)+1 for subset in self.subsets]
@@ -44,8 +44,8 @@ class CopulaModel(Model):
 		self.dots = [Dot(1) for _ in range(self.n_subsets)]
 
 		# Mixing layers
-		self.mixing_layer1 = Dense(5, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform())
-		self.mixing_layer2 = Dense(5, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform())
+		self.mixing_layer1 = Dense(5, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
+		self.mixing_layer2 = Dense(5, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
 		self.mixing_layer3 = Dense(1, kernel_initializer=frozen_glorot_uniform())
 
 
@@ -127,16 +127,16 @@ class PFSOneShotModel(Model):
 		# Z network
 		n_outer_z = 3
 		n_inner_z = 5
-		self.z_layer_1 = Dense(n_outer_z, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform())
-		self.z_layer_2 = Dense(n_inner_z, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform())
-		self.z_layer_3 = Dense(n_outer_z, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform())
+		self.z_layer_1 = Dense(n_outer_z, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
+		self.z_layer_2 = Dense(n_inner_z, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
+		self.z_layer_3 = Dense(n_outer_z, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
 
 		# Y network
 		n_outer_y = 3
 		n_inner_y = 5
-		self.y_layer_1 = Dense(n_outer_y, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform())
-		self.y_layer_2 = Dense(n_inner_y, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform())
-		self.y_layer_3 = Dense(n_outer_y, activation=tf.nn.relu, kernel_initializer=frozen_glorot_uniform())
+		self.y_layer_1 = Dense(n_outer_y, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
+		self.y_layer_2 = Dense(n_inner_y, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
+		self.y_layer_3 = Dense(n_outer_y, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
 
 		# Outer quadratic constraints
 		n_q = 1+n_outer_y+len(oy_ixs)+len(y_ixs)+n_outer_z+len(ox_ixs)

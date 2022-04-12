@@ -5,7 +5,6 @@ Estimation of the top-:math:`k` most valuable variables in a supervised learning
 the corresponding achievable performances.
 """
 import logging
-logging.basicConfig(level=logging.INFO)
 import requests
 import sys
 from time import time, sleep

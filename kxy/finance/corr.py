@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
-logging.basicConfig(level=logging.INFO)
 import requests
 import sys
 from time import time, sleep

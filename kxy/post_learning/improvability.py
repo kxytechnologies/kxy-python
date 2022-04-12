@@ -5,7 +5,6 @@ Estimation of the amount by which the performance of a trained supervised learni
 """
 import json
 import logging
-logging.basicConfig(level=logging.INFO)
 import requests
 import sys
 from time import time, sleep

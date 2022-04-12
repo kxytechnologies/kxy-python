@@ -6,7 +6,6 @@ To run our analyzes, the KXY backend needs your data. The methods below are the 
 """
 import hashlib
 import logging
-logging.basicConfig(level=logging.INFO)
 from time import time
 import requests
 

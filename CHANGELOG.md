@@ -4,6 +4,8 @@
 ## v.1.4.8 Changes
 
 * Froze the versions of all python packages in the docker file.
+* Change the activation function used by PFS from ReLU to switch/SILU.
+* Removed code setting the log level to INFO.
 
 
 ## v.1.4.7 Changes
