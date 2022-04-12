@@ -19,7 +19,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-__version__ = "1.4.8"
+__version__ = "1.4.9"
 
 from kxy.api import *
 from kxy.pre_learning import *

@@ -1,4 +1,4 @@
-VERSION = 1.4.8
+VERSION = 1.4.9
 
 # Update the s3 bucket of the docs website
 deploy_docs:
@@ -55,7 +55,7 @@ package_release:
 	make pypi_release
 	make github_release
 	timeout 5
-	make docker_release_github
+	# make docker_release_github
 	make docker_release
 
 

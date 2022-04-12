@@ -1,11 +1,15 @@
 
-
 # Change Log
+
+## v.1.4.9 Changes
+
+* Change the activation function used by PFS from ReLU to switch/SILU.
+* Leaving it to the user to set the logging level.
+
+
 ## v.1.4.8 Changes
 
 * Froze the versions of all python packages in the docker file.
-* Change the activation function used by PFS from ReLU to switch/SILU.
-* Leaving it to the user to set the logging level.
 
 
 ## v.1.4.7 Changes
