@@ -1,6 +1,12 @@
 
 # Change Log
 
+## v.1.4.10 Changes
+
+* Added a function to construct features derived from PFS mutual information estimation that should be expected to be linearly related to the target.
+* Fixed a global name conflict in `kxy.learning.base_learners`.
+
+
 ## v.1.4.9 Changes
 
 * Change the activation function used by PFS from ReLU to switch/SILU.

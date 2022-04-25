@@ -592,20 +592,31 @@ class LeanMLPredictor(object):
 		result : dict
 			Dictionary containing selected variables, as well as training, validation and testing performance.
 		"""
+		if path:
+			try:
+				self.set_from_disk(path, learner_func)
+				return {'Selected Variables': self.selected_variables}
+			except:
+				pass
 
 		if additive_learning:
-			return self._additive_fit(obj, target_column, learner_func, problem_type=problem_type, snr=snr, train_frac=train_frac, random_state=random_state, \
+			results = self._additive_fit(obj, target_column, learner_func, problem_type=problem_type, snr=snr, train_frac=train_frac, random_state=random_state, \
 				force_redo=force_redo, max_n_features=max_n_features, min_n_features=min_n_features, start_n_features=start_n_features, anonymize=anonymize, \
 				benchmark_feature=benchmark_feature, missing_value_imputation=missing_value_imputation, score=score, n_down_perf_before_stop=n_down_perf_before_stop, \
 				regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, start_n_features_perf_frac=start_n_features_perf_frac, \
 				val_performance_buffer=val_performance_buffer, path=path, file_name=file_name)
 
 		else:
-			return self._non_additive_fit(obj, target_column, learner_func, problem_type=problem_type, snr=snr, train_frac=train_frac, random_state=random_state, \
+			results = self._non_additive_fit(obj, target_column, learner_func, problem_type=problem_type, snr=snr, train_frac=train_frac, random_state=random_state, \
 				force_redo=force_redo, max_n_features=max_n_features, min_n_features=min_n_features, start_n_features=start_n_features, anonymize=anonymize, \
 				benchmark_feature=benchmark_feature, missing_value_imputation=missing_value_imputation, score=score, n_down_perf_before_stop=n_down_perf_before_stop, \
 				regression_baseline=regression_baseline, regression_error_type=regression_error_type, return_scores=return_scores, start_n_features_perf_frac=start_n_features_perf_frac, \
 				val_performance_buffer=val_performance_buffer, path=path, file_name=file_name)
+
+		if path:
+			self.save(path)
+
+		return results
 
 
 
@@ -716,6 +727,39 @@ class LeanMLPredictor(object):
 		with open(meta_path, 'wb') as f:
 			pkl.dump(meta, f)
 
+
+
+	def set_from_disk(self, path, learner_func):
+		"""
+		Load the learner from disk.
+		"""
+		meta_path = path + '-meta-LeanMLPredictor'
+		with open(meta_path, 'rb') as f:
+			meta = pkl.load(f)
+
+		additive_learning = meta['additive_learning']
+		target_column = meta['target_column']
+		variables = meta['variables']
+		selected_variables = meta['selected_variables']
+		problem_type = meta['problem_type']
+		max_var_ixs = meta['max_var_ixs']
+		n_models = meta['n_models']
+		n_vars = len(selected_variables)
+		predictor_paths = meta.get('predictor_paths', [path + '-model-%d-LeanMLPredictor' % i \
+			for i in range(n_models)])
+
+		self.additive_learning = additive_learning
+		self.target_column = target_column
+		self.variables = variables
+		self.selected_variables = selected_variables
+		self.problem_type = problem_type
+		self.max_var_ixs = max_var_ixs
+
+		self.models = []
+		for model_path in predictor_paths:
+			model = learner_func(n_vars=n_vars, path=model_path, \
+				safe=False)
+			self.models.append(model)
 
 
 

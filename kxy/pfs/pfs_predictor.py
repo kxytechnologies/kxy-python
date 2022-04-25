@@ -141,6 +141,16 @@ class PFSPredictor(object):
 			A dictionary containing, among other things, feature directions.
 
 		"""
+		if path:
+			try:
+				predictor = PFSPredictor.load(path, learner_func)
+				self.models = predictor.models
+				self.feature_directions = predictor.feature_directions
+				self.target_column = predictor.target_column
+				self.x_columns = predictor.x_columns
+				return {'Feature Directions': self.feature_directions}
+			except:
+				pass
 		self.target_column = target_column
 		self.x_columns = sorted([_ for _ in obj.columns if _ != target_column])
 

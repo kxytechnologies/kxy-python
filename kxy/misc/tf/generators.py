@@ -92,7 +92,9 @@ class PFSBatchGenerator(Sequence):
 		self.y = y
 		self.ox = ox
 		self.oy = oy
-		self.z = np.concatenate([self.x, self.y, self.ox, self.oy], axis=1) if not self.ox is None else np.concatenate([self.x, self.y], axis=1)
+		self.z = np.concatenate([self.x, self.y, self.ox, self.oy], axis=1) if (not self.ox is None and not self.oy is None) else \
+			np.concatenate([self.x, self.y, self.ox], axis=1) if (not self.ox is None) else \
+			np.concatenate([self.x, self.y], axis=1)
 		self.d = self.z.shape[1]
 
 		self.steps_per_epoch = steps_per_epoch
@@ -110,6 +112,7 @@ class PFSBatchGenerator(Sequence):
 		z_ = self.z[selected_rows, :]
 		if not self.ox is None:
 			ox_ = self.ox[selected_rows, :]
+		if not self.oy is None:		
 			oy_ = self.oy[selected_rows, :]
 
 		z_p = None
@@ -120,10 +123,12 @@ class PFSBatchGenerator(Sequence):
 			randomize = np.arange(y_q.shape[0])
 			self.rnd_gen.shuffle(randomize)
 			y_q = y_q[randomize]
-			if not self.ox is None:
+			if not self.oy is None:
 				oy_q = oy_.copy()
 				oy_q = oy_q[randomize]
-			z_q_ = np.concatenate([x_, y_q.copy(), ox_, oy_q], axis=1) if not self.ox is None else np.concatenate([x_, y_q.copy()], axis=1)
+			z_q_ = np.concatenate([x_, y_q.copy(), ox_, oy_q], axis=1) if (not self.ox is None and not self.oy is None) else \
+				np.concatenate([x_, y_q.copy(), ox_], axis=1) if not self.ox is None else \
+				np.concatenate([x_, y_q.copy()], axis=1)
 			z_q = z_q_.copy() if z_q is None else np.concatenate([z_q, z_q_.copy()], axis=0)
 
 		z = np.empty((self.batch_size*self.n_shuffle, self.d, 2))

@@ -149,3 +149,5 @@ local_*.py
 AutogluonModels*
 *-PFSPredictor
 *-PCAPredictor
+*-LeanMLPredictor
+*-NaivePredictor

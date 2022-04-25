@@ -115,8 +115,9 @@ class PFSOneShotModel(Model):
 	"""
 	Model for Principal Feature Selection.
 	"""
-	def __init__(self, x_ixs, y_ixs, ox_ixs=[], oy_ixs=[], p=1):
+	def __init__(self, x_ixs, y_ixs, ox_ixs=[], oy_ixs=[], p=1, expand_y=True):
 		super(PFSOneShotModel, self).__init__()
+		self.expand_y = expand_y
 		self.p_samples = Lambda(lambda x: x[:,:,0])
 		self.q_samples = Lambda(lambda x: x[:,:,1])
 
@@ -131,26 +132,29 @@ class PFSOneShotModel(Model):
 		self.z_layer_2 = Dense(n_inner_z, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
 		self.z_layer_3 = Dense(n_outer_z, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
 
-		# Y network
-		n_outer_y = 3
-		n_inner_y = 5
-		self.y_layer_1 = Dense(n_outer_y, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
-		self.y_layer_2 = Dense(n_inner_y, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
-		self.y_layer_3 = Dense(n_outer_y, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
-
-		# Outer quadratic constraints
-		n_q = 1+n_outer_y+len(oy_ixs)+len(y_ixs)+n_outer_z+len(ox_ixs)
-		self.quad_load = InitializableDense(n_q)
-		self.quad_dot = Dot(1)
+		if self.expand_y:
+			# Y network
+			n_outer_y = 1
+			n_inner_y = 5
+			self.y_layer_1 = Dense(n_outer_y, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
+			self.y_layer_2 = Dense(n_inner_y, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
+			self.y_layer_3 = Dense(n_outer_y, activation=tf.nn.silu, kernel_initializer=frozen_glorot_uniform())
+		else:
+			n_outer_y = 0
 
 		# Indices of x and y.
 		self.x_ixs = x_ixs
 		self.y_ixs = y_ixs
 		self.ox_ixs = ox_ixs
-		self.oy_ixs = oy_ixs
+		self.oy_ixs = oy_ixs if self.expand_y else []
+
+		# Outer quadratic constraints
+		n_q = 1+n_outer_y+len(self.oy_ixs)+len(self.y_ixs)+n_outer_z+len(self.ox_ixs)
+		self.quad_load = InitializableDense(n_q)
+		self.quad_dot = Dot(1)
 
 
-	def fx(self, u):
+	def new_fx(self, u):
 		''' '''
 		x = tf.gather(u, self.x_ixs, axis=1)
 
@@ -162,6 +166,13 @@ class PFSOneShotModel(Model):
 		fx = self.z_layer_2(fx)
 		fx = self.z_layer_3(fx)
 
+		return fx
+
+
+	def fx(self, u):
+		''' '''
+		fx = self.new_fx(u)
+
 		if self.ox_ixs:
 			old_fx = tf.gather(u, self.ox_ixs, axis=1)
 			fx = concatenate([fx, old_fx], axis=1)
@@ -169,12 +180,21 @@ class PFSOneShotModel(Model):
 		return fx
 
 
-	def gy(self, u):
+	def new_gy(self, u):
 		''' '''
+		assert self.expand_y, 'expand_y should be set to True to use this function'
 		y = tf.gather(u, self.y_ixs, axis=1)
 		gy = self.y_layer_1(y)
 		gy = self.y_layer_2(gy)
 		gy = self.y_layer_3(gy)
+
+		return gy
+
+
+	def gy(self, u):
+		''' '''
+		assert self.expand_y, 'expand_y should be set to True to use this function'
+		gy = self.new_gy(u)
 
 		if self.oy_ixs:
 			old_gy = tf.gather(u, self.oy_ixs, axis=1)
@@ -191,11 +211,14 @@ class PFSOneShotModel(Model):
 		res = tf.zeros(shape=[n, 1], dtype=tf.float64)
 
 		fx = self.fx(u)
-		gy = self.gy(u)
 
 		# q = [1, f(z), y, g(y)]H[1, f(z), y, g(y)]^T
 		# Note: the intercept is critical here, do not remove it!
-		fxgy = concatenate([tf.ones(shape=[n, 1], dtype=tf.float64), fx, y, gy], axis=1)
+		if self.expand_y:
+			gy = self.gy(u)
+			fxgy = concatenate([tf.ones(shape=[n, 1], dtype=tf.float64), fx, y, gy], axis=1)
+		else:
+			fxgy = concatenate([tf.ones(shape=[n, 1], dtype=tf.float64), fx, y], axis=1)
 		q = self.quad_load(fxgy)
 		q = self.quad_dot([q, fxgy])
 
@@ -223,7 +246,8 @@ class PFSModel(PFSOneShotModel):
 	"""
 	Model for Principal Feature Selection.
 	"""
-	def __init__(self, x_ixs, y_ixs, ox_ixs=[], oy_ixs=[]):
-		super(PFSModel, self).__init__(x_ixs, y_ixs, ox_ixs=ox_ixs, oy_ixs=oy_ixs, p=1)
+	def __init__(self, x_ixs, y_ixs, ox_ixs=[], oy_ixs=[], expand_y=True):
+		super(PFSModel, self).__init__(x_ixs, y_ixs, ox_ixs=ox_ixs, oy_ixs=oy_ixs, p=1, \
+			expand_y=expand_y)
 
 

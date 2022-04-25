@@ -116,7 +116,7 @@ def test_pfs_accuracy():
 	from kxy.misc.tf import set_default_parameter
 	set_default_parameter('lr', 0.001)
 	selector = PFS()
-	selector.fit(x, y, epochs=21, seed=seed)
+	selector.fit(x, y, epochs=21, seed=seed, expand_y=True)
 
 	# Learned principal directions
 	F = selector.feature_directions
@@ -131,5 +131,51 @@ def test_pfs_accuracy():
 
 	assert e <= 0.10
 	assert selector.mutual_information > 1.0
+
+
+def test_feature_extraction():
+	# Generate the data
+	seed = 1
+	np.random.seed(seed)
+	d = 100
+	w = np.ones(d)/d
+	x_train = np.random.randn(10000, d)
+	x_trainTw = np.dot(x_train, w)
+	y_train = x_trainTw + 2.*x_trainTw**2 + 0.5*x_trainTw**3
+
+	# Run PFS
+	from kxy.misc.tf import set_default_parameter
+	set_default_parameter('lr', 0.001)
+	selector = PFS()
+	selector.fit(x_train, y_train, epochs=21, seed=seed, expand_y=False)
+
+	# Extract the features
+	fx_train = selector.max_ent_features_x(x_train)
+	assert fx_train.shape[0] == x_train.shape[0]
+
+	# Run a linear regression relating learned features to y
+	from sklearn.linear_model import LinearRegression
+	from sklearn.metrics import r2_score
+
+	# Training
+	m = LinearRegression()
+	m.fit(fx_train, y_train)
+
+	# Testing accuracy
+	x_test = np.random.randn(10000, d)
+	x_testTw = np.dot(x_test, w)
+	y_test = x_testTw + 2.*x_testTw**2 + 0.5*x_testTw**3
+
+	fx_test = selector.max_ent_features_x(x_test)
+	assert fx_test.shape[0] == x_test.shape[0]
+
+	y_test_predicted = m.predict(fx_test)
+	testing_r2 = r2_score(y_test_predicted, y_test)
+
+	y_train_predicted = m.predict(fx_train)
+	training_r2 = r2_score(y_train_predicted, y_train)
+
+	assert training_r2>0.99, 'Learned features should be good for linear regression in-sample'
+	assert testing_r2>0.99, 'Learned features should be good for linear regression out-of-sample'
 
 

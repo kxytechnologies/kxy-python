@@ -60,13 +60,18 @@ class PFSLearner(object):
 	Principal Feature Learner.
 	'''
 	def __init__(self, dx, dy=1, dox=0, doy=0, beta_1=None, beta_2=None, epsilon=None, amsgrad=None, \
-			lr=None, name='Adam'):
+			lr=None, name='Adam', expand_y=True):
+		self.expand_y = expand_y
+		self.dx = dx
+		self.dy = dy
+		self.dox = dox
+		self.doy = doy
 		x_ixs = [_ for _ in range(dx)]
 		y_ixs = [dx+_ for _ in range(dy)]
 		ox_ixs = [dx+dy+_ for _ in range(dox)]
 		oy_ixs = [dx+dy+dox+_ for _ in range(doy)]
 
-		self.model = PFSModel(x_ixs, y_ixs, ox_ixs=ox_ixs, oy_ixs=oy_ixs)
+		self.model = PFSModel(x_ixs, y_ixs, ox_ixs=ox_ixs, oy_ixs=oy_ixs, expand_y=expand_y)
 		beta_1 = get_default_parameter('beta_1') if beta_1 is None else beta_1
 		beta_2 = get_default_parameter('beta_2') if beta_2 is None else beta_2
 		lr = get_default_parameter('lr') if lr is None else lr
@@ -119,7 +124,34 @@ class PFSLearner(object):
 
 		self.feature_direction = w
 		self.fx = self.model.fx(tf.constant(z_gen.z)).numpy()
-		self.gy = self.model.gy(tf.constant(z_gen.z)).numpy()
+		if self.expand_y:
+			self.gy = self.model.gy(tf.constant(z_gen.z)).numpy()
+
+
+	def learned_constraints_x(self, x):
+		'''
+		'''
+		n = x.shape[0]
+		y = np.zeros((n, self.dy))
+		ox = np.zeros((n, self.dox)) if self.dox>0 else None
+		oy = np.zeros((n, self.doy)) if self.doy>0 else None
+		z_gen = PFSBatchGenerator(x, y, ox=ox, oy=oy, n_shuffle=1)
+		fx = self.model.fx(tf.constant(z_gen.z)).numpy()
+
+		return fx
+
+
+	def learned_constraints_y(self, y):
+		'''
+		'''
+		n = x.shape[0]
+		x = np.zeros((n, self.dx))
+		ox = np.zeros((n, self.dox)) if self.dox>0 else None
+		oy = np.zeros((n, self.doy)) if self.doy>0 else None
+		z_gen = PFSBatchGenerator(x, y, ox=ox, oy=oy, n_shuffle=1)
+		gy = self.model.gy(tf.constant(z_gen.z)).numpy()
+
+		return gy
 
 
 
@@ -129,11 +161,12 @@ class PFSOneShotLearner(object):
 	Principal Feature Learner learning multiple principal features simultaneously.
 	'''
 	def __init__(self, dx, dy=1, beta_1=None, beta_2=None, epsilon=None, amsgrad=None, \
-			lr=None, name='Adam', p=1):
+			lr=None, name='Adam', p=1, expand_y=True):
+		self.expand_y = expand_y
 		x_ixs = [_ for _ in range(dx)]
 		y_ixs = [dx+_ for _ in range(dy)]
 
-		self.model = PFSOneShotModel(x_ixs, y_ixs, p=p)
+		self.model = PFSOneShotModel(x_ixs, y_ixs, p=p, expand_y=expand_y)
 		beta_1 = get_default_parameter('beta_1') if beta_1 is None else beta_1
 		beta_2 = get_default_parameter('beta_2') if beta_2 is None else beta_2
 		lr = get_default_parameter('lr') if lr is None else lr
