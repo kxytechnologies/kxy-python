@@ -17,5 +17,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from .pfs_selector import *
-from .pfs_predictor import *
+try:
+	from .pfs_selector import *
+	from .pfs_predictor import *
+except:
+	import logging
+	logging.warn('Importing the PFS submodule failed: Principal Feature Selector might not be available.')

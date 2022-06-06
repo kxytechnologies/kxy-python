@@ -118,7 +118,7 @@ def test_lean_boosted_lightgbm_regressor():
 
 def test_lean_boosted_lightgbm_learning_api_regressor():
 	# Regression
-	params = params = {
+	params = {
 		'objective': 'rmse',  
 		'boosting_type': 'gbdt',
 		'num_leaves': 100,
@@ -245,7 +245,7 @@ def test_lean_boosted_lightgbm_classifier():
 
 def test_lean_boosted_lightgbm_learning_api_classifier():
 	# Classification
-	params = params = {
+	params = {
 		'objective': 'binary',
 		'metric': ['auc', 'binary_logloss'],
 		'boosting_type': 'gbdt',
@@ -361,7 +361,7 @@ def test_n_down_perf_before_stop():
 
 def test_non_additive_lean_boosted_regressor():
 	# Regression
-	params = params = {
+	params = {
 		'objective': 'rmse',  
 		'boosting_type': 'gbdt',
 		'num_leaves': 100,
